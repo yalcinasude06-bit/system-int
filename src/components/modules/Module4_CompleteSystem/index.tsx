@@ -39,7 +39,7 @@ export function Module4CompleteSystem({ onSubmit, faultInjected }: LearningModul
     await onSubmit({ score, payload: { interfaces, flowCards, alternativeRoute: alternativeRoute || null, faultInjected: Boolean(faultInjected), stoppedAt: maxStep, result: message } });
   }
   return <section className="panel module-shell">
-    <div className="module-header"><span className="module-number">04</span><div><div className="eyebrow">Modül 4</div><h2 style={{ margin: 0 }}>Komple Sistemi Kur ve Simüle Et</h2><p className="muted">Alt sistemleri arayüzlerle bağla; sipariş token’ını uçtan uca geçir.</p></div></div>
+    <div className="module-title-chip">Modül 4: Komple Sistemi Kur</div>
     {faultInjected && <div className="fault-banner"><Siren /> Hoca kriz enjekte etti: Üretim Hattı Arızası. Alternatif bir rota kur.</div>}
     <EnterpriseMacroCanvas tokenStep={step} running={running} faultInjected={faultInjected} alternativeRoute={alternativeRoute} />
     <div className="grid-2"><InterfaceSelector selected={interfaces} onToggle={toggle} /><FlowCardSelector selected={flowCards} onToggle={toggleCard} /></div>

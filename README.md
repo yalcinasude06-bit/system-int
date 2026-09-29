@@ -30,6 +30,8 @@ npx supabase db push
 - Oturum sıralaması `session_score`, genel sıralama ise kalıcı öğrenci profilindeki
   `total_score` alanı üzerinden canlı güncellenir.
 - Modül 1, dokuz temel kavramı sistem anatomisi üzerinde kurdurur.
+- Arayüz açık/pastel eğitim teması kullanır; Modül 1 çevre, amaç, sınır, arayüz,
+  bileşen, ilişki, girdi, çıktı ve kısıt katmanlarını kod tabanlı SVG kanvasta gösterir.
 - Modül 1 yanıtı veritabanı RPC’siyle tek sefer kabul edilir; yeniden gönderim puanı
   değiştirmez ve sayfa yenilendiğinde kilitli yerleşim geri yüklenir.
 - Modül 2, beş ilişki türünü ve artı/eksi kutuplu şok yayılımını simüle eder.

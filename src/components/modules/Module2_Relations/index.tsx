@@ -45,7 +45,7 @@ export function Module2Relations({ onSubmit }: LearningModuleProps) {
   }
 
   return <section className="panel module-shell">
-    <div className="module-header"><span className="module-number">02</span><div><div className="eyebrow">Modül 2</div><h2 style={{ margin: 0 }}>İlişki Ağını Kur ve Çalıştır</h2><p className="muted">Kaynak düğüme, ardından hedef düğüme tıklayarak ok oluştur.</p></div></div>
+    <div className="module-title-chip">Modül 2: İlişki Ağını Kur</div>
     <div className="dashboard-grid"><NodeGraphCanvas edges={edges} selected={selected} onNodeClick={selectNode} simulating={running} warningNodeIds={warningNodeIds} /><div className="card"><h3>Kurulan ilişkiler</h3><p className="muted">Her bağlantının türü ve etkisi.</p><div className="relation-list">{edges.length ? edges.map((edge) => <div className="relation-row" key={edge.id}><span>{labels.get(edge.from)} → {labels.get(edge.to)}</span><b className={`edge-sign ${edge.polarity === "+" ? "positive" : "negative"}`}>{edge.polarity}</b><small>{edge.type}</small></div>) : <div className="empty">İki düğüm seçerek başla.</div>}</div></div></div>
     <SimulationRunner running={running} result={result} explanations={explanations} onRun={() => void run()} onReset={() => { setEdges([]); setResult(""); setWarningNodeIds([]); setExplanations([]); }} />
     {pending && <RelationModal from={labels.get(pending[0]) || pending[0]} to={labels.get(pending[1]) || pending[1]} onSave={addEdge} onClose={() => setPending(null)} />}

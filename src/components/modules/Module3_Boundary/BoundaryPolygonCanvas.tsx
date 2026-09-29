@@ -25,7 +25,7 @@ export function BoundaryPolygonCanvas({ points, onChange, insideIds }: { points:
   }
   const polygon = points.map((point) => `${point.x},${point.y}`).join(" ");
   return <div className="boundary-canvas"><svg className="boundary-svg" viewBox="0 0 800 430" onClick={handleClick} role="img" aria-label="Sistem sınırı çizim alanı">
-    <defs><pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M 32 0 L 0 0 0 32" fill="none" stroke="rgba(255,255,255,.035)" strokeWidth="1" /></pattern></defs><rect width="800" height="430" fill="url(#grid)" />
+    <defs><pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M 32 0 L 0 0 0 32" fill="none" stroke="rgba(71,85,105,.09)" strokeWidth="1" /></pattern></defs><rect width="800" height="430" fill="url(#grid)" />
     {points.length >= 2 && <polyline points={polygon} className="polygon-line" />}
     {points.map((point, index) => <circle key={`${point.x}-${point.y}-${index}`} cx={point.x} cy={point.y} r="6" className="polygon-point" />)}
     {mapElements.map((item) => <g key={item.id} className={`map-node ${insideIds.has(item.id) ? "inside" : ""}`}><circle cx={item.position.x} cy={item.position.y} r="36" /><text x={item.position.x} y={item.position.y-3} fontSize="18">{item.icon}</text><text x={item.position.x} y={item.position.y+17}>{item.name}</text></g>)}
