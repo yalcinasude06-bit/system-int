@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Presentation, Radio, ShieldCheck } from "lucide-react";
 import { Navbar } from "@/components/common/Navbar";
@@ -14,10 +14,23 @@ export default function TeacherPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    const raw = localStorage.getItem("system-lab:teacher-session");
+    if (!raw) return;
+    try {
+      const saved = JSON.parse(raw) as { sessionId?: string; pin?: string };
+      if (saved.sessionId && saved.pin) router.replace(`/teacher/session/${saved.pin}`);
+      else localStorage.removeItem("system-lab:teacher-session");
+    } catch {
+      localStorage.removeItem("system-lab:teacher-session");
+    }
+  }, [router]);
+
   async function handleCreate(event: React.FormEvent) {
     event.preventDefault(); setLoading(true); setError("");
     try {
       const session = await createSession(title);
+      localStorage.setItem("system-lab:teacher-session", JSON.stringify({ sessionId: session.id, pin: session.pin_code }));
       router.push(`/teacher/session/${session.pin_code}`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Oturum oluşturulamadı.");

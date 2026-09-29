@@ -14,6 +14,7 @@ export interface Session {
 export interface Student {
   id: string;
   session_id: string;
+  student_number: string;
   nickname: string;
   avatar: string;
   score: number;

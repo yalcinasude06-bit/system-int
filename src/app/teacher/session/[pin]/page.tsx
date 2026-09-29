@@ -31,6 +31,7 @@ export default function TeacherSessionPage() {
     try {
       const found = await getSessionByPin(pin);
       if (!found) throw new Error("Aktif oturum bulunamadı.");
+      localStorage.setItem("system-lab:teacher-session", JSON.stringify({ sessionId: found.id, pin: found.pin_code }));
       setSession(found);
       const [{ data: people }, { data: answers }] = await Promise.all([
         supabase.from("students").select("*").eq("session_id", found.id).order("score", { ascending: false }),
@@ -93,7 +94,7 @@ export default function TeacherSessionPage() {
       </section>
       <aside className="stack">
         {session.current_module === 4 && <FaultInjectionPanel active={session.fault_injected} loading={busy} onToggle={() => void patch({ fault_injected: !session.fault_injected })} />}
-        <div className="card"><h3>Oturum kontrolü</h3><p className="muted">Dersi bitirdiğinizde öğrenci ekranlarını güvenle kapatın.</p><Button variant="danger" size="small" icon={<Power size={16} />} onClick={async () => { await patch({ is_active: false }); router.push("/teacher"); }}>Oturumu bitir</Button></div>
+        <div className="card"><h3>Oturum kontrolü</h3><p className="muted">Dersi bitirdiğinizde öğrenci ekranlarını güvenle kapatın.</p><Button variant="danger" size="small" icon={<Power size={16} />} onClick={async () => { await patch({ is_active: false }); localStorage.removeItem("system-lab:teacher-session"); router.push("/teacher"); }}>Oturumu bitir</Button></div>
       </aside>
     </div>
 

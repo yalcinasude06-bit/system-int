@@ -6,6 +6,7 @@ export const mapElements: MapElement[] = [
   { id: "employees", name: "Çalışanlar", type: "internal", position: { x: 220, y: 130 }, icon: "👥" },
   { id: "production", name: "Üretim Hattı", type: "internal", position: { x: 390, y: 205 }, icon: "🏭" },
   { id: "robots", name: "Robotik", type: "internal", position: { x: 230, y: 300 }, icon: "🤖" },
+  { id: "sales-marketing", name: "Satış / Pazarlama", type: "internal", position: { x: 445, y: 325 }, icon: "📣" },
   { id: "suppliers", name: "Tedarikçiler", type: "direct_env", position: { x: 590, y: 100 }, icon: "🚚" },
   { id: "customers", name: "Müşteriler", type: "direct_env", position: { x: 650, y: 260 }, icon: "🛒" },
   { id: "competitors", name: "Rakipler", type: "direct_env", position: { x: 560, y: 365 }, icon: "🏁" },

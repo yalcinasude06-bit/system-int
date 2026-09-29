@@ -33,13 +33,23 @@ export async function getSessionByPin(pin: string): Promise<Session | null> {
 
 export async function joinSession(
   sessionId: string,
-  nickname: string,
+  studentNumber: string,
+  fullName: string,
   avatar: string,
 ): Promise<Student> {
   const client = requireSupabase();
   const { data, error } = await client
     .from("students")
-    .insert({ session_id: sessionId, nickname: nickname.trim(), avatar })
+    .upsert(
+      {
+        session_id: sessionId,
+        student_number: studentNumber.trim(),
+        nickname: fullName.trim(),
+        avatar,
+        last_active: new Date().toISOString(),
+      },
+      { onConflict: "session_id,student_number" },
+    )
     .select()
     .single();
   if (error) throw error;
