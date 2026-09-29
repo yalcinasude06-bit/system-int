@@ -1,0 +1,22 @@
+# Dependencies and package-manager cache
+node_modules/
+.npm-cache/
+
+# Local secrets
+.env
+.env.*
+!.env.example
+
+# Service-specific local state
+.vercel/
+.supabase/
+
+# Build output
+.next/
+dist/
+build/
+
+# Editor and OS files
+.DS_Store
+Thumbs.db
+
