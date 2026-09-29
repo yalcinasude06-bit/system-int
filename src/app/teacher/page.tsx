@@ -2,19 +2,24 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Presentation, Radio, ShieldCheck } from "lucide-react";
+import { KeyRound, LogIn, LogOut, Presentation, Radio, ShieldCheck } from "lucide-react";
 import { Navbar } from "@/components/common/Navbar";
 import { Button } from "@/components/common/Button";
 import { createSession } from "@/lib/session";
 import { isSupabaseConfigured } from "@/lib/supabase";
+import { useTeacherAuth } from "@/lib/useTeacherAuth";
 
 export default function TeacherPage() {
   const router = useRouter();
+  const { status, login, logout } = useTeacherAuth();
   const [title, setTitle] = useState("Sistem Analizi Dersi");
+  const [username, setUsername] = useState("admin");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (status !== "authenticated") return;
     const raw = localStorage.getItem("system-lab:teacher-session");
     if (!raw) return;
     try {
@@ -24,7 +29,14 @@ export default function TeacherPage() {
     } catch {
       localStorage.removeItem("system-lab:teacher-session");
     }
-  }, [router]);
+  }, [router, status]);
+
+  async function handleLogin(event: React.FormEvent) {
+    event.preventDefault(); setLoading(true); setError("");
+    try { await login(username.trim(), password); }
+    catch (caught) { setError(caught instanceof Error ? caught.message : "Giriş yapılamadı."); }
+    finally { setLoading(false); }
+  }
 
   async function handleCreate(event: React.FormEvent) {
     event.preventDefault(); setLoading(true); setError("");
@@ -37,9 +49,24 @@ export default function TeacherPage() {
     } finally { setLoading(false); }
   }
 
+  if (status === "checking") return <><Navbar /><main className="container page"><div className="empty">Öğretmen oturumu doğrulanıyor…</div></main></>;
+
+  if (status === "unauthenticated") return <><Navbar /><main className="container page">
+    <div className="form-card panel auth-card">
+      <div className="module-header"><span className="module-number"><KeyRound /></span><div><div className="eyebrow">Yetkili erişimi</div><h1 style={{ margin: "5px 0" }}>Öğretmen girişi</h1></div></div>
+      <p className="muted">Canlı ders oturumlarını yalnızca öğretmen hesabıyla yönetin.</p>
+      <form className="form-grid" onSubmit={handleLogin}>
+        <div className="field"><label htmlFor="teacher-username">Kullanıcı adı</label><input id="teacher-username" className="input" autoComplete="username" required value={username} onChange={(event) => setUsername(event.target.value)} /></div>
+        <div className="field"><label htmlFor="teacher-password">Şifre</label><input id="teacher-password" className="input" type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} /></div>
+        {error && <div className="notice error">{error}</div>}
+        <Button type="submit" loading={loading} icon={<LogIn size={18} />}>Giriş yap</Button>
+      </form>
+    </div>
+  </main></>;
+
   return <><Navbar /><main className="container page">
     <div className="form-card panel">
-      <div className="module-header"><span className="module-number"><Presentation /></span><div><div className="eyebrow">Öğretmen konsolu</div><h1 style={{ margin: "5px 0" }}>Canlı oturum oluştur</h1></div></div>
+      <div className="section-head"><div className="module-header"><span className="module-number"><Presentation /></span><div><div className="eyebrow">Öğretmen konsolu</div><h1 style={{ margin: "5px 0" }}>Canlı oturum oluştur</h1></div></div><Button size="small" variant="secondary" icon={<LogOut size={15} />} onClick={logout}>Çıkış</Button></div>
       <p className="muted">Öğrenciler altı haneli PIN veya QR kod ile saniyeler içinde katılır.</p>
       <form className="form-grid" onSubmit={handleCreate}>
         <div className="field"><label htmlFor="title">Ders başlığı</label><input id="title" className="input" value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} /></div>
