@@ -20,13 +20,19 @@ npx supabase db push
 
 ## Öğrenme akışı
 
-- Öğretmen oturumu tarayıcıda kalıcıdır; yenilemede mevcut sınıf ve öğrenciler yüklenir.
-- Öğretmen paneli sunucu tarafında doğrulanan kullanıcı adı/şifre ve 12 saatlik imzalı
-  tarayıcı oturumu ile korunur. Varsayılan geliştirme girişi `admin / sistem2026` olup
+- Öğretmen yetkisi yalnızca açık tarayıcı sekmesinde tutulur; sekme kapatıldığında yeniden
+  kullanıcı adı ve şifre doğrulaması gerekir.
+- Öğretmen paneli sunucu tarafında doğrulanan kullanıcı adı/şifre ve sekme kapsamlı imzalı
+  oturum ile korunur. Varsayılan geliştirme girişi `admin / sistem2026` olup
   production ortamında `TEACHER_USERNAME` ve `TEACHER_PASSWORD` değiştirilmelidir.
 - Öğrenciler PIN, okul numarası ve ad soyad ile katılır. Aynı okul numarasıyla yeniden
   katılım puanı ve ilerlemeyi korur.
-- On dört haftalık menüden seçilen hafta/modül tüm öğrencilere Realtime ile yansır.
+- On dört haftalık menüde Hafta 1 dört canlı modülle aktiftir; diğer haftalar yaklaşan içerik
+  kartını gösterir.
+- Öğrenciler öğretmen modülü başlatana kadar bekleme ekranında kalır; başlangıçta 3-2-1
+  geri sayımı, bitişte puan ve mini liderlik ekranı gösterilir.
+- Projeksiyon paneli canlı QR, öğrenci durum baloncukları, oturum/genel sıralama ve ilk üç
+  podyumunu tek tahta görünümünde sunar.
 - Oturum sıralaması `session_score`, genel sıralama ise kalıcı öğrenci profilindeki
   `total_score` alanı üzerinden canlı güncellenir.
 - Modül 1, dokuz temel kavramı sistem anatomisi üzerinde kurdurur.

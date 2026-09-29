@@ -6,6 +6,7 @@ create table if not exists public.sessions (
   title varchar(255) not null default 'Sistem Analizi Dersi',
   current_module int not null default 1 check (current_module between 1 and 4),
   module_stage int not null default 1 check (module_stage > 0),
+  is_module_started boolean not null default false,
   is_active boolean not null default true,
   fault_injected boolean not null default false,
   created_at timestamptz not null default timezone('utc', now())

@@ -93,7 +93,7 @@ export async function saveSubmission(input: {
 
 export async function updateSession(
   sessionId: string,
-  patch: Partial<Pick<Session, "selected_week" | "current_module" | "module_stage" | "fault_injected" | "is_active">>,
+  patch: Partial<Pick<Session, "selected_week" | "current_module" | "module_stage" | "is_module_started" | "fault_injected" | "is_active">>,
 ): Promise<void> {
   const client = requireSupabase();
   const { error } = await client.from("sessions").update(patch).eq("id", sessionId);

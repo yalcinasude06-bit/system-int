@@ -7,6 +7,7 @@ export interface Session {
   selected_week: number;
   current_module: ModuleId;
   module_stage: number;
+  is_module_started: boolean;
   is_active: boolean;
   fault_injected: boolean;
   created_at: string;

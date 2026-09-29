@@ -9,7 +9,10 @@ export function useTeacherAuth() {
   const [status, setStatus] = useState<AuthStatus>("checking");
 
   useEffect(() => {
-    const token = localStorage.getItem(storageKey);
+    // Remove credentials written by older releases; teacher access is tab-scoped now.
+    localStorage.removeItem(storageKey);
+    localStorage.removeItem("system-lab:teacher-session");
+    const token = sessionStorage.getItem(storageKey);
     if (!token) {
       const timer = window.setTimeout(() => setStatus("unauthenticated"), 0);
       return () => window.clearTimeout(timer);
@@ -17,7 +20,7 @@ export function useTeacherAuth() {
     const controller = new AbortController();
     fetch("/api/teacher/auth", { headers: { Authorization: `Bearer ${token}` }, signal: controller.signal })
       .then((response) => {
-        if (!response.ok) localStorage.removeItem(storageKey);
+        if (!response.ok) sessionStorage.removeItem(storageKey);
         setStatus(response.ok ? "authenticated" : "unauthenticated");
       })
       .catch((error: unknown) => {
@@ -35,12 +38,12 @@ export function useTeacherAuth() {
     });
     const data = await response.json() as { token?: string; error?: string };
     if (!response.ok || !data.token) throw new Error(data.error || "Giriş yapılamadı.");
-    localStorage.setItem(storageKey, data.token);
+    sessionStorage.setItem(storageKey, data.token);
     setStatus("authenticated");
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem(storageKey);
+    sessionStorage.removeItem(storageKey);
     setStatus("unauthenticated");
   }, []);
 

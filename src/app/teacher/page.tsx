@@ -20,14 +20,14 @@ export default function TeacherPage() {
 
   useEffect(() => {
     if (status !== "authenticated") return;
-    const raw = localStorage.getItem("system-lab:teacher-session");
+    const raw = sessionStorage.getItem("system-lab:teacher-session");
     if (!raw) return;
     try {
       const saved = JSON.parse(raw) as { sessionId?: string; pin?: string };
       if (saved.sessionId && saved.pin) router.replace(`/teacher/session/${saved.pin}`);
-      else localStorage.removeItem("system-lab:teacher-session");
+      else sessionStorage.removeItem("system-lab:teacher-session");
     } catch {
-      localStorage.removeItem("system-lab:teacher-session");
+      sessionStorage.removeItem("system-lab:teacher-session");
     }
   }, [router, status]);
 
@@ -42,7 +42,7 @@ export default function TeacherPage() {
     event.preventDefault(); setLoading(true); setError("");
     try {
       const session = await createSession(title);
-      localStorage.setItem("system-lab:teacher-session", JSON.stringify({ sessionId: session.id, pin: session.pin_code }));
+      sessionStorage.setItem("system-lab:teacher-session", JSON.stringify({ sessionId: session.id, pin: session.pin_code }));
       router.push(`/teacher/session/${session.pin_code}`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Oturum oluşturulamadı.");
@@ -55,9 +55,9 @@ export default function TeacherPage() {
     <div className="form-card panel auth-card">
       <div className="module-header"><span className="module-number"><KeyRound /></span><div><div className="eyebrow">Yetkili erişimi</div><h1 style={{ margin: "5px 0" }}>Öğretmen girişi</h1></div></div>
       <p className="muted">Canlı ders oturumlarını yalnızca öğretmen hesabıyla yönetin.</p>
-      <form className="form-grid" onSubmit={handleLogin}>
-        <div className="field"><label htmlFor="teacher-username">Kullanıcı adı</label><input id="teacher-username" className="input" autoComplete="username" required value={username} onChange={(event) => setUsername(event.target.value)} /></div>
-        <div className="field"><label htmlFor="teacher-password">Şifre</label><input id="teacher-password" className="input" type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} /></div>
+      <form className="form-grid" onSubmit={handleLogin} autoComplete="off">
+        <div className="field"><label htmlFor="teacher-username">Kullanıcı adı</label><input id="teacher-username" className="input" autoComplete="off" required value={username} onChange={(event) => setUsername(event.target.value)} /></div>
+        <div className="field"><label htmlFor="teacher-password">Şifre</label><input id="teacher-password" className="input" type="password" autoComplete="off" required value={password} onChange={(event) => setPassword(event.target.value)} /></div>
         {error && <div className="notice error">{error}</div>}
         <Button type="submit" loading={loading} icon={<LogIn size={18} />}>Giriş yap</Button>
       </form>
