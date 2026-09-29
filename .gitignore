@@ -10,6 +10,7 @@ node_modules/
 # Service-specific local state and generated credentials
 .vercel/
 .supabase/
+supabase/.temp/
 
 # Build output
 .next/
