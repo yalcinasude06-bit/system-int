@@ -7,7 +7,7 @@ node_modules/
 .env.*
 !.env.example
 
-# Service-specific local state
+# Service-specific local state and generated credentials
 .vercel/
 .supabase/
 
@@ -19,4 +19,3 @@ build/
 # Editor and OS files
 .DS_Store
 Thumbs.db
-
