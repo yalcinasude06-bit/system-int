@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { motion, useMotionValue, useTransform } from "framer-motion";
+import { AnimatePresence, motion, useMotionValue, useTransform } from "framer-motion";
 import { ArrowLeft, ArrowRight, Check, LockKeyhole, RotateCcw, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import type { LearningModuleProps, ModuleSubmission } from "@/types";
@@ -34,7 +34,7 @@ const chain: ChainStep[] = [
   {
     id: "sales",
     trigger: "Talep %20 arttı",
-    icon: "🛒",
+    icon: "📈",
     variable: "Satış Miktarı",
     expected: "positive",
     nextState: "Satış Miktarı arttı",
@@ -43,102 +43,101 @@ const chain: ChainStep[] = [
     accent: "#3b82f6",
   },
   {
-    id: "revenue",
+    id: "inventory",
     trigger: "Satış Miktarı arttı",
-    icon: "💰",
-    variable: "Şirket Geliri",
-    expected: "positive",
-    nextState: "Şirket Geliri arttı",
-    explanation: "Satış miktarı arttığında şirket geliri de artar (+ Pozitif feedback).",
+    icon: "📦",
+    variable: "Depo Stok Miktarı",
+    expected: "negative",
+    nextState: "Depo Stok Miktarı azaldı",
+    explanation: "Satış arttıkça depodaki stok miktarı azalır (− Negatif feedback).",
     color: "#fef3c7",
     accent: "#f59e0b",
   },
   {
-    id: "marketing",
-    trigger: "Şirket Geliri arttı",
-    icon: "📢",
-    variable: "Pazarlama Bütçesi",
+    id: "stock-risk",
+    trigger: "Depo Stok Miktarı azaldı",
+    icon: "⚠️",
+    variable: "Stok Tükenme Riski",
     expected: "positive",
-    nextState: "Pazarlama Bütçesi arttı",
-    explanation: "Gelir artışı pazarlama için ayrılabilecek bütçeyi artırır (+ Pozitif feedback).",
+    nextState: "Stok Tükenme Riski arttı",
+    explanation: "Depo stoğunun azalması stok tükenme riskini artırır (+ Pozitif feedback).",
     color: "#ede9fe",
     accent: "#8b5cf6",
   },
   {
-    id: "awareness",
-    trigger: "Pazarlama Bütçesi arttı",
-    icon: "📣",
-    variable: "Marka Bilinirliği",
-    expected: "positive",
-    nextState: "Marka Bilinirliği arttı",
-    explanation: "Daha yüksek pazarlama bütçesi markanın daha çok kişiye ulaşmasını sağlar (+ Pozitif ilişki).",
-    color: "#e0f2fe",
-    accent: "#38bdf8",
-  },
-  {
-    id: "customers",
-    trigger: "Marka Bilinirliği arttı",
-    icon: "👥",
-    variable: "Yeni Müşteri Sayısı",
-    expected: "positive",
-    nextState: "Yeni Müşteri Sayısı arttı",
-    explanation: "Markanın daha fazla tanınması yeni müşteri sayısını artırır (+ Pozitif ilişki).",
-    color: "#fce7f3",
-    accent: "#f472b6",
-  },
-  {
-    id: "orders",
-    trigger: "Yeni Müşteri Sayısı arttı",
-    icon: "📦",
-    variable: "Sipariş Yoğunluğu",
-    expected: "positive",
-    nextState: "Sipariş Yoğunluğu arttı",
-    explanation: "Yeni müşteri sayısı arttıkça alınan siparişlerin yoğunluğu da artar (+ Pozitif ilişki).",
-    color: "#fef3c7",
-    accent: "#f59e0b",
-  },
-  {
-    id: "delivery",
-    trigger: "Sipariş Yoğunluğu arttı",
-    icon: "🚚",
-    variable: "Teslimat Süresi",
-    expected: "positive",
-    nextState: "Teslimat Süresi arttı",
-    explanation: "Aynı kapasitede daha fazla sipariş, teslimat süresini uzatır (+ Pozitif ilişki).",
-    color: "#e2e8f0",
-    accent: "#64748b",
-  },
-  {
     id: "satisfaction",
-    trigger: "Teslimat Süresi arttı",
+    trigger: "Stok Tükenme Riski arttı",
     icon: "🙂",
     variable: "Müşteri Memnuniyeti",
     expected: "negative",
     nextState: "Müşteri Memnuniyeti azaldı",
-    explanation: "Teslimatın uzaması müşteri memnuniyetini düşürür (− Negatif ilişki).",
+    explanation: "Stok tükenme riskinin yükselmesi müşteri memnuniyetini azaltır (− Negatif feedback).",
+    color: "#e0f2fe",
+    accent: "#38bdf8",
+  },
+  {
+    id: "complaints",
+    trigger: "Müşteri Memnuniyeti azaldı",
+    icon: "📣",
+    variable: "Müşteri Şikâyet Sayısı",
+    expected: "positive",
+    nextState: "Müşteri Şikâyet Sayısı arttı",
+    explanation: "Memnuniyet azaldığında müşteri şikâyetlerinin sayısı artar (+ Pozitif feedback).",
+    color: "#fce7f3",
+    accent: "#f472b6",
+  },
+  {
+    id: "loyalty",
+    trigger: "Müşteri Şikâyetleri arttı",
+    icon: "🤝",
+    variable: "Marka Sadakati",
+    expected: "negative",
+    nextState: "Marka Sadakati azaldı",
+    explanation: "Şikâyetlerin artması müşterilerin marka sadakatini azaltır (− Negatif feedback).",
+    color: "#fef3c7",
+    accent: "#f59e0b",
+  },
+  {
+    id: "churn",
+    trigger: "Marka Sadakati azaldı",
+    icon: "🚪",
+    variable: "Müşteri Kayıp Oranı (Churn)",
+    expected: "positive",
+    nextState: "Müşteri Kayıp Oranı arttı",
+    explanation: "Marka sadakati azaldığında müşteri kayıp oranı yükselir (+ Pozitif feedback).",
+    color: "#e2e8f0",
+    accent: "#64748b",
+  },
+  {
+    id: "revenue",
+    trigger: "Müşteri Kaybı arttı",
+    icon: "💰",
+    variable: "Toplam Şirket Geliri",
+    expected: "negative",
+    nextState: "Toplam Şirket Geliri azaldı",
+    explanation: "Müşteri kaybı arttıkça şirketin toplam geliri azalır (− Negatif feedback).",
     color: "#f1f5f9",
     accent: "#94a3b8",
   },
   {
-    id: "repeat-purchase",
-    trigger: "Müşteri Memnuniyeti azaldı",
-    icon: "🔁",
-    variable: "Tekrar Satın Alma",
+    id: "improvement-budget",
+    trigger: "Toplam Gelir azaldı",
+    icon: "🛠️",
+    variable: "Geliştirme & İyileştirme Bütçesi",
     expected: "positive",
-    nextState: "Tekrar Satın Alma azaldı",
-    explanation: "Memnuniyet ile tekrar satın alma aynı yönde değişir; memnuniyet azalınca tekrar satın alma da azalır (+ Pozitif ilişki).",
+    nextState: "Geliştirme & İyileştirme Bütçesi azaldı",
+    explanation: "Toplam gelir ile geliştirme bütçesi aynı yönde değişir (+ Pozitif feedback).",
     color: "#ede9fe",
     accent: "#8b5cf6",
   },
   {
-    id: "price",
-    trigger: "Tekrar Satın Alma azaldı",
-    icon: "🏷️",
-    variable: "Kampanya İndirimi",
-    detail: "Talebi yeniden canlandırma kararı",
+    id: "system-errors",
+    trigger: "Geliştirme Bütçesi azaldı",
+    icon: "🚨",
+    variable: "Sistemik Hata Oranı",
     expected: "negative",
-    nextState: "Kampanya İndirimi arttı",
-    explanation: "Talep azaldığında şirket talebi canlandırmak için indirimleri artırır (− Negatif ilişki).",
+    nextState: "Sistemik Hata Oranı arttı",
+    explanation: "Geliştirme bütçesi azaldığında sistemik hata oranı yükselir (− Negatif feedback).",
     color: "#f1f5f9",
     accent: "#64748b",
   },
@@ -167,6 +166,8 @@ export function Module2Relations({ onSubmit, existingSubmission }: LearningModul
   const negativeGlow = useTransform(x, [-150, -35, 0], [1, .18, 0]);
   const positiveGlow = useTransform(x, [0, 35, 150], [0, .18, 1]);
   const current = chain[Math.min(stepIndex, chain.length - 1)];
+  const nextCard = chain[stepIndex + 1];
+  const deepCard = chain[stepIndex + 2];
 
   const submitResult = useCallback(async (submission: ModuleSubmission) => {
     setSubmitting(true);
@@ -202,7 +203,7 @@ export function Module2Relations({ onSubmit, existingSubmission }: LearningModul
       await delay(720);
     }
     setPhase("exit");
-    await delay(520);
+    await delay(300);
 
     if (stepIndex === chain.length - 1) {
       const finalScore = Math.round(nextAnswers.filter((item) => item.isCorrect).length * pointsPerCard);
@@ -266,10 +267,10 @@ export function Module2Relations({ onSubmit, existingSubmission }: LearningModul
   }
 
   const cardAnimation = phase === "shake"
-    ? { x: [0, -18, 17, -13, 11, -7, 0], rotate: [0, -2, 2, -1.5, 1, 0], opacity: 1 }
+    ? { x: [0, -18, 17, -13, 11, -7, 0], y: 0, scale: 1, rotate: [0, -2, 2, -1.5, 1, 0], opacity: 1 }
     : phase === "exit"
-      ? { x: direction === "positive" ? 720 : -720, rotate: direction === "positive" ? 18 : -18, opacity: 0 }
-      : { x: 0, rotate: 0, opacity: 1 };
+      ? { x: direction === "positive" ? 520 : -520, y: 0, scale: .98, rotate: direction === "positive" ? 18 : -18, opacity: 0 }
+      : { x: 0, y: 0, scale: 1, rotate: 0, opacity: 1 };
 
   return <section className="panel module-shell swipe-module-shell">
     <div className="swipe-topline">
@@ -289,29 +290,43 @@ export function Module2Relations({ onSubmit, existingSubmission }: LearningModul
       </button>
 
       <div className="swipe-deck">
-        {chain.slice(stepIndex + 1, stepIndex + 3).reverse().map((step, reverseIndex) => <div className={`swipe-card stack-card stack-${reverseIndex + 1}`} style={{ background: step.color }} key={step.id}><span>{step.icon}</span></div>)}
-        <motion.article
-          key={current.id}
-          className={`swipe-card active-card ${feedback?.correct === false ? "wrong" : ""}`}
-          style={{ x, rotate, background: current.color, borderColor: current.accent }}
-          drag={busy ? false : "x"}
-          dragConstraints={{ left: 0, right: 0 }}
-          dragElastic={.86}
-          dragSnapToOrigin
-          animate={cardAnimation}
-          transition={phase === "shake" ? { duration: .65 } : { type: "spring", stiffness: 220, damping: 24 }}
-          onDragEnd={(_, info) => {
-            if (info.offset.x > 90) void choose("positive");
-            else if (info.offset.x < -90) void choose("negative");
-          }}
-        >
-          <motion.div className="card-choice-glow negative" style={{ opacity: negativeGlow }}><X size={44} /></motion.div>
-          <motion.div className="card-choice-glow positive" style={{ opacity: positiveGlow }}><Check size={44} /></motion.div>
-          <span className="swipe-card-icon">{current.icon}</span>
-          <h1>{current.variable}</h1>
-          {current.detail && <p>{current.detail}</p>}
-          <span className="drag-hint">Kartı sürükle</span>
-        </motion.article>
+        {deepCard && <div className="swipe-card stack-card deep-card" style={{ background: deepCard.color, borderColor: deepCard.accent }} aria-hidden="true"><span>{deepCard.icon}</span></div>}
+        {nextCard && <motion.article
+          key={`next-${nextCard.id}`}
+          className="swipe-card stack-card next-card"
+          style={{ background: nextCard.color, borderColor: nextCard.accent }}
+          initial={false}
+          animate={phase === "exit"
+            ? { y: 0, scale: 1, opacity: 1, rotate: 0 }
+            : { y: 8, scale: .95, opacity: .8, rotate: 0 }}
+          transition={phase === "exit" ? { duration: .28, ease: "easeOut" } : { type: "spring", stiffness: 260, damping: 24 }}
+          aria-hidden="true"
+        ><span className="stack-card-preview-icon">{nextCard.icon}</span><h2>{nextCard.variable}</h2></motion.article>}
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.article
+            key={current.id}
+            className={`swipe-card active-card ${feedback?.correct === false ? "wrong" : ""}`}
+            style={{ x, rotate, background: current.color, borderColor: current.accent }}
+            drag={busy ? false : "x"}
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={.86}
+            dragSnapToOrigin
+            initial={false}
+            animate={cardAnimation}
+            transition={phase === "shake" ? { duration: .65 } : phase === "exit" ? { duration: .28, ease: "easeOut" } : { type: "spring", stiffness: 260, damping: 24 }}
+            onDragEnd={(_, info) => {
+              if (info.offset.x > 90) void choose("positive");
+              else if (info.offset.x < -90) void choose("negative");
+            }}
+          >
+            <motion.div className="card-choice-glow negative" style={{ opacity: negativeGlow }}><X size={44} /></motion.div>
+            <motion.div className="card-choice-glow positive" style={{ opacity: positiveGlow }}><Check size={44} /></motion.div>
+            <span className="swipe-card-icon">{current.icon}</span>
+            <h1>{current.variable}</h1>
+            {current.detail && <p>{current.detail}</p>}
+            <span className="drag-hint">Kartı sürükle</span>
+          </motion.article>
+        </AnimatePresence>
       </div>
 
       <button type="button" className="swipe-zone positive" disabled={busy} onClick={() => void choose("positive")} aria-label="Pozitif feedback seç">
