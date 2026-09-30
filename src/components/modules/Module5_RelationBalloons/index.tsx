@@ -82,7 +82,7 @@ function buildRounds(): BalloonQuestion[] {
 }
 
 const rounds = buildRounds();
-const secondsPerBalloon = 9;
+const secondsPerBalloon = 15;
 const pointsPerQuestion = 100 / rounds.length;
 
 function delay(milliseconds: number) {
@@ -97,6 +97,7 @@ export function Module5RelationBalloons({ onSubmit, existingSubmission, forceSub
   const [shot, setShot] = useState<{ side: "left" | "right"; correct: boolean; nonce: number } | null>(null);
   const [shakeNonce, setShakeNonce] = useState(0);
   const [inputLocked, setInputLocked] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [submitFailed, setSubmitFailed] = useState(false);
   const [finalSubmission, setFinalSubmission] = useState<ModuleSubmission | null>(null);
@@ -105,6 +106,7 @@ export function Module5RelationBalloons({ onSubmit, existingSubmission, forceSub
   const attemptsRef = useRef<RelationType[]>([]);
   const submissionStarted = useRef(false);
   const timeoutHandler = useRef<() => void>(() => undefined);
+  const cooldownRun = useRef(0);
   const current = rounds[Math.min(roundIndex, rounds.length - 1)];
 
   const submitResult = useCallback(async (submission: ModuleSubmission) => {
@@ -118,6 +120,8 @@ export function Module5RelationBalloons({ onSubmit, existingSubmission, forceSub
   const finalize = useCallback(async (finalAnswers: BalloonAnswer[], reason: "completed" | "teacher-ended") => {
     if (submissionStarted.current || existingSubmission) return;
     submissionStarted.current = true;
+    cooldownRun.current += 1;
+    setCooldown(0);
     const correctCount = finalAnswers.filter((answer) => answer.isCorrect).length;
     const submission: ModuleSubmission = {
       score: Math.round(correctCount * pointsPerQuestion),
@@ -151,10 +155,12 @@ export function Module5RelationBalloons({ onSubmit, existingSubmission, forceSub
     setRoundIndex((index) => index + 1);
     setPhase("active");
     setInputLocked(false);
+    setCooldown(0);
   }, [finalize, roundIndex]);
 
   const expireBalloon = useCallback(() => {
     if (resolved.current || phase !== "active" || existingSubmission) return;
+    cooldownRun.current += 1;
     resolved.current = true;
     const answer: BalloonAnswer = { questionId: current.id, expected: current.type, attempts: attemptsRef.current, isCorrect: false, timedOut: true };
     const nextAnswers = [...answersRef.current, answer];
@@ -192,15 +198,24 @@ export function Module5RelationBalloons({ onSubmit, existingSubmission, forceSub
     setInputLocked(true);
 
     if (!isCorrect) {
+      const currentCooldown = ++cooldownRun.current;
       setShakeNonce((value) => value + 1);
       setFeedback({ correct: false, text: "Bu iğne uygun değil. Balon yükselmeye devam ediyor; başka bir ilişki türü seç." });
-      await delay(560);
-      setShot(null);
+      window.setTimeout(() => {
+        if (cooldownRun.current === currentCooldown) setShot(null);
+      }, 560);
+      for (let seconds = 3; seconds > 0; seconds -= 1) {
+        setCooldown(seconds);
+        await delay(1000);
+        if (cooldownRun.current !== currentCooldown) return;
+      }
+      setCooldown(0);
       setInputLocked(false);
-      window.setTimeout(() => setFeedback((value) => value?.correct === false ? null : value), 650);
+      setFeedback((value) => value?.correct === false ? null : value);
       return;
     }
 
+    cooldownRun.current += 1;
     resolved.current = true;
     const answer: BalloonAnswer = { questionId: current.id, expected: current.type, attempts: nextAttempts, isCorrect: true, timedOut: false };
     const nextAnswers = [...answersRef.current, answer];
@@ -227,11 +242,11 @@ export function Module5RelationBalloons({ onSubmit, existingSubmission, forceSub
   const progress = Math.max(0, Math.min(100, (remaining / secondsPerBalloon) * 100));
 
   return <section className="panel module-shell balloon-module-shell">
-    <div className="module-topline"><div><div className="module-title-chip">Modül 5: İlişki Türleri &amp; Balon Patlatma</div><p>Balondaki ifadeyi oku ve doğru ilişki türünün iğnesini fırlat.</p></div><strong>{roundIndex + 1} / {rounds.length} Balon</strong></div>
+    <div className="module-topline"><div className="module-title-chip">Modül 5: İlişki Türleri &amp; Balon Patlatma</div><strong>{roundIndex + 1} / {rounds.length} Balon</strong></div>
     <div className="ten-step-progress">{rounds.map((question, index) => <span key={question.id} className={index < roundIndex ? "done" : index === roundIndex ? "active" : ""} />)}</div>
 
     <div className="balloon-game-layout">
-      <div className="pin-panel left" aria-label="Sol iğneler">{leftPins.map((category) => <button type="button" key={category.id} disabled={inputLocked || phase !== "active"} style={{ "--pin-color": category.color } as React.CSSProperties} onClick={() => void shoot(category.id)}><span>{category.icon}</span><strong>{category.label}</strong><i>➤</i></button>)}</div>
+      <div className="pin-panel left" aria-label="Sol iğneler">{leftPins.map((category) => <button type="button" key={category.id} disabled={inputLocked || phase !== "active"} style={{ "--pin-color": category.color } as React.CSSProperties} onClick={() => void shoot(category.id)}><span>{category.icon}</span><strong>{category.label}</strong><i>➤</i>{cooldown > 0 && <em className="pin-cooldown"><LockKeyhole size={15} />{cooldown}</em>}</button>)}</div>
 
       <div className="balloon-arena">
         <div className="balloon-timer"><Clock3 size={15} /><div><i style={{ width: `${progress}%` }} /></div><strong>{Math.ceil(remaining)} sn</strong></div>
@@ -244,10 +259,9 @@ export function Module5RelationBalloons({ onSubmit, existingSubmission, forceSub
         <div className="arena-target"><Target size={18} /> İğneyi seç</div>
       </div>
 
-      <div className="pin-panel right" aria-label="Sağ iğneler">{rightPins.map((category) => <button type="button" key={category.id} disabled={inputLocked || phase !== "active"} style={{ "--pin-color": category.color } as React.CSSProperties} onClick={() => void shoot(category.id)}><i>➤</i><strong>{category.label}</strong><span>{category.icon}</span></button>)}</div>
+      <div className="pin-panel right" aria-label="Sağ iğneler">{rightPins.map((category) => <button type="button" key={category.id} disabled={inputLocked || phase !== "active"} style={{ "--pin-color": category.color } as React.CSSProperties} onClick={() => void shoot(category.id)}><i>➤</i><strong>{category.label}</strong><span>{category.icon}</span>{cooldown > 0 && <em className="pin-cooldown"><LockKeyhole size={15} />{cooldown}</em>}</button>)}</div>
     </div>
 
     <div className="balloon-feedback-space" aria-live="assertive">{feedback && <div className={`balloon-feedback ${feedback.correct ? "correct" : "wrong"}`}>{feedback.correct ? <Check size={20} /> : <X size={20} />}<span>{feedback.text}</span></div>}</div>
-    <p className="score-privacy-note">Balon 9 saniye boyunca yükselir. Yanlış iğneden sonra süre bitmeden yeniden deneyebilirsin.</p>
   </section>;
 }

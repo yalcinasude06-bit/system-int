@@ -53,8 +53,6 @@ function BlackBoxCube({ revealed, wrong, process }: { revealed: boolean; wrong: 
         <path className="cube-top" d="M25 42 L78 14 L155 42 L101 71 Z" fill="url(#cube-top)" />
         <path className="cube-side" d="M101 71 L155 42 L155 112 L101 141 Z" fill="url(#cube-side)" />
         <path className="cube-front" d="M25 42 L101 71 L101 141 L25 111 Z" fill="url(#cube-front)" />
-        <path className="cube-circuit" d="M39 66 H65 V84 H87 M42 96 H60 V113 H84 M116 76 H140 M116 98 H144" />
-        <circle className="cube-light" cx="67" cy="92" r="8" />
       </g>
     </svg>
     <span>{revealed ? process : "?"}</span>
@@ -165,7 +163,7 @@ export function Module3Boundary({ onSubmit, existingSubmission, forceSubmit }: L
 
   return <section className="panel module-shell process-module-shell">
     <div className="module-topline">
-      <div><div className="module-title-chip">Modül 3: Kara Kutu ve Süreç Analizi</div><p>Girdi ile çıktıyı birbirine bağlayan dönüşüm sürecini tek seçimde belirle.</p></div>
+      <div className="module-title-chip">Modül 3: Kara Kutu ve Süreç Analizi</div>
       <strong>{systemIndex + 1} / {systems.length}</strong>
     </div>
 
@@ -176,7 +174,7 @@ export function Module3Boundary({ onSubmit, existingSubmission, forceSubmit }: L
     <div className="process-flow compact" aria-live="polite">
       <article className="process-endpoint input"><small>GİRDİ</small><span>{current.icon}</span><strong>{current.input}</strong></article>
       <ArrowRight className="process-arrow" aria-hidden="true" />
-      <article className={`black-box-3d ${wrongReveal ? "wrong-reveal" : ""}`}>
+      <article className={`black-box-3d ${revealed ? "illuminated" : ""} ${wrongReveal ? "wrong-reveal" : ""}`}>
         <small>{revealed ? "SÜREÇ" : "KARA KUTU"}</small>
         <BlackBoxCube revealed={revealed} wrong={wrongReveal} process={current.correct} />
       </article>
@@ -191,6 +189,5 @@ export function Module3Boundary({ onSubmit, existingSubmission, forceSubmit }: L
     <div className="process-feedback-space" aria-live="assertive">
       {feedback && <div className={`process-feedback ${feedback.correct ? "correct" : "wrong"}`}>{feedback.correct ? <Check size={20} /> : <X size={20} />}<span>{feedback.text}</span></div>}
     </div>
-    <p className="score-privacy-note">Her soru 10 puandır. Yanlış yanıtta doğru süreç gösterilir ve 1,5 saniye sonra yeni soruya geçilir.</p>
   </section>;
 }

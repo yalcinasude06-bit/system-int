@@ -81,7 +81,7 @@ function Gear({ x, y, size, color }: { x: number; y: number; size: number; color
 }
 
 function SystemSceneArt() {
-  return <svg className="scene-art" viewBox="0 0 1400 790" role="img" aria-label="Çevre, sistem sınırı, bileşenler, ilişkiler, girdi, çıktı, arayüz ve kısıtları gösteren sistem anatomisi">
+  return <svg className="scene-art" viewBox="0 0 1400 790" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Çevre, sistem sınırı, bileşenler, ilişkiler, girdi, çıktı, arayüz ve kısıtları gösteren sistem anatomisi">
     <defs>
       <linearGradient id="env-sky" x1="0" x2="1"><stop stopColor="#d9f3ee" /><stop offset="1" stopColor="#dceffc" /></linearGradient>
       <linearGradient id="system-core" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#dbeafe" /><stop offset="1" stopColor="#eff6ff" /></linearGradient>
@@ -182,7 +182,6 @@ export function ConceptualStage({ onComplete, initialSubmission }: {
   const slotProps = { placements, selected, locked, dragOver, onPlace: place, onSelect: setSelected, onDragOver: (zone: ZoneId | null) => setDragOver(zone) };
 
   return <div className="module-shell">
-    <div className="anatomy-touch-hint"><strong>Dokunarak yerleştir:</strong><span>Önce bir kavram kartına, sonra şemadaki hedef yuvaya dokun.</span><small>Kartları sürükleyebilir, yuvalar arasında taşıyabilir veya üstteki alana geri bırakabilirsin.</small></div>
     <div
       className={`card-tray anatomy-card-tray ${dragOver === "pool" ? "drag-over" : ""}`}
       aria-label="Bekleyen kavram kartları"

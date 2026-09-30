@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
-import { Check, LockKeyhole, MousePointer2, RotateCcw, Sparkles, Unlink, X } from "lucide-react";
+import { Check, LockKeyhole, RotateCcw, Sparkles, Unlink, X } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import type { LearningModuleProps, ModuleSubmission } from "@/types";
 import { SystemTypeIllustration } from "./SystemTypeIllustration";
@@ -38,13 +38,14 @@ const systemTypes: SystemType[] = [
 ];
 
 const visualOrder = ["stochastic", "open", "human-made", "conceptual", "dynamic", "natural", "physical", "closed", "deterministic", "static"];
-const visualCards = visualOrder.map((id) => systemTypes.find((item) => item.id === id)!);
+const systemRounds = [systemTypes.slice(0, 5), systemTypes.slice(5)];
+const systemRoundIds = systemRounds.map((round) => round.map((system) => system.id));
 const pointsPerMatch = 100 / systemTypes.length;
 
 export function Module4CompleteSystem({ onSubmit, existingSubmission }: LearningModuleProps) {
+  const [roundIndex, setRoundIndex] = useState(0);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [matches, setMatches] = useState<Record<string, string>>({});
-  const [feedback, setFeedback] = useState("");
   const [lines, setLines] = useState<ConnectionLine[]>([]);
   const [evaluated, setEvaluated] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
@@ -54,12 +55,17 @@ export function Module4CompleteSystem({ onSubmit, existingSubmission }: Learning
   const boardRef = useRef<HTMLDivElement | null>(null);
   const typeRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const visualRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const currentSystems = systemRounds[roundIndex];
+  const currentSystemIds = systemRoundIds[roundIndex];
+  const currentVisualCards = visualOrder
+    .filter((id) => currentSystemIds.includes(id))
+    .map((id) => systemTypes.find((item) => item.id === id)!);
 
   const updateLines = useCallback(() => {
     const board = boardRef.current;
     if (!board) return;
     const boardRect = board.getBoundingClientRect();
-    const nextLines = Object.entries(matches).flatMap(([typeId, visualId]) => {
+    const nextLines = Object.entries(matches).filter(([typeId]) => currentSystemIds.includes(typeId)).flatMap(([typeId, visualId]) => {
       const typeNode = typeRefs.current[typeId];
       const visualNode = visualRefs.current[visualId];
       const system = systemTypes.find((item) => item.id === typeId);
@@ -77,17 +83,19 @@ export function Module4CompleteSystem({ onSubmit, existingSubmission }: Learning
       }];
     });
     setLines(nextLines);
-  }, [evaluated, matches]);
+  }, [currentSystemIds, evaluated, matches]);
 
   useLayoutEffect(() => {
     const frame = window.requestAnimationFrame(updateLines);
     const observer = new ResizeObserver(updateLines);
     if (boardRef.current) observer.observe(boardRef.current);
     window.addEventListener("resize", updateLines);
+    window.addEventListener("scroll", updateLines, { passive: true });
     return () => {
       window.cancelAnimationFrame(frame);
       observer.disconnect();
       window.removeEventListener("resize", updateLines);
+      window.removeEventListener("scroll", updateLines);
     };
   }, [updateLines]);
 
@@ -102,25 +110,22 @@ export function Module4CompleteSystem({ onSubmit, existingSubmission }: Learning
   function selectType(id: string) {
     if (evaluated) return;
     setSelectedType((current) => current === id ? null : id);
-    setFeedback("");
   }
 
   function assignVisual(visualId: string) {
     if (evaluated) return;
-    if (!selectedType) {
-      setFeedback("Önce soldan bir sistem türü seçmelisin.");
-      return;
+    if (!selectedType) return;
+    const next = { ...matches };
+    for (const [typeId, assignedVisual] of Object.entries(next)) {
+      if (assignedVisual === visualId && typeId !== selectedType) delete next[typeId];
     }
-    setMatches((current) => {
-      const next = { ...current };
-      for (const [typeId, assignedVisual] of Object.entries(next)) {
-        if (assignedVisual === visualId && typeId !== selectedType) delete next[typeId];
-      }
-      next[selectedType] = visualId;
-      return next;
-    });
+    next[selectedType] = visualId;
+    setMatches(next);
     setSelectedType(null);
-    setFeedback("Bağlantı kuruldu. Kontrol etmeden önce istediğin eşleşmeyi değiştirebilirsin.");
+    if (roundIndex === 0 && currentSystemIds.every((id) => Boolean(next[id]))) {
+      setLines([]);
+      setRoundIndex(1);
+    }
   }
 
   async function evaluate() {
@@ -153,13 +158,11 @@ export function Module4CompleteSystem({ onSubmit, existingSubmission }: Learning
 
   return <section className="panel module-shell matching-module-shell">
     <div className="module-topline matching-topline">
-      <div><div className="module-title-chip">Modül 4: Sistem Türleri ve Görsel Eşleştirme</div><p>Önce soldaki türü, sonra sağdaki yazısız illüstrasyonu seç. Kontrol etmeden önce bağlantıları değiştirebilirsin.</p></div>
-      <strong>{Object.keys(matches).length} / {systemTypes.length} Eşleşme</strong>
+      <div className="module-title-chip">Modül 4: Sistem Türleri ve Görsel Eşleştirme</div>
+      <strong>{Object.keys(matches).length} / {systemTypes.length} · Tur {roundIndex + 1} / 2</strong>
     </div>
 
-    <div className="matching-instruction"><MousePointer2 size={19} /><span><b>1.</b> Türü seç</span><span><b>2.</b> Görsele dokun</span><span><b>3.</b> Toplu kontrol et</span></div>
-
-    <div className="matching-board visual-only-board" ref={boardRef}>
+    <div className="matching-board visual-only-board" ref={boardRef} key={roundIndex}>
       <svg className="matching-lines" aria-hidden="true">
         {lines.map((line) => {
           const stroke = line.status === "correct" ? "#10b981" : line.status === "wrong" ? "#f43f5e" : line.color;
@@ -175,7 +178,7 @@ export function Module4CompleteSystem({ onSubmit, existingSubmission }: Learning
 
       <div className="system-type-list">
         <h2>Sistem Türleri</h2>
-        {systemTypes.map((system, index) => {
+        {currentSystems.map((system, index) => {
           const assigned = matches[system.id];
           const status = evaluated ? assigned === system.id ? "correct" : "wrong" : "";
           return <div className={`system-type-entry ${status}`} key={system.id}>
@@ -195,7 +198,7 @@ export function Module4CompleteSystem({ onSubmit, existingSubmission }: Learning
 
       <div className="system-visual-list visual-only-list">
         <h2>Görseller</h2>
-        {visualCards.map((system) => {
+        {currentVisualCards.map((system) => {
           const assignedType = Object.entries(matches).find(([, visualId]) => visualId === system.id)?.[0];
           const status = evaluated && assignedType ? assignedType === system.id ? "correct" : "wrong" : "";
           return <button
@@ -211,9 +214,7 @@ export function Module4CompleteSystem({ onSubmit, existingSubmission }: Learning
       </div>
     </div>
 
-    {feedback && !evaluated && <div className="matching-feedback neutral" aria-live="polite">{feedback}</div>}
-    <div className="button-row matching-actions"><Button disabled={evaluated || Object.keys(matches).length !== systemTypes.length} loading={submitting} icon={<Check size={18} />} onClick={() => void evaluate()}>Eşleştirmeleri Kontrol Et</Button></div>
-    {!evaluated && Object.keys(matches).length !== systemTypes.length && <p className="score-privacy-note">Kontrol için 10 bağlantıyı da tamamla. Her doğru eşleşme 10 puandır.</p>}
+    {roundIndex === 1 && <div className="button-row matching-actions"><Button disabled={evaluated || Object.keys(matches).length !== systemTypes.length} loading={submitting} icon={<Check size={18} />} onClick={() => void evaluate()}>Eşleştirmeleri Kontrol Et</Button></div>}
 
     {evaluated && <div className="modal-backdrop matching-result-backdrop" role="presentation">
       <div className="modal matching-result-modal" role="dialog" aria-modal="true" aria-labelledby="matching-result-title">

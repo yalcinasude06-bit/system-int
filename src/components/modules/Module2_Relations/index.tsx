@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, useMotionValue, useTransform } from "framer-motion";
-import { ArrowLeft, ArrowRight, Check, Keyboard, LockKeyhole, RotateCcw, Sparkles, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, LockKeyhole, RotateCcw, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import type { LearningModuleProps, ModuleSubmission } from "@/types";
 
@@ -323,7 +323,5 @@ export function Module2Relations({ onSubmit, existingSubmission }: LearningModul
       {feedback && <div className={`swipe-feedback ${feedback.correct ? "correct" : "wrong"}`}>{feedback.correct ? <Check size={21} /> : <X size={21} />}<span>{feedback.text}</span></div>}
     </div>
 
-    <div className="swipe-keyboard-hint"><Keyboard size={18} /><span>Klavyeden</span><kbd>←</kbd><kbd>→</kbd><span>tuşlarını da kullanabilirsin</span></div>
-    <div className="swipe-score-preview"><span>Tamamlanan kart</span><strong>{answers.length} / {chain.length}</strong><i /><span>Puanlar sonuç açıklanana kadar gizli</span></div>
   </section>;
 }
