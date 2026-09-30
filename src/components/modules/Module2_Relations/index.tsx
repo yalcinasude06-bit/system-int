@@ -1,53 +1,263 @@
 "use client";
 
-import { useState } from "react";
-import type { LearningModuleProps } from "@/types";
-import { NodeGraphCanvas, graphNodes, type GraphEdge } from "./NodeGraphCanvas";
-import { RelationModal } from "./RelationModal";
-import { SimulationRunner } from "./SimulationRunner";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { motion, useMotionValue, useTransform } from "framer-motion";
+import { ArrowLeft, ArrowRight, Check, Keyboard, LockKeyhole, RotateCcw, Sparkles, X } from "lucide-react";
+import { Button } from "@/components/common/Button";
+import type { LearningModuleProps, ModuleSubmission } from "@/types";
 
-const required: Array<[string, string, "+" | "-"]> = [["demand", "orders", "+"], ["orders", "sales", "+"], ["sales", "revenue", "+"]];
+type SwipeDirection = "negative" | "positive";
 
-export function Module2Relations({ onSubmit }: LearningModuleProps) {
-  const [edges, setEdges] = useState<GraphEdge[]>([]); const [selected, setSelected] = useState<string | null>(null);
-  const [pending, setPending] = useState<[string, string] | null>(null); const [running, setRunning] = useState(false); const [result, setResult] = useState("");
-  const [warningNodeIds, setWarningNodeIds] = useState<string[]>([]); const [explanations, setExplanations] = useState<string[]>([]);
-  const labels = new Map(graphNodes.map((node) => [node.id, node.label]));
+type ChainStep = {
+  id: string;
+  trigger: string;
+  icon: string;
+  variable: string;
+  detail?: string;
+  expected: SwipeDirection;
+  nextState: string;
+  explanation: string;
+  color: string;
+  accent: string;
+};
 
-  function selectNode(id: string) {
-    setResult(""); setWarningNodeIds([]); setExplanations([]);
-    if (!selected) { setSelected(id); return; }
-    if (selected === id) { setSelected(null); return; }
-    setPending([selected, id]); setSelected(null);
-  }
+type Answer = {
+  stepId: string;
+  trigger: string;
+  variable: string;
+  selected: SwipeDirection;
+  expected: SwipeDirection;
+  isCorrect: boolean;
+};
 
-  function addEdge(type: string, polarity: "+" | "-") {
-    if (!pending) return;
-    setEdges((current) => [...current.filter((edge) => !(edge.from === pending[0] && edge.to === pending[1])), { id: crypto.randomUUID(), from: pending[0], to: pending[1], type, polarity }]);
-    setPending(null);
-  }
+const chain: ChainStep[] = [
+  {
+    id: "sales",
+    trigger: "Talep %20 arttı",
+    icon: "🛒",
+    variable: "Satış Miktarı",
+    expected: "positive",
+    nextState: "Satış Miktarı arttı",
+    explanation: "Talep artışı satış miktarını artırır (+ Pozitif feedback).",
+    color: "#dbeafe",
+    accent: "#3b82f6",
+  },
+  {
+    id: "revenue",
+    trigger: "Satış Miktarı arttı",
+    icon: "💰",
+    variable: "Şirket Geliri",
+    expected: "positive",
+    nextState: "Şirket Geliri arttı",
+    explanation: "Satış miktarı arttığında şirket geliri de artar (+ Pozitif feedback).",
+    color: "#fef3c7",
+    accent: "#f59e0b",
+  },
+  {
+    id: "marketing",
+    trigger: "Şirket Geliri arttı",
+    icon: "📢",
+    variable: "Pazarlama Bütçesi",
+    expected: "positive",
+    nextState: "Pazarlama Bütçesi arttı",
+    explanation: "Gelir artışı pazarlama için ayrılabilecek bütçeyi artırır (+ Pozitif feedback).",
+    color: "#ede9fe",
+    accent: "#8b5cf6",
+  },
+  {
+    id: "price",
+    trigger: "Pazarlama Bütçesi arttı",
+    icon: "🏷️",
+    variable: "Ürün Fiyatı",
+    detail: "İndirim / Kampanya Etkisi",
+    expected: "negative",
+    nextState: "Ürün Fiyatı azaldı",
+    explanation: "Artan pazarlama bütçesi kampanya ve indirimlerle ürün fiyatını azaltır (− Negatif feedback).",
+    color: "#ffe4e6",
+    accent: "#f43f5e",
+  },
+];
 
-  async function run() {
-    setRunning(true); setResult(""); setWarningNodeIds([]); setExplanations([]);
-    await new Promise((resolve) => setTimeout(resolve, 1800));
-    const correct = required.filter(([from, to, polarity]) => edges.some((edge) => edge.from === from && edge.to === to && edge.polarity === polarity)).length;
-    const reversedEdges = edges.filter((edge) => required.some(([from, to]) => edge.from === from && edge.to === to) && edge.polarity === "-");
-    const reversed = reversedEdges.length;
-    const warnings = [...new Set(reversedEdges.map((edge) => edge.to))];
-    const why = reversedEdges.map((edge) => {
-      const from = labels.get(edge.from); const to = labels.get(edge.to);
-      return `${from} arttığında ${to} da bu senaryoda artmalıdır. “−” kutbu etkiyi ters çevirdiği için şok zinciri burada bozulur.`;
+const pointsPerCard = 100 / chain.length;
+
+function delay(milliseconds: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+}
+
+export function Module2Relations({ onSubmit, existingSubmission }: LearningModuleProps) {
+  const [stepIndex, setStepIndex] = useState(0);
+  const [answers, setAnswers] = useState<Answer[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [phase, setPhase] = useState<"idle" | "shake" | "exit">("idle");
+  const [direction, setDirection] = useState<SwipeDirection | null>(null);
+  const [feedback, setFeedback] = useState<{ correct: boolean; text: string } | null>(null);
+  const [completed, setCompleted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitFailed, setSubmitFailed] = useState(false);
+  const [finalSubmission, setFinalSubmission] = useState<ModuleSubmission | null>(null);
+  const interactionLocked = useRef(false);
+  const x = useMotionValue(0);
+  const rotate = useTransform(x, [-240, 0, 240], [-13, 0, 13]);
+  const negativeGlow = useTransform(x, [-150, -35, 0], [1, .18, 0]);
+  const positiveGlow = useTransform(x, [0, 35, 150], [0, .18, 1]);
+  const current = chain[Math.min(stepIndex, chain.length - 1)];
+
+  const submitResult = useCallback(async (submission: ModuleSubmission) => {
+    setSubmitting(true);
+    setSubmitFailed(false);
+    const accepted = await onSubmit(submission);
+    setSubmitting(false);
+    if (accepted === false) setSubmitFailed(true);
+  }, [onSubmit]);
+
+  const choose = useCallback(async (selected: SwipeDirection) => {
+    if (interactionLocked.current || busy || completed || existingSubmission) return;
+    interactionLocked.current = true;
+    const isCorrect = selected === current.expected;
+    const answer: Answer = {
+      stepId: current.id,
+      trigger: current.trigger,
+      variable: current.variable,
+      selected,
+      expected: current.expected,
+      isCorrect,
+    };
+    const nextAnswers = [...answers, answer];
+
+    setBusy(true);
+    setDirection(selected);
+    setFeedback({
+      correct: isCorrect,
+      text: isCorrect ? `Doğru! ${current.nextState}. Zincir doğru yönde ilerliyor.` : `Yanlış! ${current.explanation}`,
     });
-    const score = Math.max(0, Math.round((correct / required.length) * 100) - reversed * 10);
-    const message = correct === required.length && reversed === 0 ? "Başarılı: Talep → Sipariş → Satış → Gelir etkisi tutarlı biçimde yayıldı." : `Sistem sapma üretti: zorunlu zincirin ${correct}/${required.length} bağlantısı doğru. Etki yönlerini gözden geçir.`;
-    setResult(message); setWarningNodeIds(warnings); setExplanations(why); setRunning(false);
-    await onSubmit({ score, payload: { edges, shock: { node: "demand", change: 20 }, result: message } });
+
+    if (!isCorrect) {
+      setPhase("shake");
+      await delay(720);
+    }
+    setPhase("exit");
+    await delay(520);
+
+    if (stepIndex === chain.length - 1) {
+      const finalScore = Math.round(nextAnswers.filter((item) => item.isCorrect).length * pointsPerCard);
+      const submission: ModuleSubmission = {
+        score: finalScore,
+        payload: {
+          mode: "swipe-chain",
+          answers: nextAnswers,
+          correctCount: nextAnswers.filter((item) => item.isCorrect).length,
+          cardCount: chain.length,
+          pointsPerCard,
+          finalState: current.nextState,
+        },
+      };
+      setAnswers(nextAnswers);
+      setFinalSubmission(submission);
+      setCompleted(true);
+      setPhase("idle");
+      setDirection(null);
+      x.set(0);
+      await submitResult(submission);
+      setBusy(false);
+      return;
+    }
+
+    setAnswers(nextAnswers);
+    x.set(0);
+    setStepIndex((index) => index + 1);
+    setPhase("idle");
+    setDirection(null);
+    setBusy(false);
+    interactionLocked.current = false;
+    window.setTimeout(() => setFeedback(null), 900);
+  }, [answers, busy, completed, current, existingSubmission, stepIndex, submitResult, x]);
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+      event.preventDefault();
+      void choose(event.key === "ArrowLeft" ? "negative" : "positive");
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [choose]);
+
+  if (existingSubmission) {
+    return <section className="panel module-shell swipe-module-shell"><div className="module-title-chip">Modül 2: Zincirleme Geri Bildirim</div><div className="swipe-complete-card"><LockKeyhole size={42} /><h2>Bu modül tamamlandı</h2><p>Yanıtın kilitlendi. Öğretmen sonuçları açıklayana kadar bekleyin.</p></div></section>;
   }
 
-  return <section className="panel module-shell">
-    <div className="module-title-chip">Modül 2: İlişki Ağını Kur</div>
-    <div className="dashboard-grid"><NodeGraphCanvas edges={edges} selected={selected} onNodeClick={selectNode} simulating={running} warningNodeIds={warningNodeIds} /><div className="card"><h3>Kurulan ilişkiler</h3><p className="muted">Her bağlantının türü ve etkisi.</p><div className="relation-list">{edges.length ? edges.map((edge) => <div className="relation-row" key={edge.id}><span>{labels.get(edge.from)} → {labels.get(edge.to)}</span><b className={`edge-sign ${edge.polarity === "+" ? "positive" : "negative"}`}>{edge.polarity}</b><small>{edge.type}</small></div>) : <div className="empty">İki düğüm seçerek başla.</div>}</div></div></div>
-    <SimulationRunner running={running} result={result} explanations={explanations} onRun={() => void run()} onReset={() => { setEdges([]); setResult(""); setWarningNodeIds([]); setExplanations([]); }} />
-    {pending && <RelationModal from={labels.get(pending[0]) || pending[0]} to={labels.get(pending[1]) || pending[1]} onSave={addEdge} onClose={() => setPending(null)} />}
+  if (completed) {
+    return <section className="panel module-shell swipe-module-shell">
+      <div className="module-title-chip">Modül 2: Zincirleme Geri Bildirim</div>
+      <div className="swipe-complete-card">
+        <Sparkles size={42} />
+        <h2>Tüm kartlar tamamlandı</h2>
+        <p>Yanıtların kilitleniyor. Öğretmen sonuçları açıklayana kadar puanın gizli kalacak.</p>
+        {submitting && <div className="notice">Yanıt kaydediliyor…</div>}
+        {submitFailed && finalSubmission && <><div className="notice error">Yanıt kaydedilemedi. Seçimlerin korundu.</div><Button loading={submitting} icon={<RotateCcw size={17} />} onClick={() => void submitResult(finalSubmission)}>Kaydı tekrar dene</Button></>}
+      </div>
+    </section>;
+  }
+
+  const cardAnimation = phase === "shake"
+    ? { x: [0, -18, 17, -13, 11, -7, 0], rotate: [0, -2, 2, -1.5, 1, 0], opacity: 1 }
+    : phase === "exit"
+      ? { x: direction === "positive" ? 720 : -720, rotate: direction === "positive" ? 18 : -18, opacity: 0 }
+      : { x: 0, rotate: 0, opacity: 1 };
+
+  return <section className="panel module-shell swipe-module-shell">
+    <div className="swipe-topline">
+      <div className="module-title-chip">Modül 2: Zincirleme Geri Bildirim</div>
+      <strong>{stepIndex + 1} / {chain.length} Kart</strong>
+    </div>
+
+    <div className="chain-progress" aria-label={`Kart ${stepIndex + 1} / ${chain.length}`}>
+      {chain.map((step, index) => <span key={step.id} className={index < stepIndex ? "done" : index === stepIndex ? "active" : ""} />)}
+    </div>
+
+    <div className="event-ribbon"><span>📊</span><div><small>MEVCUT DURUM</small><strong>{current.trigger}</strong></div></div>
+
+    <div className="swipe-stage">
+      <button type="button" className="swipe-zone negative" disabled={busy} onClick={() => void choose("negative")} aria-label="Negatif feedback seç">
+        <span><ArrowLeft size={35} /></span><strong>Negatif feedback</strong><small>Sola kaydır veya tıkla</small>
+      </button>
+
+      <div className="swipe-deck">
+        {chain.slice(stepIndex + 1, stepIndex + 3).reverse().map((step, reverseIndex) => <div className={`swipe-card stack-card stack-${reverseIndex + 1}`} style={{ background: step.color }} key={step.id}><span>{step.icon}</span></div>)}
+        <motion.article
+          key={current.id}
+          className={`swipe-card active-card ${feedback?.correct === false ? "wrong" : ""}`}
+          style={{ x, rotate, background: current.color, borderColor: current.accent }}
+          drag={busy ? false : "x"}
+          dragConstraints={{ left: 0, right: 0 }}
+          dragElastic={.86}
+          dragSnapToOrigin
+          animate={cardAnimation}
+          transition={phase === "shake" ? { duration: .65 } : { type: "spring", stiffness: 220, damping: 24 }}
+          onDragEnd={(_, info) => {
+            if (info.offset.x > 90) void choose("positive");
+            else if (info.offset.x < -90) void choose("negative");
+          }}
+        >
+          <motion.div className="card-choice-glow negative" style={{ opacity: negativeGlow }}><X size={44} /></motion.div>
+          <motion.div className="card-choice-glow positive" style={{ opacity: positiveGlow }}><Check size={44} /></motion.div>
+          <span className="swipe-card-icon">{current.icon}</span>
+          <h1>{current.variable}</h1>
+          {current.detail && <p>{current.detail}</p>}
+          <span className="drag-hint">Kartı sürükle</span>
+        </motion.article>
+      </div>
+
+      <button type="button" className="swipe-zone positive" disabled={busy} onClick={() => void choose("positive")} aria-label="Pozitif feedback seç">
+        <span><ArrowRight size={35} /></span><strong>Pozitif feedback</strong><small>Sağa kaydır veya tıkla</small>
+      </button>
+    </div>
+
+    <div className="swipe-feedback-space" aria-live="polite">
+      {feedback && <div className={`swipe-feedback ${feedback.correct ? "correct" : "wrong"}`}>{feedback.correct ? <Check size={21} /> : <X size={21} />}<span>{feedback.text}</span></div>}
+    </div>
+
+    <div className="swipe-keyboard-hint"><Keyboard size={18} /><span>Klavyeden</span><kbd>←</kbd><kbd>→</kbd><span>tuşlarını da kullanabilirsin</span></div>
+    <div className="swipe-score-preview"><span>Tamamlanan kart</span><strong>{answers.length} / {chain.length}</strong><i /><span>Puanlar sonuç açıklanana kadar gizli</span></div>
   </section>;
 }
