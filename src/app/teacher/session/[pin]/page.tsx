@@ -10,7 +10,8 @@ import { ModuleStartCountdown } from "@/components/common/ModuleStartCountdown";
 import { QRModal } from "@/components/common/QRModal";
 import { ModuleSelector, WeekSelector } from "@/components/teacher/ModuleSelector";
 import { Leaderboard } from "@/components/teacher/Leaderboard";
-import { getSessionByPin, updateSession } from "@/lib/session";
+import { getRemainingCountdown } from "@/lib/moduleCountdown";
+import { cancelSessionModuleStart, getSessionByPin, startSessionModule, updateSession } from "@/lib/session";
 import { supabase } from "@/lib/supabase";
 import { useTeacherAuth } from "@/lib/useTeacherAuth";
 import type { ModuleId, Session, Student, StudentProfile } from "@/types";
@@ -46,6 +47,7 @@ export default function TeacherSessionPage() {
       }
       sessionStorage.setItem("system-lab:teacher-session", JSON.stringify({ sessionId: found.id, pin: found.pin_code }));
       setSession(found);
+      setBriefingModule(found.is_module_started && getRemainingCountdown(found.module_started_at) > 0 ? found.current_module : null);
       const [{ data: people, error: peopleError }, { data: overall, error: overallError }] = await Promise.all([
         supabase.from("students").select("*").eq("session_id", found.id).order("session_score", { ascending: false }),
         supabase.from("student_profiles").select("*").order("total_score", { ascending: false }),
@@ -73,7 +75,11 @@ export default function TeacherSessionPage() {
     const client = supabase;
     if (!client || !sessionId) return;
     const channel = client.channel(`teacher:${sessionId}`)
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "sessions", filter: `id=eq.${sessionId}` }, (event) => setSession(event.new as Session))
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "sessions", filter: `id=eq.${sessionId}` }, (event) => {
+        const nextSession = event.new as Session;
+        setSession(nextSession);
+        setBriefingModule(nextSession.is_module_started && getRemainingCountdown(nextSession.module_started_at) > 0 ? nextSession.current_module : null);
+      })
       .on("postgres_changes", { event: "*", schema: "public", table: "students", filter: `session_id=eq.${sessionId}` }, () => void load())
       .on("postgres_changes", { event: "*", schema: "public", table: "student_profiles" }, () => void load())
       .subscribe();
@@ -86,7 +92,7 @@ export default function TeacherSessionPage() {
     setError("");
     try {
       await updateSession(session.id, values);
-      setSession({ ...session, ...values });
+      setSession((current) => current ? { ...current, ...values } : current);
       return true;
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Güncelleme başarısız.");
@@ -98,13 +104,39 @@ export default function TeacherSessionPage() {
 
   function chooseWeek(selectedWeek: number) {
     if (selectedWeek === session?.selected_week) return;
-    void patch({ selected_week: selectedWeek, current_module: 1, module_stage: 1, is_module_started: false, fault_injected: false });
+    void patch({ selected_week: selectedWeek, current_module: 1, module_stage: 1, is_module_started: false, module_started_at: null, fault_injected: false });
   }
 
   async function startModule(currentModule: ModuleId) {
-    if (session?.selected_week !== 1) return;
-    const started = await patch({ current_module: currentModule, module_stage: 2, is_module_started: true, fault_injected: false });
-    if (started) setBriefingModule(currentModule);
+    if (!session || session.selected_week !== 1) return;
+    setBusy(true);
+    setError("");
+    try {
+      const startedSession = await startSessionModule(session.id, currentModule);
+      setSession(startedSession);
+      setBriefingModule(currentModule);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Modül başlatılamadı.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function cancelModuleStart() {
+    if (!session || !briefingModule) return;
+    setBusy(true);
+    setError("");
+    try {
+      const canceledSession = await cancelSessionModuleStart(session.id);
+      setSession(canceledSession);
+      setBriefingModule(null);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Başlatma iptal edilemedi.");
+      setBriefingModule(null);
+      await load();
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function finishModule(currentModule: ModuleId) {
@@ -117,8 +149,8 @@ export default function TeacherSessionPage() {
         setSession((current) => current ? { ...current, module_stage: 4 } : current);
         await new Promise((resolve) => window.setTimeout(resolve, 2500));
       }
-      await updateSession(session.id, { is_module_started: false, module_stage: 3 });
-      setSession((current) => current ? { ...current, is_module_started: false, module_stage: 3 } : current);
+      await updateSession(session.id, { is_module_started: false, module_started_at: null, module_stage: 3 });
+      setSession((current) => current ? { ...current, is_module_started: false, module_started_at: null, module_stage: 3 } : current);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Modül sonlandırılamadı.");
     } finally {
@@ -142,7 +174,7 @@ export default function TeacherSessionPage() {
         setSession((current) => current ? { ...current, module_stage: 4 } : current);
         await new Promise((resolve) => window.setTimeout(resolve, 2500));
       }
-      await updateSession(session.id, { is_active: false, is_module_started: false, module_stage: 3 });
+      await updateSession(session.id, { is_active: false, is_module_started: false, module_started_at: null, module_stage: 3 });
       sessionStorage.removeItem("system-lab:teacher-session");
       router.push("/teacher");
     } catch (caught) {
@@ -198,6 +230,6 @@ export default function TeacherSessionPage() {
       </div>
     </div>
     <QRModal open={qrOpen} onClose={() => setQrOpen(false)} url={joinUrl} pin={pin} />
-    {briefingModule && <ModuleStartCountdown key={briefingModule} moduleId={briefingModule} onComplete={() => setBriefingModule(null)} />}
+    {briefingModule && session.is_module_started && session.module_started_at && <ModuleStartCountdown key={`${briefingModule}:${session.module_started_at}`} moduleId={briefingModule} startedAt={session.module_started_at} canceling={busy} onCancel={() => void cancelModuleStart()} onComplete={() => setBriefingModule(null)} />}
   </main>;
 }

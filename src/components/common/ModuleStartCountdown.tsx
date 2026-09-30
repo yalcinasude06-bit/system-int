@@ -2,7 +2,8 @@
 
 import { useEffect, useState, type CSSProperties } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Rocket } from "lucide-react";
+import { CircleStop, LoaderCircle } from "lucide-react";
+import { getRemainingCountdown, MODULE_COUNTDOWN_SECONDS } from "@/lib/moduleCountdown";
 import type { ModuleId } from "@/types";
 
 type ModuleBrief = {
@@ -61,30 +62,30 @@ const moduleBriefs: Record<ModuleId, ModuleBrief> = {
   },
 };
 
-export function ModuleStartCountdown({ moduleId, onComplete }: { moduleId: ModuleId; onComplete: () => void }) {
-  const [timeLeft, setTimeLeft] = useState(10);
-  const [visible, setVisible] = useState(true);
+type ModuleStartCountdownProps = {
+  moduleId: ModuleId;
+  startedAt: string;
+  onComplete: () => void;
+  onCancel?: () => void;
+  canceling?: boolean;
+};
+
+export function ModuleStartCountdown({ moduleId, startedAt, onComplete, onCancel, canceling = false }: ModuleStartCountdownProps) {
+  const [timeLeft, setTimeLeft] = useState(() => getRemainingCountdown(startedAt));
+  const [visible, setVisible] = useState(() => getRemainingCountdown(startedAt) > 0);
   const current = moduleBriefs[moduleId];
-  const isLaunching = timeLeft === 0;
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      setTimeLeft((value) => {
-        if (value <= 1) {
-          window.clearInterval(timer);
-          return 0;
-        }
-        return value - 1;
-      });
-    }, 1000);
+    function syncWithSessionStart() {
+      const remaining = getRemainingCountdown(startedAt);
+      setTimeLeft(remaining);
+      if (remaining === 0) setVisible(false);
+    }
+
+    syncWithSessionStart();
+    const timer = window.setInterval(syncWithSessionStart, 200);
     return () => window.clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    if (!isLaunching) return;
-    const timer = window.setTimeout(() => setVisible(false), 650);
-    return () => window.clearTimeout(timer);
-  }, [isLaunching]);
+  }, [startedAt]);
 
   return <AnimatePresence onExitComplete={onComplete}>
     {visible && <motion.div
@@ -104,7 +105,7 @@ export function ModuleStartCountdown({ moduleId, onComplete }: { moduleId: Modul
         exit={{ opacity: 0, scale: .94, y: -12 }}
         transition={{ type: "spring", stiffness: 230, damping: 24 }}
       >
-        <span className="module-start-eyebrow">Nasıl oynanır? · 10 saniye</span>
+        <span className="module-start-eyebrow">Nasıl oynanır? · {MODULE_COUNTDOWN_SECONDS} saniye</span>
         <motion.span className="module-start-icon" aria-hidden="true" animate={{ rotate: [0, -5, 5, 0], scale: [1, 1.06, 1] }} transition={{ duration: 2.2, repeat: Infinity }}>{current.icon}</motion.span>
         <h1 id="module-start-title">{current.title}</h1>
         <div className="module-start-gameplay">
@@ -115,14 +116,18 @@ export function ModuleStartCountdown({ moduleId, onComplete }: { moduleId: Modul
         </div>
         {current.warning && <div className="module-start-warning" role="note">⚠️ {current.warning}</div>}
         <div
-          className={`module-start-counter ${isLaunching ? "launching" : ""}`}
-          style={{ "--countdown-progress": `${timeLeft * 36}deg` } as CSSProperties}
+          className="module-start-counter"
+          style={{ "--countdown-progress": `${timeLeft * (360 / MODULE_COUNTDOWN_SECONDS)}deg` } as CSSProperties}
           aria-live="assertive"
-          aria-label={isLaunching ? "Başla" : `${timeLeft} saniye kaldı`}
+          aria-label={`${timeLeft} saniye kaldı`}
         >
-          <span key={timeLeft}>{isLaunching ? <Rocket size={31} /> : timeLeft}</span>
+          <span key={timeLeft}>{timeLeft}</span>
         </div>
-        <strong className="module-start-status">{isLaunching ? "Başla!" : "Hazır olun, başlıyor…"}</strong>
+        <strong className="module-start-status">Hazır olun, başlıyor…</strong>
+        {onCancel && <button type="button" className="module-start-cancel" disabled={canceling} onClick={onCancel}>
+          {canceling ? <LoaderCircle size={18} className="animate-spin" /> : <CircleStop size={18} />}
+          Başlatmayı İptal Et
+        </button>}
       </motion.section>
     </motion.div>}
   </AnimatePresence>;

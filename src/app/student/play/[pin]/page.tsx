@@ -12,6 +12,7 @@ import { Module2Relations } from "@/components/modules/Module2_Relations";
 import { Module3Boundary } from "@/components/modules/Module3_Boundary";
 import { Module4CompleteSystem } from "@/components/modules/Module4_CompleteSystem";
 import { Module5RelationBalloons } from "@/components/modules/Module5_RelationBalloons";
+import { getRemainingCountdown } from "@/lib/moduleCountdown";
 import { getSessionByPin, saveSubmission } from "@/lib/session";
 import { supabase } from "@/lib/supabase";
 import type { ModuleId, ModuleSubmission, Session, Student, StudentProfile, Submission } from "@/types";
@@ -123,11 +124,7 @@ export default function StudentPlayPage() {
       setSubmissions((current) => [...current.filter((item) => item.id !== saved.submission.id), saved.submission]);
       setLocallyCompletedModuleKey(`${session.selected_week}:${moduleId}`);
       setMessage(saved.wasNew ? "Yanıtınız güvenle kaydedildi." : "Bu modül için yanıt hakkını daha önce kullandın.");
-      if (saved.wasNew) {
-        setStudent((current) => current ? { ...current, session_score: current.session_score + submission.score, score: current.session_score + submission.score } : current);
-        setClassmates((current) => current.map((item) => item.id === student.id ? { ...item, session_score: item.session_score + submission.score, score: item.session_score + submission.score } : item));
-        setProfile((current) => current ? { ...current, total_score: current.total_score + submission.score } : current);
-      }
+      if (saved.wasNew) await load();
       window.setTimeout(() => setMessage(""), 3500);
       return true;
     } catch (caught) {
@@ -146,7 +143,7 @@ export default function StudentPlayPage() {
   const scoreEarned = activeSubmission?.score ?? 0;
   const totalScore = profile?.total_score ?? student.score;
 
-  const studentNav = <Navbar studentContext={{ sessionTitle: session.title, week: session.selected_week, studentName: student.nickname, studentNumber: student.student_number, score: totalScore, scoreHidden: session.is_module_started, onLeave: () => { localStorage.removeItem(`system-lab:${pin}:student`); router.push("/"); } }} />;
+  const studentNav = <Navbar studentContext={{ sessionTitle: session.title, week: session.selected_week, studentName: student.nickname, studentNumber: student.student_number, score: totalScore, onLeave: () => { localStorage.removeItem(`system-lab:${pin}:student`); router.push("/"); } }} />;
 
   if (!session.is_active) return <>{studentNav}<main className="container page"><div className="student-result-card panel"><Trophy size={58} color="var(--amber)" /><span className="eyebrow">Oturum tamamlandı</span><h1>Harika iş çıkardın!</h1><p className="lead">Genel toplam puanın <strong className="score-pop">{profile?.total_score ?? student.score}</strong></p><Button onClick={() => router.push("/")}>Ana sayfaya dön</Button></div></main></>;
 
@@ -185,7 +182,8 @@ export default function StudentPlayPage() {
   if (!session.is_module_started) return <>{studentNav}<main className="container page"><section className="student-waiting-card panel"><span className="waiting-illustration">⏳</span><span className="eyebrow">Hafta {session.selected_week} · Modül {session.current_module}</span><h1>Öğretmen modülü başlatmak üzere…</h1><p>Lütfen bekleyin! Etkinlik başladığında ekranınız otomatik olarak açılacak.</p><div className="waiting-pulse"><i /> Canlı bağlantı açık</div></section></main></>;
 
   const activeModuleKey = `${session.selected_week}:${session.current_module}`;
-  if (!activeSubmission && readyModuleKey !== activeModuleKey) return <>{studentNav}<ModuleStartCountdown key={activeModuleKey} moduleId={session.current_module} onComplete={() => setReadyModuleKey(activeModuleKey)} /></>;
+  const countdownTimeLeft = getRemainingCountdown(session.module_started_at);
+  if (!activeSubmission && session.module_started_at && countdownTimeLeft > 0 && readyModuleKey !== activeModuleKey) return <>{studentNav}<ModuleStartCountdown key={`${activeModuleKey}:${session.module_started_at}`} moduleId={session.current_module} startedAt={session.module_started_at} onComplete={() => setReadyModuleKey(activeModuleKey)} /></>;
 
   const modules = {
     1: <Module1SystemBuild existingSubmission={activeSubmission} onSubmit={(submission) => submit(1, submission)} />,

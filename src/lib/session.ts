@@ -93,9 +93,28 @@ export async function saveSubmission(input: {
 
 export async function updateSession(
   sessionId: string,
-  patch: Partial<Pick<Session, "selected_week" | "current_module" | "module_stage" | "is_module_started" | "fault_injected" | "is_active">>,
+  patch: Partial<Pick<Session, "selected_week" | "current_module" | "module_stage" | "is_module_started" | "module_started_at" | "fault_injected" | "is_active">>,
 ): Promise<void> {
   const client = requireSupabase();
   const { error } = await client.from("sessions").update(patch).eq("id", sessionId);
   if (error) throw error;
+}
+
+export async function startSessionModule(sessionId: string, moduleId: ModuleId): Promise<Session> {
+  const client = requireSupabase();
+  const { data, error } = await client.rpc("start_session_module", {
+    target_session_id: sessionId,
+    target_module_id: moduleId,
+  });
+  if (error) throw error;
+  return data as Session;
+}
+
+export async function cancelSessionModuleStart(sessionId: string): Promise<Session> {
+  const client = requireSupabase();
+  const { data, error } = await client.rpc("cancel_session_module_start", {
+    target_session_id: sessionId,
+  });
+  if (error) throw error;
+  return data as Session;
 }

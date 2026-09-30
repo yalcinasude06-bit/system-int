@@ -66,7 +66,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .student-nav-badge { color: #334155; border: 1px solid var(--line); background: #f8fafc; }
 .student-nav-badge small { color: #64748b; }
 .student-score-badge { color: #92400e; border: 1px solid #fde68a; background: #fef3c7; box-shadow: 0 0 18px rgba(245,158,11,.1); font-weight: 800; }
-.student-score-badge.hidden-score { color: #4338ca; border-color: #c7d2fe; background: #eef2ff; }
+.student-score-badge.score-updated { animation: scoreBadgeGlow .95s ease-out both; }
 .student-leave-button { color: #be123c; border: 1px solid #fecdd3; background: #fff1f2; cursor: pointer; }
 .student-module-page { padding: 22px 0 70px; }
 
@@ -94,6 +94,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes pulse { 50% { opacity: .48; transform: scale(.96); } }
 @keyframes dash { to { stroke-dashoffset: -80; } }
+@keyframes scoreBadgeGlow {
+  0% { color: #065f46; border-color: #6ee7b7; background: #d1fae5; box-shadow: 0 0 0 rgba(16,185,129,0); transform: scale(1); }
+  38% { color: #92400e; border-color: #fbbf24; background: #fef3c7; box-shadow: 0 0 26px rgba(245,158,11,.48),0 0 0 5px rgba(16,185,129,.12); transform: scale(1.08); }
+  100% { color: #92400e; border-color: #fde68a; background: #fef3c7; box-shadow: 0 0 18px rgba(245,158,11,.1); transform: scale(1); }
+}
 
 .glass, .panel, .card {
   background: var(--surface);
@@ -762,6 +767,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .module-start-counter.launching { background: conic-gradient(#10b981 360deg,#d1fae5 0); transform: scale(1.08); }
 .module-start-counter.launching > span { width: 65px; height: 65px; display: grid; place-items: center; color: #ffffff; background: linear-gradient(135deg,#10b981,#34d399); border-radius: 50%; }
 .module-start-status { position: relative; z-index: 1; color: #64748b; font-size: 12px; letter-spacing: .02em; }
+.module-start-cancel { position: relative; z-index: 1; min-height: 43px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-top: 2px; padding: 0 15px; color: #be123c; background: #fff1f2; border: 1px solid #fda4af; border-radius: 13px; box-shadow: 0 8px 20px rgba(190,18,60,.1); cursor: pointer; font-size: 12px; font-weight: 850; transition: transform .18s ease,box-shadow .18s ease,opacity .18s ease; }
+.module-start-cancel:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 25px rgba(190,18,60,.17); }
+.module-start-cancel:disabled { cursor: wait; opacity: .55; }
 .student-result-page { padding-top: 20px; }
 .student-result-card { margin-top: 0; }
 .student-result-card h1 strong { color: #d97706; }
