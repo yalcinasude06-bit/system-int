@@ -203,8 +203,8 @@ export default function StudentPlayPage() {
   const modules = {
     1: <Module1SystemBuild existingSubmission={activeSubmission} onSubmit={(submission) => submit(1, submission)} />,
     2: <Module2Relations existingSubmission={activeSubmission} onSubmit={(submission) => submit(2, submission)} />,
-    3: <Module3Boundary onSubmit={(submission) => submit(3, submission)} />,
-    4: <Module4CompleteSystem faultInjected={session.fault_injected} onSubmit={(submission) => submit(4, submission)} />,
+    3: <Module3Boundary existingSubmission={activeSubmission} onSubmit={(submission) => submit(3, submission)} />,
+    4: <Module4CompleteSystem existingSubmission={activeSubmission} onSubmit={(submission) => submit(4, submission)} />,
   };
 
   return <>{studentNav}<main className="container student-module-page stack">

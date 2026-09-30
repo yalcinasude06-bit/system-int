@@ -41,9 +41,10 @@ npx supabase db push
   bileşen, ilişki, girdi, çıktı ve kısıt katmanlarını kod tabanlı SVG kanvasta gösterir.
 - Modül 1 yanıtı veritabanı RPC’siyle tek sefer kabul edilir; yeniden gönderim puanı
   değiştirmez ve sayfa yenilendiğinde kilitli yerleşim geri yüklenir.
-- Modül 2, talep artışından kampanya etkisine uzanan dört adımlı nedensel zinciri sürükleme,
-  tıklama veya klavye oklarıyla oynanan pastel kart destesi üzerinden öğretir. Her kart 25
+- Modül 2, talep artışından kampanya kararına uzanan on adımlı nedensel zinciri sürükleme,
+  dokunma veya klavye oklarıyla oynanan tarafsız kart destesi üzerinden öğretir. Her kart 10
   puandır; yanlış seçim akışı kesmeden doğru sistem durumuna ilerler.
-- Modül 3, Churchman 2-Kuralı ile dinamik sistem sınırı çizdirir.
-- Modül 4, değer zincirini bilgi/malzeme kartlarıyla çalıştırır ve kriz anında
-  alternatif üretim rotası kurdurur.
+- Modül 3, on farklı girdi-çıktı sistemi için kara kutudaki dönüşüm sürecini üç yakın seçenek
+  arasından buldurur. Yanlış cevap çözümü göstermez; ilk denemede doğru bulunan her süreç 10 puandır.
+- Modül 4, on sistem türünü karışık sıradaki temsili görsel kartlarla iki aşamalı olarak
+  eşleştirir; doğru eşleşmeler bağlantı çizgisi ve pedagojik açıklamayla pekiştirilir.

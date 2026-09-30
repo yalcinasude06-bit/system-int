@@ -147,11 +147,9 @@ export default function TeacherSessionPage() {
             activeModule={session.current_module}
             moduleStage={session.module_stage}
             isModuleStarted={session.is_module_started}
-            faultInjected={session.fault_injected}
             disabled={busy}
             onStart={startModule}
             onFinish={finishModule}
-            onToggleFault={() => void patch({ fault_injected: !session.fault_injected })}
           />
         </section>
 

@@ -11,7 +11,7 @@ const anatomy = {
   relations: { hint: "Parçaların etkileşimi", answer: "İlişkiler" },
   boundary: { hint: "Sınır", answer: "Sınır" },
   environment: { hint: "Çevre", answer: "Çevre" },
-  interface: { hint: "Sınırdaki geçiş noktası", answer: "Ara yüzler" },
+  interface: { hint: "Sınırdaki geçiş noktası", answer: "Arayüz" },
   input: { hint: "Sisteme giren akış", answer: "Girdi" },
   output: { hint: "Sistemden çıkan akış", answer: "Çıktı" },
   constraint: { hint: "Hareket alanını daraltan kural", answer: "Kısıtlar" },
@@ -20,7 +20,7 @@ const anatomy = {
 type ZoneId = keyof typeof anatomy;
 const cardOrder: ZoneId[] = ["components", "relations", "boundary", "purpose", "environment", "interface", "input", "output", "constraint"];
 const cards = cardOrder.map((id) => anatomy[id].answer);
-const legacyNames: Record<string, string> = { Arayüz: "Ara yüzler", Kısıt: "Kısıtlar" };
+const legacyNames: Record<string, string> = { "Ara yüzler": "Arayüz", Kısıt: "Kısıtlar" };
 const slotNumbers: Record<ZoneId, number> = { constraint: 1, components: 2, relations: 3, boundary: 4, purpose: 5, environment: 6, interface: 7, input: 8, output: 9 };
 
 function savedPlacements(submission?: Submission | null) {
@@ -62,7 +62,7 @@ function AnatomySlot({ id, placements, selected, locked, dragOver, onPlace, onSe
     {value && <button
       type="button"
       draggable={!locked}
-      className={`placed-anatomy-card concept-${id} ${selected === value ? "selected" : ""}`}
+      className={`placed-anatomy-card ${selected === value ? "selected" : ""}`}
       onClick={(event) => { event.stopPropagation(); if (!locked) onSelect(value); }}
       onDragStart={(event) => { event.dataTransfer.setData("text/plain", value); event.dataTransfer.setData("application/x-system-zone", id); }}
     >{value}</button>}
@@ -182,6 +182,7 @@ export function ConceptualStage({ onComplete, initialSubmission }: {
   const slotProps = { placements, selected, locked, dragOver, onPlace: place, onSelect: setSelected, onDragOver: (zone: ZoneId | null) => setDragOver(zone) };
 
   return <div className="module-shell">
+    <div className="anatomy-touch-hint"><strong>Dokunarak yerleştir:</strong><span>Önce bir kavram kartına, sonra şemadaki hedef yuvaya dokun.</span><small>Kartları sürükleyebilir, yuvalar arasında taşıyabilir veya üstteki alana geri bırakabilirsin.</small></div>
     <div
       className={`card-tray anatomy-card-tray ${dragOver === "pool" ? "drag-over" : ""}`}
       aria-label="Bekleyen kavram kartları"
@@ -191,14 +192,14 @@ export function ConceptualStage({ onComplete, initialSubmission }: {
       onDrop={(event) => { event.preventDefault(); setDragOver(null); returnToPool(event.dataTransfer.getData("text/plain")); }}
       onClick={() => { if (selected) returnToPool(selected); }}
     >
-      {available.map((card) => { const zone = cardOrder.find((id) => anatomy[id].answer === card)!; return <button draggable={!locked} key={card} type="button" className={`drag-card concept-${zone} ${selected === card ? "selected" : ""}`} onDragStart={(event) => event.dataTransfer.setData("text/plain", card)} onClick={(event) => { event.stopPropagation(); if (!locked) setSelected(card); }}>{card}</button>; })}
+      {available.map((card) => <button draggable={!locked} key={card} type="button" className={`drag-card ${selected === card ? "selected" : ""}`} onDragStart={(event) => event.dataTransfer.setData("text/plain", card)} onClick={(event) => { event.stopPropagation(); if (!locked) setSelected(card); }}>{card}</button>)}
       {!available.length && !locked && <span className="muted">Tüm kartlar şemada · geri almak için kartı buraya sürükle.</span>}
-      {locked && <span className="locked-badge"><LockKeyhole size={14} /> Gönderildi · {score} puan</span>}
+      {locked && <span className="locked-badge"><LockKeyhole size={14} /> Gönderildi · puan gizli</span>}
     </div>
 
     <div className="system-scene-scroll"><div className="system-scene"><SystemSceneArt /><AnatomySlot id="constraint" {...slotProps} /><AnatomySlot id="components" {...slotProps} /><AnatomySlot id="relations" {...slotProps} /><AnatomySlot id="boundary" {...slotProps} /><AnatomySlot id="purpose" {...slotProps} /><AnatomySlot id="environment" {...slotProps} /><AnatomySlot id="interface" {...slotProps} /><AnatomySlot id="input" {...slotProps} /><AnatomySlot id="output" {...slotProps} /></div></div>
 
-    {locked && <div className={allCorrect ? "notice success" : "notice error"}>{allCorrect ? "Tebrikler! Sistem anatomisinin tamamını doğru kurdun." : `Yanıtın kilitlendi. ${score} puan aldın; yeşil yuvalar doğru, kırmızı yuvalar yanlış yerleşimleri gösterir.`}</div>}
+    {locked && <div className={allCorrect ? "notice success" : "notice error"}>{allCorrect ? "Tebrikler! Sistem anatomisinin tamamını doğru kurdun. Puanın sonuçlar açıklanana kadar gizli." : "Yanıtın kilitlendi. Doğru ve yanlış yerleşimler işaretlendi; puanın sonuçlar açıklanana kadar gizli."}</div>}
     <div className="button-row module-actions"><Button loading={submitting} onClick={() => void submit()} disabled={locked || Object.keys(placements).length !== cards.length}>{locked ? "Yanıt gönderildi" : "Kontrol Et"}</Button><Button variant="secondary" icon={<RotateCcw size={16} />} disabled={locked || submitting} onClick={() => { setPlacements({}); setSelected(null); }}>Sıfırla</Button></div>
   </div>;
 }

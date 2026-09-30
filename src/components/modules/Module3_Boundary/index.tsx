@@ -1,37 +1,173 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Check, RotateCcw, Undo2 } from "lucide-react";
+import { useCallback, useRef, useState } from "react";
+import { ArrowRight, Check, LockKeyhole, RotateCcw, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/common/Button";
-import { isPointInPolygon, polygonArea } from "@/lib/polygonUtils";
-import type { LearningModuleProps, Point } from "@/types";
-import { BoundaryPolygonCanvas, mapElements } from "./BoundaryPolygonCanvas";
-import { EnvironmentClassifier } from "./EnvironmentClassifier";
-import { ScenarioController } from "./ScenarioController";
+import type { LearningModuleProps, ModuleSubmission } from "@/types";
 
-export function Module3Boundary({ onSubmit }: LearningModuleProps) {
-  const [stage, setStage] = useState(1); const [points, setPoints] = useState<Point[]>([]); const [closed, setClosed] = useState(false); const [feedback, setFeedback] = useState("");
-  const [partnershipChoice, setPartnershipChoice] = useState<boolean | null>(null);
-  const insideIds = useMemo(() => new Set(closed ? mapElements.filter((item) => isPointInPolygon(item.position, points)).map((item) => item.id) : []), [closed, points]);
-  function reset() { setPoints([]); setClosed(false); setFeedback(""); }
-  async function evaluate() {
-    if (points.length < 3) return;
-    setClosed(true);
-    const computed = new Set(mapElements.filter((item) => isPointInPolygon(item.position, points)).map((item) => item.id));
-    const required = new Set(["employees", "production", "robots", ...(stage >= 2 ? ["sales-marketing"] : []), ...(stage === 3 && partnershipChoice ? ["suppliers"] : [])]);
-    const correctInside = [...required].filter((id) => computed.has(id)).length;
-    const unexpectedInside = [...computed].filter((id) => !required.has(id)).length;
-    const score = Math.max(0, Math.round((correctInside / required.size) * 100) - unexpectedInside * 10);
-    const dynamicLesson = stage === 3 ? partnershipChoice ? " Stratejik ortaklıkla tedarikçi artık seçtiğin sistem sınırının parçası oldu; sınır bağlama göre değişti." : " Tedarikçiyi yakın iş çevresinde bıraktın; bu da gerekçelendirilebilir ve sınırın yönetim kararına bağlı olduğunu gösterir." : "";
-    const text = (score >= 85 ? "Sınır, senaryodaki yönetim alanını güçlü biçimde temsil ediyor." : "Sınırın içine aldığın kontrol dışı öğeleri ve dışarıda bıraktığın çekirdek bileşenleri yeniden düşün.") + dynamicLesson;
-    setFeedback(text);
-    await onSubmit({ stage, score, payload: { polygon: points, inside: [...computed], area: polygonArea(points), scenario: stage } });
+type BlackBoxSystem = {
+  id: string;
+  input: string;
+  output: string;
+  options: string[];
+  correct: string;
+  icon: string;
+};
+
+type ProcessAnswer = {
+  systemId: string;
+  selected: string;
+  attempts: number;
+  firstAttemptCorrect: boolean;
+};
+
+const systems: BlackBoxSystem[] = [
+  { id: "production", input: "Ham madde", output: "Ürün", options: ["Kalite kontrol", "Üretim", "Paketleme"], correct: "Üretim", icon: "🏭" },
+  { id: "data", input: "Veri", output: "Bilgi", options: ["Veri işleme", "Veri saklama", "Veri toplama"], correct: "Veri işleme", icon: "💾" },
+  { id: "education", input: "Öğrenciler", output: "Mezun birey", options: ["Rehberlik", "Sınav değerlendirme", "Eğitim"], correct: "Eğitim", icon: "🎓" },
+  { id: "health", input: "Hasta", output: "Sağlığına kavuşmuş hasta", options: ["Hasta kaydı", "Tedavi", "Ön muayene"], correct: "Tedavi", icon: "🩺" },
+  { id: "canning", input: "Sebze + su + enerji", output: "Kutulanmış konserve", options: ["Etiketleme", "Sebzeleri ayıklama", "Pişirme ve konserveleme"], correct: "Pişirme ve konserveleme", icon: "🥫" },
+  { id: "automobile", input: "Metal levha + parçalar", output: "Otomobil", options: ["Kesme–delme–montaj", "Boyama", "Parça kontrolü"], correct: "Kesme–delme–montaj", icon: "🚗" },
+  { id: "flour", input: "Buğday", output: "Un", options: ["Paketleme", "Öğütme", "Eleme"], correct: "Öğütme", icon: "🌾" },
+  { id: "order", input: "Sipariş bilgileri", output: "Hazırlanmış sipariş", options: ["Sevkiyat planlama", "Sipariş kaydı", "Sipariş hazırlama"], correct: "Sipariş hazırlama", icon: "📦" },
+  { id: "tire", input: "Ham kauçuk + kimyasallar", output: "Lastik", options: ["Lastik üretim süreci", "Son kalite kontrol", "Karışım hazırlama"], correct: "Lastik üretim süreci", icon: "🛞" },
+  { id: "analysis", input: "Müşteri verileri", output: "Karar bilgisi / analiz sonucu", options: ["Rapor biçimlendirme", "Analiz etme", "Veri toplama"], correct: "Analiz etme", icon: "📊" },
+];
+
+const pointsPerSystem = 100 / systems.length;
+
+function delay(milliseconds: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+}
+
+export function Module3Boundary({ onSubmit, existingSubmission }: LearningModuleProps) {
+  const [systemIndex, setSystemIndex] = useState(0);
+  const [answers, setAnswers] = useState<ProcessAnswer[]>([]);
+  const [attempts, setAttempts] = useState<Record<string, number>>({});
+  const [feedback, setFeedback] = useState<{ correct: boolean; text: string } | null>(null);
+  const [revealed, setRevealed] = useState(false);
+  const [shaking, setShaking] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [completed, setCompleted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitFailed, setSubmitFailed] = useState(false);
+  const [finalSubmission, setFinalSubmission] = useState<ModuleSubmission | null>(null);
+  const interactionLocked = useRef(false);
+  const current = systems[Math.min(systemIndex, systems.length - 1)];
+
+  const submitResult = useCallback(async (submission: ModuleSubmission) => {
+    setSubmitting(true);
+    setSubmitFailed(false);
+    const accepted = await onSubmit(submission);
+    setSubmitting(false);
+    if (accepted === false) setSubmitFailed(true);
+  }, [onSubmit]);
+
+  const choose = useCallback(async (selected: string) => {
+    if (interactionLocked.current || busy || completed || existingSubmission) return;
+    interactionLocked.current = true;
+    const nextAttemptCount = (attempts[current.id] || 0) + 1;
+    setAttempts((value) => ({ ...value, [current.id]: nextAttemptCount }));
+
+    if (selected !== current.correct) {
+      setBusy(true);
+      setShaking(true);
+      setFeedback({ correct: false, text: "Bu işlem girdiyi verilen çıktıya dönüştürmüyor. Sürecin tamamını yeniden düşün ve tekrar dene." });
+      await delay(620);
+      setShaking(false);
+      setBusy(false);
+      interactionLocked.current = false;
+      return;
+    }
+
+    const answer: ProcessAnswer = {
+      systemId: current.id,
+      selected,
+      attempts: nextAttemptCount,
+      firstAttemptCorrect: nextAttemptCount === 1,
+    };
+    const nextAnswers = [...answers, answer];
+    setAnswers(nextAnswers);
+    setBusy(true);
+    setRevealed(true);
+    setFeedback({ correct: true, text: "Doğru süreç! Kara kutunun içindeki dönüşümü görünür hâle getirdin." });
+    await delay(1050);
+
+    if (systemIndex === systems.length - 1) {
+      const firstTryCount = nextAnswers.filter((item) => item.firstAttemptCorrect).length;
+      const submission: ModuleSubmission = {
+        score: Math.round(firstTryCount * pointsPerSystem),
+        payload: {
+          mode: "black-box-process-analysis",
+          answers: nextAnswers,
+          firstTryCorrectCount: firstTryCount,
+          systemCount: systems.length,
+          pointsPerSystem,
+        },
+      };
+      setFinalSubmission(submission);
+      setCompleted(true);
+      setBusy(false);
+      await submitResult(submission);
+      return;
+    }
+
+    setSystemIndex((index) => index + 1);
+    setRevealed(false);
+    setFeedback(null);
+    setBusy(false);
+    interactionLocked.current = false;
+  }, [answers, attempts, busy, completed, current, existingSubmission, submitResult, systemIndex]);
+
+  if (existingSubmission) {
+    return <section className="panel module-shell process-module-shell">
+      <div className="module-title-chip">Modül 3: Kara Kutu ve Süreç Analizi</div>
+      <div className="module-complete-card"><LockKeyhole size={42} /><h2>Bu modül tamamlandı</h2><p>Yanıtın kilitlendi. Öğretmen sonuçları açıklayana kadar bekleyin.</p></div>
+    </section>;
   }
-  return <section className="panel module-shell">
-    <div className="module-title-chip">Modül 3: Sistem Sınırını Çiz</div>
-    <div className="churchman-rules"><strong>Churchman 2-Kuralı</strong><span>1. Öğe sistemin amacına ulaşması için gerekli mi?</span><span>2. Sistem bu öğeyi doğrudan yönetebiliyor mu?</span></div>
-    <div className="boundary-layout"><div><BoundaryPolygonCanvas points={points} onChange={(next) => { if (!closed) setPoints(next); }} insideIds={insideIds} /><div className="button-row"><Button size="small" onClick={() => void evaluate()} disabled={points.length < 3 || closed || (stage === 3 && partnershipChoice === null)} icon={<Check size={16} />}>Sınırı kapat</Button><Button size="small" variant="secondary" onClick={() => { setPoints((current) => current.slice(0, -1)); setClosed(false); }} disabled={!points.length} icon={<Undo2 size={16} />}>Geri al</Button><Button size="small" variant="secondary" onClick={reset} icon={<RotateCcw size={16} />}>Temizle</Button></div></div><aside className="stack"><ScenarioController stage={stage} partnershipChoice={partnershipChoice} onPartnershipChoice={(choice) => { setPartnershipChoice(choice); reset(); }} onChange={(next) => { setStage(next); setPartnershipChoice(null); reset(); }} />{closed && <div className="card"><h3>Anlık gruplama</h3><p className="muted">Ray-Casting sonucuna göre güncellendi.</p><EnvironmentClassifier elements={mapElements} insideIds={insideIds} /></div>}</aside></div>
-    <div className="legend"><span><i style={{ background: "var(--emerald)" }} /> Sistem içi</span><span><i style={{ background: "var(--indigo-soft)" }} /> Yakın iş çevresi</span><span><i style={{ background: "var(--violet)" }} /> Uzak genel çevre</span></div>
-    {feedback && <div className={feedback.startsWith("Sınır,") ? "notice success" : "notice"}>{feedback}</div>}
+
+  if (completed) {
+    return <section className="panel module-shell process-module-shell">
+      <div className="module-title-chip">Modül 3: Kara Kutu ve Süreç Analizi</div>
+      <div className="module-complete-card">
+        <Sparkles size={42} />
+        <h2>10 kara kutuyu da çözdün</h2>
+        <p>Yanıtların kilitlendi. Puanın, öğretmen sonuçları açtığında görünecek.</p>
+        {submitting && <div className="notice">Yanıt kaydediliyor…</div>}
+        {submitFailed && finalSubmission && <><div className="notice error">Yanıt kaydedilemedi. İlerlemen korundu.</div><Button loading={submitting} icon={<RotateCcw size={17} />} onClick={() => void submitResult(finalSubmission)}>Kaydı tekrar dene</Button></>}
+      </div>
+    </section>;
+  }
+
+  return <section className="panel module-shell process-module-shell">
+    <div className="module-topline">
+      <div><div className="module-title-chip">Modül 3: Kara Kutu ve Süreç Analizi</div><p>Girdi ile çıktıyı birbirine bağlayan doğru dönüşüm sürecini bul.</p></div>
+      <strong>{systemIndex + 1} / {systems.length}</strong>
+    </div>
+
+    <div className="ten-step-progress" aria-label={`Sistem ${systemIndex + 1} / ${systems.length}`}>
+      {systems.map((system, index) => <span key={system.id} className={index < systemIndex ? "done" : index === systemIndex ? "active" : ""} />)}
+    </div>
+
+    <div className="process-flow" aria-live="polite">
+      <article className="process-endpoint input"><small>GİRDİ</small><span>{current.icon}</span><strong>{current.input}</strong></article>
+      <ArrowRight className="process-arrow" aria-hidden="true" />
+      <article className={`black-box ${revealed ? "revealed" : ""} ${shaking ? "shake" : ""}`}>
+        <small>{revealed ? "SÜREÇ" : "KARA KUTU"}</small>
+        <span aria-hidden="true">{revealed ? "✦" : "?"}</span>
+        <strong>{revealed ? current.correct : "Dönüşümü keşfet"}</strong>
+      </article>
+      <ArrowRight className="process-arrow" aria-hidden="true" />
+      <article className="process-endpoint output"><small>ÇIKTI</small><span>🎯</span><strong>{current.output}</strong></article>
+    </div>
+
+    <div className="process-options" aria-label="Süreç seçenekleri">
+      {current.options.map((option) => <button type="button" key={option} disabled={busy} className={revealed && option === current.correct ? "correct" : ""} onClick={() => void choose(option)}>{revealed && option === current.correct && <Check size={18} />}{option}</button>)}
+    </div>
+
+    <div className="process-feedback-space" aria-live="assertive">
+      {feedback && <div className={`process-feedback ${feedback.correct ? "correct" : "wrong"}`}>{feedback.correct ? <Check size={20} /> : <X size={20} />}<span>{feedback.text}</span></div>}
+    </div>
+    <p className="score-privacy-note">Her sistem 10 puan değerindedir. Puanlar sonuçlar açıklanana kadar gizli tutulur.</p>
   </section>;
 }

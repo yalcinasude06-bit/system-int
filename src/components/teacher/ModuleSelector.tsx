@@ -1,4 +1,4 @@
-import { Boxes, CheckCircle2, Network, Orbit, PackageOpen, Play, Square, Wrench } from "lucide-react";
+import { Boxes, CheckCircle2, Network, Play, ScanSearch, Shapes, Square } from "lucide-react";
 import type { ComponentType } from "react";
 import type { ModuleId } from "@/types";
 
@@ -12,9 +12,9 @@ export const weekOneModules: Array<{
   Icon: ComponentType<{ size?: number }>;
 }> = [
   { id: 1, title: "Sistemi Kur", subtitle: "Sistem anatomisi", description: "Bir sistemin dokuz temel parçasını doğru konumlara yerleştir.", Icon: Boxes },
-  { id: 2, title: "İlişki Ağını Çalıştır", subtitle: "Nedensellik", description: "Bağlantıları kur ve değişimin ağ boyunca nasıl yayıldığını keşfet.", Icon: Network },
-  { id: 3, title: "Sınırı Çiz", subtitle: "Sistem ve çevre", description: "Sistem sınırını belirle, doğrudan ve dolaylı çevreyi sınıflandır.", Icon: Orbit },
-  { id: 4, title: "Komple Sistemi Kur", subtitle: "Uçtan uca simülasyon", description: "Alt sistemleri bağla, akışı çalıştır ve beklenmeyen duruma yanıt ver.", Icon: PackageOpen },
+  { id: 2, title: "İlişki Ağını Çalıştır", subtitle: "10 kartlık nedensellik zinciri", description: "Değişimlerin sistem boyunca hangi yönde ilerlediğini kaydırarak belirle.", Icon: Network },
+  { id: 3, title: "Kara Kutuyu Aç", subtitle: "Süreç analizi", description: "Girdi ve çıktıyı bağlayan dönüşüm sürecini on farklı sistemde keşfet.", Icon: ScanSearch },
+  { id: 4, title: "Sistem Türlerini Eşleştir", subtitle: "Görsel sınıflandırma", description: "On sistem türünü onları temsil eden görsellerle eşleştir.", Icon: Shapes },
 ];
 
 export function WeekSelector({ activeWeek, onChange, disabled }: { activeWeek: number; onChange: (week: number) => void; disabled?: boolean }) {
@@ -42,14 +42,12 @@ type ModuleSelectorProps = {
   activeModule: ModuleId;
   moduleStage: number;
   isModuleStarted: boolean;
-  faultInjected: boolean;
   disabled?: boolean;
   onStart: (module: ModuleId) => void;
   onFinish: (module: ModuleId) => void;
-  onToggleFault: () => void;
 };
 
-export function ModuleSelector({ activeWeek, activeModule, moduleStage, isModuleStarted, faultInjected, disabled, onStart, onFinish, onToggleFault }: ModuleSelectorProps) {
+export function ModuleSelector({ activeWeek, activeModule, moduleStage, isModuleStarted, disabled, onStart, onFinish }: ModuleSelectorProps) {
   if (activeWeek !== 1) {
     return (
       <div className="coming-soon-card" role="status">
@@ -73,7 +71,6 @@ export function ModuleSelector({ activeWeek, activeModule, moduleStage, isModule
             <div className="dashboard-module-actions">
               {isLive ? <span className="on-air-badge"><i /> Canlı Yayında</span> : isFinished ? <span className="results-open-badge"><CheckCircle2 size={18} /> Sonuçlar Açık</span> : <button type="button" className="row-action start" disabled={disabled || isModuleStarted} onClick={() => onStart(id)}><Play size={19} fill="currentColor" /> Başlat</button>}
               <button type="button" className="row-action finish" disabled={disabled || !isLive} onClick={() => onFinish(id)}><Square size={18} fill="currentColor" /> Bitir &amp; Sonuçları Açıkla</button>
-              {id === 4 && isLive && <button type="button" className={`row-action fault ${faultInjected ? "active" : ""}`} disabled={disabled} onClick={onToggleFault}><Wrench size={17} /> {faultInjected ? "Arıza Aktif" : "Arıza Ekle"}</button>}
             </div>
           </article>
         );
