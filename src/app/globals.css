@@ -737,9 +737,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .module-start-eyebrow { position: relative; z-index: 1; padding: 7px 11px; color: #4338ca; background: rgba(238,242,255,.9); border: 1px solid #c7d2fe; border-radius: 999px; font-size: 10px; font-weight: 900; letter-spacing: .11em; text-transform: uppercase; }
 .module-start-icon { position: relative; z-index: 1; display: block; font-size: clamp(55px,10vw,78px); line-height: 1; filter: drop-shadow(0 13px 20px rgba(79,70,229,.15)); }
 .module-start-card h1 { position: relative; z-index: 1; max-width: 430px; margin: 0; font-size: clamp(25px,5vw,37px); line-height: 1.08; letter-spacing: -.045em; }
-.module-start-description { position: relative; z-index: 1; display: grid; gap: 4px; max-width: 440px; }
-.module-start-description p { margin: 0; color: #475569; font-size: clamp(13px,2.1vw,16px); font-weight: 650; line-height: 1.55; }
-.module-start-description p:last-child { color: #312e81; font-weight: 800; }
+.module-start-gameplay { position: relative; z-index: 1; width: 100%; max-width: 450px; display: grid; gap: 7px; }
+.module-start-step { display: grid; grid-template-columns: 30px minmax(0,1fr); align-items: center; gap: 10px; padding: 9px 11px; color: #334155; background: rgba(248,250,252,.88); border: 1px solid #e2e8f0; border-radius: 13px; text-align: left; }
+.module-start-step > span { width: 28px; height: 28px; display: grid; place-items: center; color: #ffffff; background: linear-gradient(135deg,#6366f1,#818cf8); border-radius: 9px; box-shadow: 0 5px 12px rgba(99,102,241,.2); font-size: 11px; font-weight: 950; }
+.module-start-step > div { min-width: 0; display: grid; gap: 2px; }
+.module-start-step strong { color: #312e81; font-size: 13px; line-height: 1.2; }
+.module-start-step small { color: #64748b; font-size: 11px; font-weight: 650; line-height: 1.32; }
+.module-start-warning { position: relative; z-index: 1; width: 100%; max-width: 450px; padding: 8px 10px; color: #9a3412; background: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px; font-size: 10px; font-weight: 850; line-height: 1.35; }
 .module-start-counter { --countdown-progress: 360deg; position: relative; z-index: 1; width: 94px; aspect-ratio: 1; display: grid; place-items: center; margin-top: 5px; background: conic-gradient(#6366f1 var(--countdown-progress),#e0e7ff 0); border-radius: 50%; box-shadow: 0 14px 30px rgba(99,102,241,.22); transition: background .28s linear,transform .25s ease; }
 .module-start-counter::before { content: ""; position: absolute; inset: 7px; background: #ffffff; border-radius: inherit; box-shadow: inset 0 0 18px rgba(99,102,241,.08); }
 .module-start-counter > span { position: relative; z-index: 1; color: #4f46e5; font-size: 39px; font-weight: 950; line-height: 1; font-variant-numeric: tabular-nums; animation: countPop .42s ease both; }
@@ -815,7 +819,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .module-start-card { gap: 10px; padding: 25px 18px; border-radius: 25px; }
   .module-start-icon { font-size: 52px; }
   .module-start-card h1 { font-size: clamp(23px,7vw,30px); }
-  .module-start-description p { font-size: 12px; line-height: 1.45; }
+  .module-start-step { grid-template-columns: 27px minmax(0,1fr); gap: 8px; padding: 7px 8px; }
+  .module-start-step > span { width: 25px; height: 25px; border-radius: 8px; font-size: 10px; }
+  .module-start-step strong { font-size: 11px; }
+  .module-start-step small { font-size: 9px; }
   .module-start-counter { width: 82px; }
   .module-start-counter > span { font-size: 34px; }
   .module-start-counter.launching > span { width: 56px; height: 56px; }

@@ -8,49 +8,56 @@ import type { ModuleId } from "@/types";
 type ModuleBrief = {
   icon: string;
   title: string;
-  description: [string, string];
+  steps: Array<{
+    action: string;
+    detail: string;
+  }>;
+  warning?: string;
 };
 
 const moduleBriefs: Record<ModuleId, ModuleBrief> = {
   1: {
     icon: "🧩",
     title: "Modül 1: Sistemi Kur",
-    description: [
-      "Sistemin 9 temel parçasını şema üzerindeki doğru yuvalara yerleştir.",
-      "Parçaları ezberle değil, sistem içindeki görev ve işlevleriyle eşleştir!",
+    steps: [
+      { action: "Kavram kartını seç", detail: "Yukarıdaki bir karta dokun veya kartı sürükle." },
+      { action: "Hedef yuvaya yerleştir", detail: "Şemadaki kesikli doğru yuvaya dokun." },
+      { action: "Kontrol Et", detail: "Tüm kartları yerleştirince butona bas." },
     ],
   },
   2: {
     icon: "🔄",
     title: "Modül 2: Zincirleme Geri Bildirim",
-    description: [
-      "Tetiklenen olayların zincirleme etkisini takip et.",
-      "Değişkeni artıran etki için Sağa (+), azaltan etki için Sola (-) kaydır!",
+    steps: [
+      { action: "Sağa kaydır 👉", detail: "Kart üstteki durumu artırıyorsa: doğru orantı (+)." },
+      { action: "Sola kaydır 👈", detail: "Kart üstteki durumu azaltıyorsa: ters orantı (-)." },
     ],
   },
   3: {
     icon: "⬛",
     title: "Modül 3: Kara Kutu Analizi",
-    description: [
-      "Girdi ile çıktı arasındaki dönüşümü gerçekleştiren doğru süreci bul.",
-      "Doğru tercihi yaptığında kara kutu şeffaflaşıp içini gösterecek!",
+    steps: [
+      { action: "Dönüşümü düşün", detail: "Girdiyi çıktıya çeviren süreci bul." },
+      { action: "Bir seçeneğe dokun", detail: "Alttaki 3 seçenekten doğru olanı seç; kutu aydınlansın." },
     ],
   },
   4: {
     icon: "🖼️",
-    title: "Modül 4: Sistem Türleri ve Görseller",
-    description: [
-      "Soldaki 10 sistem türünü sağdaki en uygun temsili görsellerle eşleştir.",
-      "Görselde özellikle vurgulanan temel sistem özelliğine odaklan!",
+    title: "Modül 4: Sistem Türleri Eşleştirme",
+    steps: [
+      { action: "Sistem türünü seç", detail: "Önce soldaki sistem türüne dokun." },
+      { action: "Görselle eşleştir", detail: "Ardından sağdaki uygun görsele dokun." },
+      { action: "Kontrol Et", detail: "Tüm eşleştirmeler bitince butona bas." },
     ],
   },
   5: {
     icon: "🎈",
     title: "Modül 5: İlişki Türleri ve Balonlar",
-    description: [
-      "Alttan yükselen balondaki cümlenin hangi ilişki türüne ait olduğunu belirle.",
-      "Doğru iğneye basarak balonu tepeye ulaşmadan patlat!",
+    steps: [
+      { action: "Balondaki cümleyi oku", detail: "Balon ekrandan çıkmadan ilişki türünü belirle." },
+      { action: "Doğru iğneye dokun", detail: "Sağ veya soldaki 6 iğneden doğru olanla balonu patlat." },
     ],
+    warning: "Yanlış iğne seçersen tüm iğneler 3 saniye kilitlenir!",
   },
 };
 
@@ -97,12 +104,16 @@ export function ModuleStartCountdown({ moduleId, onComplete }: { moduleId: Modul
         exit={{ opacity: 0, scale: .94, y: -12 }}
         transition={{ type: "spring", stiffness: 230, damping: 24 }}
       >
-        <span className="module-start-eyebrow">10 saniyelik hazırlık</span>
+        <span className="module-start-eyebrow">Nasıl oynanır? · 10 saniye</span>
         <motion.span className="module-start-icon" aria-hidden="true" animate={{ rotate: [0, -5, 5, 0], scale: [1, 1.06, 1] }} transition={{ duration: 2.2, repeat: Infinity }}>{current.icon}</motion.span>
         <h1 id="module-start-title">{current.title}</h1>
-        <div className="module-start-description">
-          {current.description.map((line) => <p key={line}>{line}</p>)}
+        <div className="module-start-gameplay">
+          {current.steps.map((step, index) => <div className="module-start-step" key={step.action}>
+            <span>{index + 1}</span>
+            <div><strong>{step.action}</strong><small>{step.detail}</small></div>
+          </div>)}
         </div>
+        {current.warning && <div className="module-start-warning" role="note">⚠️ {current.warning}</div>}
         <div
           className={`module-start-counter ${isLaunching ? "launching" : ""}`}
           style={{ "--countdown-progress": `${timeLeft * 36}deg` } as CSSProperties}
