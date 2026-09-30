@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
 import { Clock3, Medal, Radio, Sparkles, Trophy } from "lucide-react";
@@ -30,6 +30,7 @@ export default function StudentPlayPage() {
   const [error, setError] = useState("");
   const [countdown, setCountdown] = useState<string | null>(null);
   const [readyModuleKey, setReadyModuleKey] = useState("");
+  const celebratedModuleKey = useRef("");
 
   const load = useCallback(async () => {
     if (!supabase) { setError("Supabase yapılandırılmamış."); setLoading(false); return; }
@@ -78,6 +79,7 @@ export default function StudentPlayPage() {
   const currentModule = session?.current_module;
   const isModuleStarted = session?.is_module_started;
   const activeSubmissionId = activeSubmission?.id;
+  const resultsRevealed = !isModuleStarted && (session?.module_stage ?? 0) >= 3;
 
   const sessionId = session?.id;
   const studentId = student?.id;
@@ -116,6 +118,17 @@ export default function StudentPlayPage() {
     return () => timers.forEach((timer) => window.clearTimeout(timer));
   }, [activeSubmissionId, currentModule, currentWeek, isModuleStarted, readyModuleKey]);
 
+  useEffect(() => {
+    if (!resultsRevealed || !currentWeek || !currentModule) return;
+    const moduleKey = `${currentWeek}:${currentModule}`;
+    if (celebratedModuleKey.current === moduleKey) return;
+    celebratedModuleKey.current = moduleKey;
+    const timer = window.setTimeout(() => {
+      confetti({ particleCount: 130, spread: 82, origin: { y: .72 }, colors: ["#10b981", "#6366f1", "#f59e0b", "#f472b6"] });
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [currentModule, currentWeek, resultsRevealed]);
+
   async function submit(moduleId: ModuleId, submission: ModuleSubmission) {
     if (!session || !student || !session.is_module_started) return false;
     setSaving(true);
@@ -123,12 +136,11 @@ export default function StudentPlayPage() {
     try {
       const saved = await saveSubmission({ sessionId: session.id, studentId: student.id, studentNumber: student.student_number, weekId: session.selected_week, moduleId, stage: submission.stage || 1, payload: submission.payload, score: submission.score });
       setSubmissions((current) => [...current.filter((item) => item.id !== saved.submission.id), saved.submission]);
-      setMessage(saved.wasNew ? `Gönderim kilitlendi · ${submission.score} puan` : "Bu modül için yanıt hakkını daha önce kullandın.");
+      setMessage(saved.wasNew ? "Yanıtınız güvenle kaydedildi." : "Bu modül için yanıt hakkını daha önce kullandın.");
       if (saved.wasNew) {
         setStudent((current) => current ? { ...current, session_score: current.session_score + submission.score, score: current.session_score + submission.score } : current);
         setClassmates((current) => current.map((item) => item.id === student.id ? { ...item, session_score: item.session_score + submission.score, score: item.session_score + submission.score } : item));
         setProfile((current) => current ? { ...current, total_score: current.total_score + submission.score } : current);
-        confetti({ particleCount: 110, spread: 78, origin: { y: .72 }, colors: ["#10b981", "#6366f1", "#f59e0b", "#f472b6"] });
       }
       window.setTimeout(() => setMessage(""), 3500);
       return true;
@@ -146,15 +158,15 @@ export default function StudentPlayPage() {
   const ranking = [...classmates].sort((a, b) => b.session_score - a.session_score || a.joined_at.localeCompare(b.joined_at));
   const ownRank = ranking.findIndex((item) => item.id === student.id) + 1;
   const scoreEarned = activeSubmission?.score ?? 0;
-  const showResults = Boolean(activeSubmission) || (!session.is_module_started && session.module_stage >= 3);
+  const totalScore = profile?.total_score ?? student.score;
 
-  const studentNav = <Navbar studentContext={{ sessionTitle: session.title, week: session.selected_week, studentName: student.nickname, studentNumber: student.student_number, score: profile?.total_score ?? student.score, onLeave: () => { localStorage.removeItem(`system-lab:${pin}:student`); router.push("/"); } }} />;
+  const studentNav = <Navbar studentContext={{ sessionTitle: session.title, week: session.selected_week, studentName: student.nickname, studentNumber: student.student_number, score: totalScore, scoreHidden: session.is_module_started, onLeave: () => { localStorage.removeItem(`system-lab:${pin}:student`); router.push("/"); } }} />;
 
   if (!session.is_active) return <>{studentNav}<main className="container page"><div className="student-result-card panel"><Trophy size={58} color="var(--amber)" /><span className="eyebrow">Oturum tamamlandı</span><h1>Harika iş çıkardın!</h1><p className="lead">Genel toplam puanın <strong className="score-pop">{profile?.total_score ?? student.score}</strong></p><Button onClick={() => router.push("/")}>Ana sayfaya dön</Button></div></main></>;
 
   if (session.selected_week !== 1) return <>{studentNav}<main className="container page"><div className="student-waiting-card panel"><span className="waiting-illustration">🚧</span><span className="eyebrow">Hafta {session.selected_week}</span><h1>Yeni içerikler hazırlanıyor</h1><p>Bu haftanın modülleri ve interaktif içerikleri yakında eklenecektir.</p><div className="waiting-pulse"><i /> Öğretmenin yönlendirmesini bekleyin</div></div></main></>;
 
-  if (showResults) return <>{studentNav}<main className="container page student-result-page">
+  if (resultsRevealed) return <>{studentNav}<main className="container page student-result-page">
     <section className="student-result-card panel">
       <div className="result-spark"><Sparkles size={30} /></div>
       <span className="result-trophy">🏆</span>
@@ -169,6 +181,18 @@ export default function StudentPlayPage() {
         <div className="own-rank"><span>Senin sıran</span><strong>{ownRank > 0 ? `${ownRank}.` : "—"}</strong><small>{student.session_score} puan</small></div>
       </div>
       <div className="next-module-wait"><Radio size={18} /><span>Öğretmen bir sonraki modülü başlatana kadar beklemede kalın…</span></div>
+    </section>
+  </main></>;
+
+  if (activeSubmission) return <>{studentNav}<main className="container page student-submission-wait-page">
+    <section className="student-submission-wait panel">
+      <span className="submission-check" aria-hidden="true">✓</span>
+      <span className="eyebrow">Yanıt Alındı</span>
+      <h1>Yanıtınız Kaydedildi!</h1>
+      <p>Öğretmen modülü bitirip sonuçları açıklayana kadar lütfen bekleyin…</p>
+      {message && <div className="notice success">{message}</div>}
+      {error && <div className="notice error">{error}</div>}
+      <div className="waiting-pulse"><i /> Sonuçlar henüz gizli</div>
     </section>
   </main></>;
 

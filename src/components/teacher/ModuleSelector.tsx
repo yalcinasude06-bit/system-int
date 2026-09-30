@@ -1,4 +1,4 @@
-import { Boxes, Network, Orbit, PackageOpen } from "lucide-react";
+import { Boxes, CheckCircle2, Network, Orbit, PackageOpen, Play, Square, Wrench } from "lucide-react";
 import type { ComponentType } from "react";
 import type { ModuleId } from "@/types";
 
@@ -19,7 +19,7 @@ export const weekOneModules: Array<{
 
 export function WeekSelector({ activeWeek, onChange, disabled }: { activeWeek: number; onChange: (week: number) => void; disabled?: boolean }) {
   return (
-    <div className="week-tabs projection-week-tabs" role="tablist" aria-label="Ders haftası">
+    <div className="week-tabs dashboard-week-tabs" role="tablist" aria-label="Ders haftası">
       {weeks.map((week) => (
         <button
           key={week}
@@ -37,41 +37,47 @@ export function WeekSelector({ activeWeek, onChange, disabled }: { activeWeek: n
   );
 }
 
-export function ModuleSelector({ activeWeek, activeModule, onChange, disabled }: { activeWeek: number; activeModule: ModuleId; onChange: (module: ModuleId) => void; disabled?: boolean }) {
+type ModuleSelectorProps = {
+  activeWeek: number;
+  activeModule: ModuleId;
+  moduleStage: number;
+  isModuleStarted: boolean;
+  faultInjected: boolean;
+  disabled?: boolean;
+  onStart: (module: ModuleId) => void;
+  onFinish: (module: ModuleId) => void;
+  onToggleFault: () => void;
+};
+
+export function ModuleSelector({ activeWeek, activeModule, moduleStage, isModuleStarted, faultInjected, disabled, onStart, onFinish, onToggleFault }: ModuleSelectorProps) {
   if (activeWeek !== 1) {
     return (
       <div className="coming-soon-card" role="status">
         <span aria-hidden="true">🚧</span>
-        <div>
-          <strong>Hafta {activeWeek} hazırlık aşamasında</strong>
-          <p>Bu haftanın modülleri ve interaktif içerikleri yakında eklenecektir.</p>
-        </div>
+        <div><strong>Hafta {activeWeek} hazırlık aşamasında</strong><p>Bu haftanın modülleri ve interaktif içerikleri yakında eklenecektir.</p></div>
       </div>
     );
   }
 
   return (
-    <div className="weekly-module-menu">
-      <div className="week-module-heading">
-        <div><span className="eyebrow">Hafta 1</span><h3>Uygulama modülleri</h3></div>
-        <span className="badge">4 canlı etkinlik</span>
-      </div>
-      <div className="module-tabs" role="tablist" aria-label="Hafta 1 aktif modülü">
-        {weekOneModules.map(({ id, title, subtitle, Icon }) => (
-          <button
-            key={id}
-            type="button"
-            role="tab"
-            aria-selected={activeModule === id}
-            disabled={disabled}
-            className={`module-tab ${activeModule === id ? "active" : ""}`}
-            onClick={() => onChange(id)}
-          >
-            <span className="module-tab-icon"><Icon size={19} /></span>
-            <span><strong>{id}. {title}</strong><small>{subtitle}</small></span>
-          </button>
-        ))}
-      </div>
+    <div className="dashboard-module-list" role="list" aria-label="Hafta 1 modülleri">
+      {weekOneModules.map(({ id, title, Icon }) => {
+        const isActive = activeModule === id;
+        const isLive = isActive && isModuleStarted;
+        const isFinished = isActive && !isModuleStarted && moduleStage >= 3;
+        return (
+          <article className={`dashboard-module-row ${isActive ? "active" : ""} ${isLive ? "live" : ""}`} key={id} role="listitem">
+            <span className="dashboard-module-number">{String(id).padStart(2, "0")}</span>
+            <span className="dashboard-module-icon"><Icon size={25} /></span>
+            <h2>{title}</h2>
+            <div className="dashboard-module-actions">
+              {isLive ? <span className="on-air-badge"><i /> Canlı Yayında</span> : isFinished ? <span className="results-open-badge"><CheckCircle2 size={18} /> Sonuçlar Açık</span> : <button type="button" className="row-action start" disabled={disabled || isModuleStarted} onClick={() => onStart(id)}><Play size={19} fill="currentColor" /> Başlat</button>}
+              <button type="button" className="row-action finish" disabled={disabled || !isLive} onClick={() => onFinish(id)}><Square size={18} fill="currentColor" /> Bitir &amp; Sonuçları Açıkla</button>
+              {id === 4 && isLive && <button type="button" className={`row-action fault ${faultInjected ? "active" : ""}`} disabled={disabled} onClick={onToggleFault}><Wrench size={17} /> {faultInjected ? "Arıza Aktif" : "Arıza Ekle"}</button>}
+            </div>
+          </article>
+        );
+      })}
     </div>
   );
 }

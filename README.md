@@ -30,9 +30,10 @@ npx supabase db push
 - On dört haftalık menüde Hafta 1 dört canlı modülle aktiftir; diğer haftalar yaklaşan içerik
   kartını gösterir.
 - Öğrenciler öğretmen modülü başlatana kadar bekleme ekranında kalır; başlangıçta 3-2-1
-  geri sayımı, bitişte puan ve mini liderlik ekranı gösterilir.
-- Projeksiyon paneli canlı QR, öğrenci durum baloncukları, oturum/genel sıralama ve ilk üç
-  podyumunu tek tahta görünümünde sunar.
+  geri sayımı gösterilir. Yanıt gönderildikten sonra puan ve sıralama, öğretmen sonuçları
+  açıklayana kadar gizli tutulur.
+- Projeksiyon paneli modül satırı içi başlat/bitir kontrollerini, büyük PIN ve QR alanını,
+  oturum/genel sıralamayı sade iki sütunlu tahta görünümünde sunar.
 - Oturum sıralaması `session_score`, genel sıralama ise kalıcı öğrenci profilindeki
   `total_score` alanı üzerinden canlı güncellenir.
 - Modül 1, dokuz temel kavramı sistem anatomisi üzerinde kurdurur.
