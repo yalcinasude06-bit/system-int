@@ -1,4 +1,4 @@
-export type ModuleId = 1 | 2 | 3 | 4;
+export type ModuleId = 1 | 2 | 3 | 4 | 5;
 
 export interface Session {
   id: string;
@@ -71,4 +71,5 @@ export interface LearningModuleProps {
   onSubmit: (submission: ModuleSubmission) => Promise<boolean | void> | boolean | void;
   faultInjected?: boolean;
   existingSubmission?: Submission | null;
+  forceSubmit?: boolean;
 }

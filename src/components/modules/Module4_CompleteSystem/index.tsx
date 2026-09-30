@@ -1,23 +1,17 @@
 "use client";
 
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
-import { Check, ImageIcon, LockKeyhole, MousePointer2, RotateCcw, Sparkles, X } from "lucide-react";
+import { Check, LockKeyhole, MousePointer2, RotateCcw, Sparkles, Unlink, X } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import type { LearningModuleProps, ModuleSubmission } from "@/types";
+import { SystemTypeIllustration } from "./SystemTypeIllustration";
 
 type SystemType = {
   id: string;
   name: string;
   visual: string;
-  icon: string;
   description: string;
   color: string;
-};
-
-type MatchAnswer = {
-  systemId: string;
-  visualId: string;
-  firstAttemptCorrect: boolean;
 };
 
 type ConnectionLine = {
@@ -27,44 +21,36 @@ type ConnectionLine = {
   x2: number;
   y2: number;
   color: string;
+  status: "pending" | "correct" | "wrong";
 };
 
 const systemTypes: SystemType[] = [
-  { id: "natural", name: "Doğal Sistem", visual: "Akarsu ve doğal vadi", icon: "🏞️", description: "Sistem insan müdahalesi olmadan doğal yollarla oluşmuştur.", color: "#38bdf8" },
-  { id: "human-made", name: "İnsan Yapımı Sistem", visual: "Büyük bir baraj", icon: "🌊", description: "İnsan tarafından tasarlanmış ve inşa edilmiştir.", color: "#818cf8" },
-  { id: "static", name: "Statik Sistem", visual: "Üzerinde araç olmayan boş köprü", icon: "🌉", description: "Yapı faaliyetsizdir ve durumunu korur.", color: "#94a3b8" },
-  { id: "dynamic", name: "Dinamik Sistem", visual: "Çalışan bir fabrika üretim hattı", icon: "🏭", description: "Makineler ve akış sürekli hareket ve değişim içindedir.", color: "#f59e0b" },
-  { id: "closed", name: "Kapalı Sistem", visual: "Mühürlü deney kapsülü / cam fanus", icon: "🔬", description: "Dış ortamla madde ve enerji alışverişi yoktur.", color: "#a78bfa" },
-  { id: "open", name: "Açık Sistem", visual: "Güneş ve su alan canlı bitki", icon: "🌱", description: "Çevresiyle sürekli madde ve enerji alışverişi yapar.", color: "#34d399" },
-  { id: "deterministic", name: "Deterministik Sistem", visual: "Birbirine bağlı metal dişli çarklar", icon: "⚙️", description: "Bir parçanın hareketi diğerini kesin biçimde belirler.", color: "#64748b" },
-  { id: "stochastic", name: "Stokastik Sistem", visual: "Havaya atılmış iki zar", icon: "🎲", description: "Sonuç önceden kesin bilinemez, olasılığa bağlıdır.", color: "#f472b6" },
-  { id: "physical", name: "Fiziksel Sistem", visual: "Gerçek metal bir çaydanlık", icon: "🫖", description: "Maddi varlığı olan ve fiziksel olarak görülebilen sistemdir.", color: "#fb923c" },
-  { id: "conceptual", name: "Kavramsal Sistem", visual: "Mimarî teknik çizim / blueprint planı", icon: "📐", description: "Fiziksel nesne değil, düşünce ve planın sembollerle gösterimidir.", color: "#60a5fa" },
+  { id: "natural", name: "Doğal Sistem", visual: "Akarsu ve doğal vadi", description: "Sistem insan müdahalesi olmadan doğal yollarla oluşmuştur.", color: "#38bdf8" },
+  { id: "human-made", name: "İnsan Yapımı Sistem", visual: "Büyük beton baraj", description: "İnsan tarafından tasarlanmış ve inşa edilmiştir.", color: "#818cf8" },
+  { id: "static", name: "Statik Sistem", visual: "Üzerinde araç olmayan boş köprü", description: "Yapı faaliyetsizdir ve durumunu korur.", color: "#94a3b8" },
+  { id: "dynamic", name: "Dinamik Sistem", visual: "Çalışan fabrika robotları ve montaj hattı", description: "Makineler ve akış sürekli hareket ve değişim içindedir.", color: "#f59e0b" },
+  { id: "closed", name: "Kapalı Sistem", visual: "Mühürlü cam deney kapsülü", description: "Dış ortamla madde ve enerji alışverişi yoktur.", color: "#a78bfa" },
+  { id: "open", name: "Açık Sistem", visual: "Güneş ve su alan canlı bitki", description: "Çevresiyle sürekli madde ve enerji alışverişi yapar.", color: "#34d399" },
+  { id: "deterministic", name: "Deterministik Sistem", visual: "Kenetlenmiş metal dişli mekanizması", description: "Bir parçanın hareketi diğerini kesin biçimde belirler.", color: "#64748b" },
+  { id: "stochastic", name: "Stokastik Sistem", visual: "Havaya atılmış iki oyun zarı", description: "Sonuç önceden kesin bilinemez, olasılığa bağlıdır.", color: "#f472b6" },
+  { id: "physical", name: "Fiziksel Sistem", visual: "Gerçek metal çaydanlık", description: "Maddi varlığı olan ve fiziksel olarak görülebilen sistemdir.", color: "#fb923c" },
+  { id: "conceptual", name: "Kavramsal Sistem", visual: "Mimari blueprint planı", description: "Fiziksel nesne değil, düşünce ve planın sembollerle gösterimidir.", color: "#60a5fa" },
 ];
 
 const visualOrder = ["stochastic", "open", "human-made", "conceptual", "dynamic", "natural", "physical", "closed", "deterministic", "static"];
 const visualCards = visualOrder.map((id) => systemTypes.find((item) => item.id === id)!);
 const pointsPerMatch = 100 / systemTypes.length;
 
-function delay(milliseconds: number) {
-  return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
-}
-
 export function Module4CompleteSystem({ onSubmit, existingSubmission }: LearningModuleProps) {
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [matches, setMatches] = useState<Record<string, string>>({});
-  const [mistakeTypes, setMistakeTypes] = useState<Set<string>>(new Set());
-  const [answers, setAnswers] = useState<MatchAnswer[]>([]);
-  const [wrongVisual, setWrongVisual] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<{ correct: boolean; text: string } | null>(null);
-  const [lastMatch, setLastMatch] = useState<SystemType | null>(null);
+  const [feedback, setFeedback] = useState("");
   const [lines, setLines] = useState<ConnectionLine[]>([]);
-  const [busy, setBusy] = useState(false);
-  const [completed, setCompleted] = useState(false);
+  const [evaluated, setEvaluated] = useState(false);
+  const [correctCount, setCorrectCount] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [submitFailed, setSubmitFailed] = useState(false);
   const [finalSubmission, setFinalSubmission] = useState<ModuleSubmission | null>(null);
-  const interactionLocked = useRef(false);
   const boardRef = useRef<HTMLDivElement | null>(null);
   const typeRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const visualRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -73,24 +59,25 @@ export function Module4CompleteSystem({ onSubmit, existingSubmission }: Learning
     const board = boardRef.current;
     if (!board) return;
     const boardRect = board.getBoundingClientRect();
-    const nextLines = Object.keys(matches).flatMap((id) => {
-      const typeNode = typeRefs.current[id];
-      const visualNode = visualRefs.current[id];
-      const system = systemTypes.find((item) => item.id === id);
+    const nextLines = Object.entries(matches).flatMap(([typeId, visualId]) => {
+      const typeNode = typeRefs.current[typeId];
+      const visualNode = visualRefs.current[visualId];
+      const system = systemTypes.find((item) => item.id === typeId);
       if (!typeNode || !visualNode || !system) return [];
       const typeRect = typeNode.getBoundingClientRect();
       const visualRect = visualNode.getBoundingClientRect();
       return [{
-        id,
+        id: typeId,
         x1: typeRect.right - boardRect.left,
         y1: typeRect.top + typeRect.height / 2 - boardRect.top,
         x2: visualRect.left - boardRect.left,
         y2: visualRect.top + visualRect.height / 2 - boardRect.top,
         color: system.color,
+        status: evaluated ? typeId === visualId ? "correct" as const : "wrong" as const : "pending" as const,
       }];
     });
     setLines(nextLines);
-  }, [matches]);
+  }, [evaluated, matches]);
 
   useLayoutEffect(() => {
     const frame = window.requestAnimationFrame(updateLines);
@@ -113,134 +100,128 @@ export function Module4CompleteSystem({ onSubmit, existingSubmission }: Learning
   }, [onSubmit]);
 
   function selectType(id: string) {
-    if (busy || completed || matches[id]) return;
-    setSelectedType(id);
-    setFeedback(null);
+    if (evaluated) return;
+    setSelectedType((current) => current === id ? null : id);
+    setFeedback("");
   }
 
-  const selectVisual = useCallback(async (visualId: string) => {
-    if (interactionLocked.current || busy || completed || matches[visualId]) return;
+  function assignVisual(visualId: string) {
+    if (evaluated) return;
     if (!selectedType) {
-      setWrongVisual(visualId);
-      setFeedback({ correct: false, text: "Önce soldan bir sistem türü seç, ardından onu temsil eden görsele dokun." });
-      window.setTimeout(() => setWrongVisual(null), 560);
+      setFeedback("Önce soldan bir sistem türü seçmelisin.");
       return;
     }
-
-    interactionLocked.current = true;
-    if (visualId !== selectedType) {
-      setBusy(true);
-      setMistakeTypes((current) => new Set(current).add(selectedType));
-      setWrongVisual(visualId);
-      setFeedback({ correct: false, text: "Bu görsel seçtiğin sistem türünü temsil etmiyor. Doğru eşleşme gösterilmedi; yeniden deneyebilirsin." });
-      await delay(650);
-      setWrongVisual(null);
-      setBusy(false);
-      interactionLocked.current = false;
-      return;
-    }
-
-    const system = systemTypes.find((item) => item.id === selectedType)!;
-    const answer: MatchAnswer = { systemId: selectedType, visualId, firstAttemptCorrect: !mistakeTypes.has(selectedType) };
-    const nextAnswers = [...answers, answer];
-    const nextMatches = { ...matches, [selectedType]: visualId };
-    setAnswers(nextAnswers);
-    setMatches(nextMatches);
-    setLastMatch(system);
-    setFeedback({ correct: true, text: `${system.name} ile “${system.visual}” doğru eşleşti.` });
+    setMatches((current) => {
+      const next = { ...current };
+      for (const [typeId, assignedVisual] of Object.entries(next)) {
+        if (assignedVisual === visualId && typeId !== selectedType) delete next[typeId];
+      }
+      next[selectedType] = visualId;
+      return next;
+    });
     setSelectedType(null);
+    setFeedback("Bağlantı kuruldu. Kontrol etmeden önce istediğin eşleşmeyi değiştirebilirsin.");
+  }
 
-    if (Object.keys(nextMatches).length === systemTypes.length) {
-      const firstTryCount = nextAnswers.filter((item) => item.firstAttemptCorrect).length;
-      const submission: ModuleSubmission = {
-        score: Math.round(firstTryCount * pointsPerMatch),
-        payload: {
-          mode: "system-type-visual-matching",
-          answers: nextAnswers,
-          firstTryCorrectCount: firstTryCount,
-          matchCount: systemTypes.length,
-          pointsPerMatch,
-        },
-      };
-      setBusy(true);
-      await delay(620);
-      setFinalSubmission(submission);
-      setCompleted(true);
-      setBusy(false);
-      await submitResult(submission);
-      return;
-    }
+  async function evaluate() {
+    if (evaluated || Object.keys(matches).length !== systemTypes.length) return;
+    const totalCorrect = systemTypes.filter((system) => matches[system.id] === system.id).length;
+    const submission: ModuleSubmission = {
+      score: Math.round(totalCorrect * pointsPerMatch),
+      payload: {
+        mode: "system-type-visual-batch-matching",
+        matches,
+        correctCount: totalCorrect,
+        matchCount: systemTypes.length,
+        pointsPerMatch,
+      },
+    };
+    setCorrectCount(totalCorrect);
+    setFinalSubmission(submission);
+    setEvaluated(true);
+    await submitResult(submission);
+  }
 
-    interactionLocked.current = false;
-  }, [answers, busy, completed, matches, mistakeTypes, selectedType, submitResult]);
-
-  if (existingSubmission) {
+  if (existingSubmission && !evaluated) {
     return <section className="panel module-shell matching-module-shell">
       <div className="module-title-chip">Modül 4: Sistem Türleri</div>
       <div className="module-complete-card"><LockKeyhole size={42} /><h2>Bu modül tamamlandı</h2><p>Yanıtın kilitlendi. Öğretmen sonuçları açıklayana kadar bekleyin.</p></div>
     </section>;
   }
 
+  const wrongSystems = evaluated ? systemTypes.filter((system) => matches[system.id] !== system.id) : [];
+
   return <section className="panel module-shell matching-module-shell">
     <div className="module-topline matching-topline">
-      <div><div className="module-title-chip">Modül 4: Sistem Türleri ve Görsel Eşleştirme</div><p>Önce sistem türünü, sonra onu temsil eden görsel kartı seç.</p></div>
+      <div><div className="module-title-chip">Modül 4: Sistem Türleri ve Görsel Eşleştirme</div><p>Önce soldaki türü, sonra sağdaki yazısız illüstrasyonu seç. Kontrol etmeden önce bağlantıları değiştirebilirsin.</p></div>
       <strong>{Object.keys(matches).length} / {systemTypes.length} Eşleşme</strong>
     </div>
 
-    <div className="matching-instruction"><MousePointer2 size={19} /><span><b>1.</b> Soldan türü seç</span><span><b>2.</b> Sağdan görsele dokun</span></div>
+    <div className="matching-instruction"><MousePointer2 size={19} /><span><b>1.</b> Türü seç</span><span><b>2.</b> Görsele dokun</span><span><b>3.</b> Toplu kontrol et</span></div>
 
-    <div className="matching-board" ref={boardRef}>
+    <div className="matching-board visual-only-board" ref={boardRef}>
       <svg className="matching-lines" aria-hidden="true">
-        {lines.map((line) => <g key={line.id}><path d={`M ${line.x1} ${line.y1} C ${line.x1 + 28} ${line.y1}, ${line.x2 - 28} ${line.y2}, ${line.x2} ${line.y2}`} stroke={line.color} /><circle cx={line.x1} cy={line.y1} r="4" fill={line.color} /><circle cx={line.x2} cy={line.y2} r="4" fill={line.color} /></g>)}
+        {lines.map((line) => {
+          const stroke = line.status === "correct" ? "#10b981" : line.status === "wrong" ? "#f43f5e" : line.color;
+          const middleX = (line.x1 + line.x2) / 2;
+          const middleY = (line.y1 + line.y2) / 2;
+          return <g key={line.id} className={`match-line-${line.status}`}>
+            <path d={`M ${line.x1} ${line.y1} C ${line.x1 + 28} ${line.y1}, ${line.x2 - 28} ${line.y2}, ${line.x2} ${line.y2}`} stroke={stroke} />
+            <circle cx={line.x1} cy={line.y1} r="4" fill={stroke} /><circle cx={line.x2} cy={line.y2} r="4" fill={stroke} />
+            {line.status !== "pending" && <g transform={`translate(${middleX} ${middleY})`}><circle r="11" fill={stroke} /><text textAnchor="middle" dominantBaseline="central">{line.status === "correct" ? "✓" : "×"}</text></g>}
+          </g>;
+        })}
       </svg>
 
       <div className="system-type-list">
         <h2>Sistem Türleri</h2>
         {systemTypes.map((system, index) => {
-          const matched = Boolean(matches[system.id]);
-          return <button
-            type="button"
-            key={system.id}
-            ref={(node) => { typeRefs.current[system.id] = node; }}
-            className={`${selectedType === system.id ? "selected" : ""} ${matched ? "matched" : ""}`}
-            disabled={busy || matched}
-            onClick={() => selectType(system.id)}
-          ><span>{index + 1}</span><strong>{system.name}</strong>{matched && <Check size={18} />}</button>;
+          const assigned = matches[system.id];
+          const status = evaluated ? assigned === system.id ? "correct" : "wrong" : "";
+          return <div className={`system-type-entry ${status}`} key={system.id}>
+            <button
+              type="button"
+              ref={(node) => { typeRefs.current[system.id] = node; }}
+              className={`${selectedType === system.id ? "selected" : ""} ${assigned ? "assigned" : ""} ${status}`}
+              disabled={evaluated}
+              onClick={() => selectType(system.id)}
+            ><span>{index + 1}</span><strong>{system.name}</strong>{assigned && !evaluated && <i aria-hidden="true"><Unlink size={15} /></i>}{status === "correct" && <Check size={18} />}{status === "wrong" && <X size={18} />}</button>
+            {status === "wrong" && <div className="type-result-explanation"><strong>Doğru görsel:</strong> {system.visual}. {system.description}</div>}
+          </div>;
         })}
       </div>
 
       <div className="matching-track" aria-hidden="true"><span>BAĞLA</span></div>
 
-      <div className="system-visual-list">
-        <h2>Temsili Görseller</h2>
+      <div className="system-visual-list visual-only-list">
+        <h2>Görseller</h2>
         {visualCards.map((system) => {
-          const matched = Boolean(matches[system.id]);
+          const assignedType = Object.entries(matches).find(([, visualId]) => visualId === system.id)?.[0];
+          const status = evaluated && assignedType ? assignedType === system.id ? "correct" : "wrong" : "";
           return <button
             type="button"
             key={system.id}
             ref={(node) => { visualRefs.current[system.id] = node; }}
-            className={`${wrongVisual === system.id ? "wrong" : ""} ${matched ? "matched" : ""}`}
-            disabled={busy || matched}
-            onClick={() => void selectVisual(system.id)}
+            className={`${assignedType ? "assigned" : ""} ${status}`}
+            disabled={evaluated}
+            onClick={() => assignVisual(system.id)}
             aria-label={system.visual}
-          ><span className="visual-illustration" aria-hidden="true">{system.icon}</span><span><ImageIcon size={14} /><strong>{system.visual}</strong></span>{matched && <i><Check size={17} /></i>}</button>;
+          ><SystemTypeIllustration type={system.id} />{assignedType && !evaluated && <i aria-hidden="true">●</i>}{status === "correct" && <i><Check size={17} /></i>}{status === "wrong" && <i><X size={17} /></i>}</button>;
         })}
       </div>
     </div>
 
-    <div className="matching-feedback-space" aria-live="assertive">
-      {feedback && <div className={`matching-feedback ${feedback.correct ? "correct" : "wrong"}`}>{feedback.correct ? <Check size={20} /> : <X size={20} />}<span>{feedback.text}</span></div>}
-      {lastMatch && feedback?.correct && <div className="match-explanation"><Sparkles size={19} /><p><strong>Neden?</strong> {lastMatch.description}</p></div>}
-    </div>
+    {feedback && !evaluated && <div className="matching-feedback neutral" aria-live="polite">{feedback}</div>}
+    <div className="button-row matching-actions"><Button disabled={evaluated || Object.keys(matches).length !== systemTypes.length} loading={submitting} icon={<Check size={18} />} onClick={() => void evaluate()}>Eşleştirmeleri Kontrol Et</Button></div>
+    {!evaluated && Object.keys(matches).length !== systemTypes.length && <p className="score-privacy-note">Kontrol için 10 bağlantıyı da tamamla. Her doğru eşleşme 10 puandır.</p>}
 
-    <p className="score-privacy-note">Her eşleşme 10 puan değerindedir. Puanlar sonuçlar açıklanana kadar gizli tutulur.</p>
-
-    {completed && <div className="modal-backdrop matching-result-backdrop" role="presentation">
+    {evaluated && <div className="modal-backdrop matching-result-backdrop" role="presentation">
       <div className="modal matching-result-modal" role="dialog" aria-modal="true" aria-labelledby="matching-result-title">
-        <span className="matching-result-icon"><Check size={42} /></span>
-        <span className="eyebrow">10 / 10 Eşleşme</span>
-        <h2 id="matching-result-title">Tüm sistem türlerini eşleştirdin!</h2>
-        <p>Yanıtların kilitlendi. Puanın, öğretmen sonuçları açtığında görünecek.</p>
+        <span className="matching-result-icon"><Sparkles size={39} /></span>
+        <span className="eyebrow">10 / 10 Eşleşme Kontrol Edildi</span>
+        <h2 id="matching-result-title">Eşleştirmelerin kaydedildi</h2>
+        <p>{correctCount} doğru eşleşme yaptın. Puanın, öğretmen sonuçları açtığında görünecek.</p>
+        {wrongSystems.length > 0 && <div className="matching-modal-explanations">{wrongSystems.map((system) => <div key={system.id}><strong>{system.name}</strong><span>Doğru görsel: {system.visual}</span><p>{system.description}</p></div>)}</div>}
         {submitting && <div className="notice">Yanıt kaydediliyor…</div>}
         {submitFailed && finalSubmission && <><div className="notice error">Yanıt kaydedilemedi. Eşleşmelerin korundu.</div><Button loading={submitting} icon={<RotateCcw size={17} />} onClick={() => void submitResult(finalSubmission)}>Kaydı tekrar dene</Button></>}
       </div>

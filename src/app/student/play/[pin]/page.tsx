@@ -10,6 +10,7 @@ import { Module1SystemBuild } from "@/components/modules/Module1_SystemBuild";
 import { Module2Relations } from "@/components/modules/Module2_Relations";
 import { Module3Boundary } from "@/components/modules/Module3_Boundary";
 import { Module4CompleteSystem } from "@/components/modules/Module4_CompleteSystem";
+import { Module5RelationBalloons } from "@/components/modules/Module5_RelationBalloons";
 import { getSessionByPin, saveSubmission } from "@/lib/session";
 import { supabase } from "@/lib/supabase";
 import type { ModuleId, ModuleSubmission, Session, Student, StudentProfile, Submission } from "@/types";
@@ -30,6 +31,7 @@ export default function StudentPlayPage() {
   const [error, setError] = useState("");
   const [countdown, setCountdown] = useState<string | null>(null);
   const [readyModuleKey, setReadyModuleKey] = useState("");
+  const [locallyCompletedModuleKey, setLocallyCompletedModuleKey] = useState("");
   const celebratedModuleKey = useRef("");
 
   const load = useCallback(async () => {
@@ -136,6 +138,7 @@ export default function StudentPlayPage() {
     try {
       const saved = await saveSubmission({ sessionId: session.id, studentId: student.id, studentNumber: student.student_number, weekId: session.selected_week, moduleId, stage: submission.stage || 1, payload: submission.payload, score: submission.score });
       setSubmissions((current) => [...current.filter((item) => item.id !== saved.submission.id), saved.submission]);
+      setLocallyCompletedModuleKey(`${session.selected_week}:${moduleId}`);
       setMessage(saved.wasNew ? "Yanıtınız güvenle kaydedildi." : "Bu modül için yanıt hakkını daha önce kullandın.");
       if (saved.wasNew) {
         setStudent((current) => current ? { ...current, session_score: current.session_score + submission.score, score: current.session_score + submission.score } : current);
@@ -184,7 +187,7 @@ export default function StudentPlayPage() {
     </section>
   </main></>;
 
-  if (activeSubmission) return <>{studentNav}<main className="container page student-submission-wait-page">
+  if (activeSubmission && locallyCompletedModuleKey !== `${session.selected_week}:${session.current_module}`) return <>{studentNav}<main className="container page student-submission-wait-page">
     <section className="student-submission-wait panel">
       <span className="submission-check" aria-hidden="true">✓</span>
       <span className="eyebrow">Yanıt Alındı</span>
@@ -203,8 +206,9 @@ export default function StudentPlayPage() {
   const modules = {
     1: <Module1SystemBuild existingSubmission={activeSubmission} onSubmit={(submission) => submit(1, submission)} />,
     2: <Module2Relations existingSubmission={activeSubmission} onSubmit={(submission) => submit(2, submission)} />,
-    3: <Module3Boundary existingSubmission={activeSubmission} onSubmit={(submission) => submit(3, submission)} />,
+    3: <Module3Boundary existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onSubmit={(submission) => submit(3, submission)} />,
     4: <Module4CompleteSystem existingSubmission={activeSubmission} onSubmit={(submission) => submit(4, submission)} />,
+    5: <Module5RelationBalloons existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onSubmit={(submission) => submit(5, submission)} />,
   };
 
   return <>{studentNav}<main className="container student-module-page stack">

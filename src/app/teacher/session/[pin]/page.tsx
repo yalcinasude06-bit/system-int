@@ -104,9 +104,23 @@ export default function TeacherSessionPage() {
     void patch({ current_module: currentModule, module_stage: 2, is_module_started: true, fault_injected: false });
   }
 
-  function finishModule(currentModule: ModuleId) {
+  async function finishModule(currentModule: ModuleId) {
     if (!session || session.current_module !== currentModule || !session.is_module_started) return;
-    void patch({ is_module_started: false, module_stage: 3 });
+    setBusy(true);
+    setError("");
+    try {
+      if (currentModule === 3 || currentModule === 5) {
+        await updateSession(session.id, { module_stage: 4 });
+        setSession((current) => current ? { ...current, module_stage: 4 } : current);
+        await new Promise((resolve) => window.setTimeout(resolve, 2500));
+      }
+      await updateSession(session.id, { is_module_started: false, module_stage: 3 });
+      setSession((current) => current ? { ...current, is_module_started: false, module_stage: 3 } : current);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Modül sonlandırılamadı.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   function leaveTeacherPanel() {
@@ -116,10 +130,23 @@ export default function TeacherSessionPage() {
   }
 
   async function closeSession() {
-    const closed = await patch({ is_active: false, is_module_started: false, module_stage: 3 });
-    if (!closed) return;
-    sessionStorage.removeItem("system-lab:teacher-session");
-    router.push("/teacher");
+    if (!session) return;
+    setBusy(true);
+    setError("");
+    try {
+      if (session.is_module_started && (session.current_module === 3 || session.current_module === 5)) {
+        await updateSession(session.id, { module_stage: 4 });
+        setSession((current) => current ? { ...current, module_stage: 4 } : current);
+        await new Promise((resolve) => window.setTimeout(resolve, 2500));
+      }
+      await updateSession(session.id, { is_active: false, is_module_started: false, module_stage: 3 });
+      sessionStorage.removeItem("system-lab:teacher-session");
+      router.push("/teacher");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Oturum kapatılamadı.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   if (authStatus === "checking" || loading) return <><Navbar /><main className="container page"><div className="empty">Canlı oturum yükleniyor…</div></main></>;
@@ -149,7 +176,7 @@ export default function TeacherSessionPage() {
             isModuleStarted={session.is_module_started}
             disabled={busy}
             onStart={startModule}
-            onFinish={finishModule}
+            onFinish={(module) => void finishModule(module)}
           />
         </section>
 

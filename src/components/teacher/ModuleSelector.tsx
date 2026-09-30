@@ -1,4 +1,4 @@
-import { Boxes, CheckCircle2, Network, Play, ScanSearch, Shapes, Square } from "lucide-react";
+import { Boxes, CheckCircle2, Network, Play, ScanSearch, Shapes, Square, Target } from "lucide-react";
 import type { ComponentType } from "react";
 import type { ModuleId } from "@/types";
 
@@ -15,6 +15,7 @@ export const weekOneModules: Array<{
   { id: 2, title: "İlişki Ağını Çalıştır", subtitle: "10 kartlık nedensellik zinciri", description: "Değişimlerin sistem boyunca hangi yönde ilerlediğini kaydırarak belirle.", Icon: Network },
   { id: 3, title: "Kara Kutuyu Aç", subtitle: "Süreç analizi", description: "Girdi ve çıktıyı bağlayan dönüşüm sürecini on farklı sistemde keşfet.", Icon: ScanSearch },
   { id: 4, title: "Sistem Türlerini Eşleştir", subtitle: "Görsel sınıflandırma", description: "On sistem türünü onları temsil eden görsellerle eşleştir.", Icon: Shapes },
+  { id: 5, title: "İlişki Balonlarını Patlat", subtitle: "İlişki türleri", description: "Süzülen ifadeleri altı ilişki türünden doğru iğneyle eşleştir.", Icon: Target },
 ];
 
 export function WeekSelector({ activeWeek, onChange, disabled }: { activeWeek: number; onChange: (week: number) => void; disabled?: boolean }) {

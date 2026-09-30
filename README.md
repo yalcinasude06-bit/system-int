@@ -1,6 +1,6 @@
 # Sistem Laboratuvarı
 
-Sistem analizi eğitimini dört etkileşimli modül, canlı sınıf oturumları ve
+Sistem analizi eğitimini beş etkileşimli modül, canlı sınıf oturumları ve
 Supabase Realtime altyapısıyla deneyime dönüştüren Next.js uygulaması.
 
 ## Yerel geliştirme
@@ -27,7 +27,7 @@ npx supabase db push
   production ortamında `TEACHER_USERNAME` ve `TEACHER_PASSWORD` değiştirilmelidir.
 - Öğrenciler PIN, okul numarası ve ad soyad ile katılır. Aynı okul numarasıyla yeniden
   katılım puanı ve ilerlemeyi korur.
-- On dört haftalık menüde Hafta 1 dört canlı modülle aktiftir; diğer haftalar yaklaşan içerik
+- On dört haftalık menüde Hafta 1 beş canlı modülle aktiftir; diğer haftalar yaklaşan içerik
   kartını gösterir.
 - Öğrenciler öğretmen modülü başlatana kadar bekleme ekranında kalır; başlangıçta 3-2-1
   geri sayımı gösterilir. Yanıt gönderildikten sonra puan ve sıralama, öğretmen sonuçları
@@ -44,7 +44,10 @@ npx supabase db push
 - Modül 2, talep artışından kampanya kararına uzanan on adımlı nedensel zinciri sürükleme,
   dokunma veya klavye oklarıyla oynanan tarafsız kart destesi üzerinden öğretir. Her kart 10
   puandır; yanlış seçim akışı kesmeden doğru sistem durumuna ilerler.
-- Modül 3, on farklı girdi-çıktı sistemi için kara kutudaki dönüşüm sürecini üç yakın seçenek
-  arasından buldurur. Yanlış cevap çözümü göstermez; ilk denemede doğru bulunan her süreç 10 puandır.
-- Modül 4, on sistem türünü karışık sıradaki temsili görsel kartlarla iki aşamalı olarak
-  eşleştirir; doğru eşleşmeler bağlantı çizgisi ve pedagojik açıklamayla pekiştirilir.
+- Modül 3, on farklı girdi-çıktı sistemi için 3B kara kutudaki dönüşüm sürecini üç yakın seçenek
+  arasından tek seçimde buldurur. Yanlışta doğru süreç 1,5 saniye gösterilir; öğretmen erken
+  bitirirse o ana kadarki doğru yanıtlar kısmi puan olarak kaydedilir.
+- Modül 4, on sistem türünü metinsiz SVG illüstrasyonlarla serbestçe eşleştirir. Öğrenci
+  bağlantıları değiştirebilir; toplu kontrolde doğru/yanlış çizgiler ve açıklamalar gösterilir.
+- Modül 5, altı ilişki türü ve 36 soruluk havuzdan dengeli seçilen on balonu; zaman, iğne
+  fırlatma, geri sekme ve patlama animasyonlarıyla oynatır.
