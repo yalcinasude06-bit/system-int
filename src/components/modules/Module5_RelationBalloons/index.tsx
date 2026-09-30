@@ -239,6 +239,7 @@ export function Module5RelationBalloons({ onSubmit, existingSubmission, forceSub
 
   const leftPins = categories.filter((category) => category.side === "left");
   const rightPins = categories.filter((category) => category.side === "right");
+  const pinGrid = leftPins.flatMap((category, index) => [category, rightPins[index]]).filter((category): category is RelationCategory => Boolean(category));
   const progress = Math.max(0, Math.min(100, (remaining / secondsPerBalloon) * 100));
 
   return <section className="panel module-shell balloon-module-shell">
@@ -246,8 +247,6 @@ export function Module5RelationBalloons({ onSubmit, existingSubmission, forceSub
     <div className="ten-step-progress">{rounds.map((question, index) => <span key={question.id} className={index < roundIndex ? "done" : index === roundIndex ? "active" : ""} />)}</div>
 
     <div className="balloon-game-layout">
-      <div className="pin-panel left" aria-label="Sol iğneler">{leftPins.map((category) => <button type="button" key={category.id} disabled={inputLocked || phase !== "active"} style={{ "--pin-color": category.color } as React.CSSProperties} onClick={() => void shoot(category.id)}><span>{category.icon}</span><strong>{category.label}</strong><i>➤</i>{cooldown > 0 && <em className="pin-cooldown"><LockKeyhole size={15} />{cooldown}</em>}</button>)}</div>
-
       <div className="balloon-arena">
         <div className="balloon-timer"><Clock3 size={15} /><div><i style={{ width: `${progress}%` }} /></div><strong>{Math.ceil(remaining)} sn</strong></div>
         <motion.div key={current.id} className="balloon-rise" initial={{ y: 230 }} animate={{ y: -430 }} transition={{ duration: secondsPerBalloon, ease: "linear" }}>
@@ -259,7 +258,7 @@ export function Module5RelationBalloons({ onSubmit, existingSubmission, forceSub
         <div className="arena-target"><Target size={18} /> İğneyi seç</div>
       </div>
 
-      <div className="pin-panel right" aria-label="Sağ iğneler">{rightPins.map((category) => <button type="button" key={category.id} disabled={inputLocked || phase !== "active"} style={{ "--pin-color": category.color } as React.CSSProperties} onClick={() => void shoot(category.id)}><i>➤</i><strong>{category.id === "energy" ? <>Enerjinin<br />Korunumu</> : category.label}</strong><span>{category.icon}</span>{cooldown > 0 && <em className="pin-cooldown"><LockKeyhole size={15} />{cooldown}</em>}</button>)}</div>
+      <div className="relation-pin-grid" aria-label="İlişki türü iğneleri">{pinGrid.map((category) => <button type="button" key={category.id} disabled={inputLocked || phase !== "active"} style={{ "--pin-color": category.color } as React.CSSProperties} onClick={() => void shoot(category.id)}><span className="relation-pin-icon">{category.icon}</span><strong className={category.id === "mathematical" ? "compact-label" : ""}>{category.id === "energy" ? <>Enerjinin<br />Korunumu</> : category.label}</strong>{cooldown > 0 && <em className="pin-cooldown"><LockKeyhole size={14} />{cooldown}</em>}</button>)}</div>
     </div>
 
     <div className="balloon-feedback-space" aria-live="assertive">{feedback && <div className={`balloon-feedback ${feedback.correct ? "correct" : "wrong"}`}>{feedback.correct ? <Check size={20} /> : <X size={20} />}<span>{feedback.text}</span></div>}</div>
