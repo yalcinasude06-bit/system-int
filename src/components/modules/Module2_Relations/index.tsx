@@ -10,6 +10,7 @@ type SwipeDirection = "negative" | "positive";
 
 type ChainStep = {
   id: string;
+  triggerIcon: string;
   trigger: string;
   icon: string;
   variable: string;
@@ -33,111 +34,121 @@ type Answer = {
 const chain: ChainStep[] = [
   {
     id: "sales",
+    triggerIcon: "📈",
     trigger: "Talep %20 arttı",
     icon: "📈",
     variable: "Satış Miktarı",
     expected: "positive",
     nextState: "Satış Miktarı arttı",
-    explanation: "Talep artışı satış miktarını artırır (+ Pozitif feedback).",
+    explanation: "Talep arttığında satılan ürün miktarı da artar (+ Pozitif Feedback Etkisi).",
     color: "#dbeafe",
     accent: "#3b82f6",
   },
   {
     id: "inventory",
+    triggerIcon: "📈",
     trigger: "Satış Miktarı arttı",
     icon: "📦",
     variable: "Depo Stok Miktarı",
     expected: "negative",
     nextState: "Depo Stok Miktarı azaldı",
-    explanation: "Satış arttıkça depodaki stok miktarı azalır (− Negatif feedback).",
+    explanation: "Satışlar arttıkça depodaki stok seviyesi azalır (− Negatif Feedback Etkisi).",
     color: "#fef3c7",
     accent: "#f59e0b",
   },
   {
     id: "stock-risk",
+    triggerIcon: "📉",
     trigger: "Depo Stok Miktarı azaldı",
     icon: "⚠️",
     variable: "Stok Tükenme Riski",
-    expected: "positive",
+    expected: "negative",
     nextState: "Stok Tükenme Riski arttı",
-    explanation: "Depo stoğunun azalması stok tükenme riskini artırır (+ Pozitif feedback).",
+    explanation: "Stok miktarı azaldıkça ürünün tükenme riski ters orantılı olarak artar (− Negatif Feedback Etkisi).",
     color: "#ede9fe",
     accent: "#8b5cf6",
   },
   {
     id: "satisfaction",
+    triggerIcon: "📈",
     trigger: "Stok Tükenme Riski arttı",
     icon: "🙂",
     variable: "Müşteri Memnuniyeti",
     expected: "negative",
     nextState: "Müşteri Memnuniyeti azaldı",
-    explanation: "Stok tükenme riskinin yükselmesi müşteri memnuniyetini azaltır (− Negatif feedback).",
+    explanation: "Stok tükenme riski ve gecikmeler arttıkça müşteri memnuniyeti düşer (− Negatif Feedback Etkisi).",
     color: "#e0f2fe",
     accent: "#38bdf8",
   },
   {
     id: "complaints",
+    triggerIcon: "📉",
     trigger: "Müşteri Memnuniyeti azaldı",
     icon: "📣",
     variable: "Müşteri Şikâyet Sayısı",
-    expected: "positive",
+    expected: "negative",
     nextState: "Müşteri Şikâyet Sayısı arttı",
-    explanation: "Memnuniyet azaldığında müşteri şikâyetlerinin sayısı artar (+ Pozitif feedback).",
+    explanation: "Müşteri memnuniyeti azaldıkça şikâyet sayısı ters orantılı olarak yükselir (− Negatif Feedback Etkisi).",
     color: "#fce7f3",
     accent: "#f472b6",
   },
   {
     id: "loyalty",
-    trigger: "Müşteri Şikâyetleri arttı",
+    triggerIcon: "📈",
+    trigger: "Müşteri Şikâyet Sayısı arttı",
     icon: "🤝",
     variable: "Marka Sadakati",
     expected: "negative",
     nextState: "Marka Sadakati azaldı",
-    explanation: "Şikâyetlerin artması müşterilerin marka sadakatini azaltır (− Negatif feedback).",
+    explanation: "Şikâyetler arttıkça müşterilerin markaya olan sadakati azalır (− Negatif Feedback Etkisi).",
     color: "#fef3c7",
     accent: "#f59e0b",
   },
   {
     id: "churn",
+    triggerIcon: "📉",
     trigger: "Marka Sadakati azaldı",
     icon: "🚪",
     variable: "Müşteri Kayıp Oranı (Churn)",
-    expected: "positive",
-    nextState: "Müşteri Kayıp Oranı arttı",
-    explanation: "Marka sadakati azaldığında müşteri kayıp oranı yükselir (+ Pozitif feedback).",
+    expected: "negative",
+    nextState: "Müşteri Kayıp Oranı (Churn) arttı",
+    explanation: "Marka sadakati düştükçe müşterilerin rakibe geçiş oranı artar (− Negatif Feedback Etkisi).",
     color: "#e2e8f0",
     accent: "#64748b",
   },
   {
     id: "revenue",
-    trigger: "Müşteri Kaybı arttı",
+    triggerIcon: "📈",
+    trigger: "Müşteri Kayıp Oranı (Churn) arttı",
     icon: "💰",
     variable: "Toplam Şirket Geliri",
     expected: "negative",
     nextState: "Toplam Şirket Geliri azaldı",
-    explanation: "Müşteri kaybı arttıkça şirketin toplam geliri azalır (− Negatif feedback).",
+    explanation: "Müşteri kaybı arttıkça şirketin toplam geliri azalır (− Negatif Feedback Etkisi).",
     color: "#f1f5f9",
     accent: "#94a3b8",
   },
   {
     id: "improvement-budget",
-    trigger: "Toplam Gelir azaldı",
+    triggerIcon: "📉",
+    trigger: "Toplam Şirket Geliri azaldı",
     icon: "🛠️",
     variable: "Geliştirme & İyileştirme Bütçesi",
     expected: "positive",
     nextState: "Geliştirme & İyileştirme Bütçesi azaldı",
-    explanation: "Toplam gelir ile geliştirme bütçesi aynı yönde değişir (+ Pozitif feedback).",
+    explanation: "Şirket geliri azaldıkça Ar-Ge ve kalite iyileştirme bütçesi de doğru orantılı olarak daralır (+ Pozitif Feedback Etkisi).",
     color: "#ede9fe",
     accent: "#8b5cf6",
   },
   {
     id: "system-errors",
-    trigger: "Geliştirme Bütçesi azaldı",
+    triggerIcon: "📉",
+    trigger: "Geliştirme & İyileştirme Bütçesi azaldı",
     icon: "🚨",
     variable: "Sistemik Hata Oranı",
     expected: "negative",
     nextState: "Sistemik Hata Oranı arttı",
-    explanation: "Geliştirme bütçesi azaldığında sistemik hata oranı yükselir (− Negatif feedback).",
+    explanation: "İyileştirme bütçesi azaldıkça süreçlerdeki sistemik hata oranı ters orantılı olarak artar (− Negatif Feedback Etkisi).",
     color: "#f1f5f9",
     accent: "#64748b",
   },
@@ -195,7 +206,7 @@ export function Module2Relations({ onSubmit, existingSubmission }: LearningModul
     setDirection(selected);
     setFeedback({
       correct: isCorrect,
-      text: isCorrect ? `Doğru! ${current.nextState}. Zincir doğru yönde ilerliyor.` : `Yanlış! ${current.explanation}`,
+      text: isCorrect ? `Doğru! ${current.explanation}` : `Yanlış! ${current.explanation}`,
     });
 
     if (!isCorrect) {
@@ -216,6 +227,12 @@ export function Module2Relations({ onSubmit, existingSubmission }: LearningModul
           cardCount: chain.length,
           pointsPerCard,
           finalState: current.nextState,
+          loopClosure: {
+            from: "Sistemik Hata Oranı",
+            to: "Müşteri Memnuniyeti",
+            effect: "negative",
+            explanation: "Sistemik hata oranı arttığında müşteri deneyimi kötüleşir ve müşteri memnuniyeti azalır (− Negatif Feedback Etkisi).",
+          },
         },
       };
       setAnswers(nextAnswers);
@@ -250,16 +267,23 @@ export function Module2Relations({ onSubmit, existingSubmission }: LearningModul
   }, [choose]);
 
   if (existingSubmission) {
-    return <section className="panel module-shell swipe-module-shell"><div className="module-title-chip">Modül 2: Zincirleme Geri Bildirim</div><div className="swipe-complete-card"><LockKeyhole size={42} /><h2>Bu modül tamamlandı</h2><p>Yanıtın kilitlendi. Öğretmen sonuçları açıklayana kadar bekleyin.</p></div></section>;
+    return <section className="panel module-shell swipe-module-shell"><div className="module-title-chip">Modül 2: Sistem Dinamiği Geri Bildirim Döngüsü</div><div className="swipe-complete-card"><LockKeyhole size={42} /><h2>Bu modül tamamlandı</h2><p>Yanıtın kilitlendi. Öğretmen sonuçları açıklayana kadar bekleyin.</p></div></section>;
   }
 
   if (completed) {
     return <section className="panel module-shell swipe-module-shell">
-      <div className="module-title-chip">Modül 2: Zincirleme Geri Bildirim</div>
-      <div className="swipe-complete-card">
+      <div className="module-title-chip">Modül 2: Sistem Dinamiği Geri Bildirim Döngüsü</div>
+      <div className="swipe-complete-card feedback-loop-success">
         <Sparkles size={42} />
-        <h2>Tüm kartlar tamamlandı</h2>
-        <p>Yanıtların kilitleniyor. Öğretmen sonuçları açıklayana kadar puanın gizli kalacak.</p>
+        <div className="feedback-loop-visual" role="img" aria-label="Sistemik Hata Oranı, negatif feedback etkisiyle Müşteri Memnuniyetine geri bağlanır">
+          <strong>Sistemik Hata Oranı</strong>
+          <span className="feedback-loop-arrow"><RotateCcw size={34} /></span>
+          <strong>Müşteri Memnuniyeti</strong>
+          <small>Negatif (−) Feedback Etkisi</small>
+        </div>
+        <h2>🎉 Tebrikler! Sistemik bir Geri Bildirim Döngüsünü (Feedback Loop) başarıyla tamamladınız!</h2>
+        <p>Sistemik hata oranı arttığında müşteri deneyimi kötüleşir ve müşteri memnuniyeti azalır (− Negatif Feedback Etkisi).</p>
+        <p className="submission-privacy-note">Yanıtların kilitleniyor. Öğretmen sonuçları açıklayana kadar puanın gizli kalacak.</p>
         {submitting && <div className="notice">Yanıt kaydediliyor…</div>}
         {submitFailed && finalSubmission && <><div className="notice error">Yanıt kaydedilemedi. Seçimlerin korundu.</div><Button loading={submitting} icon={<RotateCcw size={17} />} onClick={() => void submitResult(finalSubmission)}>Kaydı tekrar dene</Button></>}
       </div>
@@ -274,7 +298,7 @@ export function Module2Relations({ onSubmit, existingSubmission }: LearningModul
 
   return <section className="panel module-shell swipe-module-shell">
     <div className="swipe-topline">
-      <div className="module-title-chip">Modül 2: Zincirleme Geri Bildirim</div>
+      <div className="module-title-chip">Modül 2: Sistem Dinamiği Geri Bildirim Döngüsü</div>
       <strong>{stepIndex + 1} / {chain.length} Kart</strong>
     </div>
 
@@ -282,11 +306,11 @@ export function Module2Relations({ onSubmit, existingSubmission }: LearningModul
       {chain.map((step, index) => <span key={step.id} className={index < stepIndex ? "done" : index === stepIndex ? "active" : ""} />)}
     </div>
 
-    <div className="event-ribbon"><span>📊</span><div><small>MEVCUT DURUM</small><strong>{current.trigger}</strong></div></div>
+    <div className="event-ribbon"><span>{current.triggerIcon}</span><div><small>MEVCUT DURUM</small><strong>{current.trigger}</strong></div></div>
 
     <div className="swipe-stage">
-      <button type="button" className="swipe-zone negative" disabled={busy} onClick={() => void choose("negative")} aria-label="Negatif feedback seç">
-        <span><ArrowLeft size={35} /></span><strong>Negatif feedback</strong><small>Sola kaydır veya tıkla</small>
+      <button type="button" className="swipe-zone negative" disabled={busy} onClick={() => void choose("negative")} aria-label="Negatif eksi Feedback Etkisini seç">
+        <span><ArrowLeft size={35} /></span><strong>Negatif (−) Feedback Etkisi</strong><small>Sola kaydır veya tıkla</small>
       </button>
 
       <div className="swipe-deck">
@@ -329,8 +353,8 @@ export function Module2Relations({ onSubmit, existingSubmission }: LearningModul
         </AnimatePresence>
       </div>
 
-      <button type="button" className="swipe-zone positive" disabled={busy} onClick={() => void choose("positive")} aria-label="Pozitif feedback seç">
-        <span><ArrowRight size={35} /></span><strong>Pozitif feedback</strong><small>Sağa kaydır veya tıkla</small>
+      <button type="button" className="swipe-zone positive" disabled={busy} onClick={() => void choose("positive")} aria-label="Pozitif artı Feedback Etkisini seç">
+        <span><ArrowRight size={35} /></span><strong>Pozitif (+) Feedback Etkisi</strong><small>Sağa kaydır veya tıkla</small>
       </button>
     </div>
 
