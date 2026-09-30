@@ -259,7 +259,7 @@ export function Module5RelationBalloons({ onSubmit, existingSubmission, forceSub
         <div className="arena-target"><Target size={18} /> İğneyi seç</div>
       </div>
 
-      <div className="pin-panel right" aria-label="Sağ iğneler">{rightPins.map((category) => <button type="button" key={category.id} disabled={inputLocked || phase !== "active"} style={{ "--pin-color": category.color } as React.CSSProperties} onClick={() => void shoot(category.id)}><i>➤</i><strong>{category.label}</strong><span>{category.icon}</span>{cooldown > 0 && <em className="pin-cooldown"><LockKeyhole size={15} />{cooldown}</em>}</button>)}</div>
+      <div className="pin-panel right" aria-label="Sağ iğneler">{rightPins.map((category) => <button type="button" key={category.id} disabled={inputLocked || phase !== "active"} style={{ "--pin-color": category.color } as React.CSSProperties} onClick={() => void shoot(category.id)}><i>➤</i><strong>{category.id === "energy" ? <>Enerjinin<br />Korunumu</> : category.label}</strong><span>{category.icon}</span>{cooldown > 0 && <em className="pin-cooldown"><LockKeyhole size={15} />{cooldown}</em>}</button>)}</div>
     </div>
 
     <div className="balloon-feedback-space" aria-live="assertive">{feedback && <div className={`balloon-feedback ${feedback.correct ? "correct" : "wrong"}`}>{feedback.correct ? <Check size={20} /> : <X size={20} />}<span>{feedback.text}</span></div>}</div>

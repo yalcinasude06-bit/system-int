@@ -183,7 +183,7 @@ export function ConceptualStage({ onComplete, initialSubmission }: {
 
   return <div className="module-shell">
     <div
-      className={`card-tray anatomy-card-tray ${dragOver === "pool" ? "drag-over" : ""}`}
+      className={`card-tray anatomy-card-tray ${available.length ? "" : "is-empty"} ${dragOver === "pool" ? "drag-over" : ""}`}
       aria-label="Bekleyen kavram kartları"
       onDragEnter={(event) => { if (!locked) { event.preventDefault(); setDragOver("pool"); } }}
       onDragOver={(event) => { if (!locked) event.preventDefault(); }}
@@ -192,7 +192,7 @@ export function ConceptualStage({ onComplete, initialSubmission }: {
       onClick={() => { if (selected) returnToPool(selected); }}
     >
       {available.map((card) => <button draggable={!locked} key={card} type="button" className={`drag-card ${selected === card ? "selected" : ""}`} onDragStart={(event) => event.dataTransfer.setData("text/plain", card)} onClick={(event) => { event.stopPropagation(); if (!locked) setSelected(card); }}>{card}</button>)}
-      {!available.length && !locked && <span className="muted">Tüm kartlar şemada · geri almak için kartı buraya sürükle.</span>}
+      {!available.length && !locked && <span className="anatomy-tray-empty">Tüm kartlar şemada · Geri almak için buraya bırak.</span>}
       {locked && <span className="locked-badge"><LockKeyhole size={14} /> Gönderildi · puan gizli</span>}
     </div>
 
