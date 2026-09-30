@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
-import { Clock3, Medal, Radio, Sparkles, Trophy } from "lucide-react";
+import { Medal, Radio, Sparkles, Trophy } from "lucide-react";
 import { Navbar } from "@/components/common/Navbar";
 import { Button } from "@/components/common/Button";
+import { ModuleStartCountdown } from "@/components/common/ModuleStartCountdown";
 import { Module1SystemBuild } from "@/components/modules/Module1_SystemBuild";
 import { Module2Relations } from "@/components/modules/Module2_Relations";
 import { Module3Boundary } from "@/components/modules/Module3_Boundary";
@@ -29,7 +30,6 @@ export default function StudentPlayPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [countdown, setCountdown] = useState<string | null>(null);
   const [readyModuleKey, setReadyModuleKey] = useState("");
   const [locallyCompletedModuleKey, setLocallyCompletedModuleKey] = useState("");
   const celebratedModuleKey = useRef("");
@@ -80,7 +80,6 @@ export default function StudentPlayPage() {
   const currentWeek = session?.selected_week;
   const currentModule = session?.current_module;
   const isModuleStarted = session?.is_module_started;
-  const activeSubmissionId = activeSubmission?.id;
   const resultsRevealed = !isModuleStarted && (session?.module_stage ?? 0) >= 3;
 
   const sessionId = session?.id;
@@ -99,26 +98,10 @@ export default function StudentPlayPage() {
   }, [load, sessionId, studentId, studentNumber]);
 
   useEffect(() => {
-    if (!currentWeek || !currentModule) return;
-    const moduleKey = `${currentWeek}:${currentModule}`;
-    if (!isModuleStarted || activeSubmissionId) {
-      const timer = window.setTimeout(() => {
-        setCountdown(null);
-        if (!isModuleStarted) setReadyModuleKey("");
-      }, 0);
-      return () => window.clearTimeout(timer);
-    }
-    if (readyModuleKey === moduleKey) return;
-
-    const timers = [
-      window.setTimeout(() => setCountdown("3"), 0),
-      window.setTimeout(() => setCountdown("2"), 900),
-      window.setTimeout(() => setCountdown("1"), 1800),
-      window.setTimeout(() => setCountdown("Başla!"), 2700),
-      window.setTimeout(() => { setCountdown(null); setReadyModuleKey(moduleKey); }, 3400),
-    ];
-    return () => timers.forEach((timer) => window.clearTimeout(timer));
-  }, [activeSubmissionId, currentModule, currentWeek, isModuleStarted, readyModuleKey]);
+    if (isModuleStarted) return;
+    const timer = window.setTimeout(() => setReadyModuleKey(""), 0);
+    return () => window.clearTimeout(timer);
+  }, [currentModule, currentWeek, isModuleStarted]);
 
   useEffect(() => {
     if (!resultsRevealed || !currentWeek || !currentModule) return;
@@ -201,7 +184,8 @@ export default function StudentPlayPage() {
 
   if (!session.is_module_started) return <>{studentNav}<main className="container page"><section className="student-waiting-card panel"><span className="waiting-illustration">⏳</span><span className="eyebrow">Hafta {session.selected_week} · Modül {session.current_module}</span><h1>Öğretmen modülü başlatmak üzere…</h1><p>Lütfen bekleyin! Etkinlik başladığında ekranınız otomatik olarak açılacak.</p><div className="waiting-pulse"><i /> Canlı bağlantı açık</div></section></main></>;
 
-  if (countdown !== null || readyModuleKey !== `${session.selected_week}:${session.current_module}`) return <>{studentNav}<main className="countdown-screen"><div className="countdown-orbit"><span>{countdown || "3"}</span></div><div><Clock3 size={21} /><strong>Hazır ol!</strong></div></main></>;
+  const activeModuleKey = `${session.selected_week}:${session.current_module}`;
+  if (!activeSubmission && readyModuleKey !== activeModuleKey) return <>{studentNav}<ModuleStartCountdown key={activeModuleKey} moduleId={session.current_module} onComplete={() => setReadyModuleKey(activeModuleKey)} /></>;
 
   const modules = {
     1: <Module1SystemBuild existingSubmission={activeSubmission} onSubmit={(submission) => submit(1, submission)} />,

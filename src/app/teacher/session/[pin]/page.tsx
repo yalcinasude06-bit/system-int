@@ -6,6 +6,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { Copy, Expand, LogOut, Power, Radio, Trophy, Users } from "lucide-react";
 import { Navbar } from "@/components/common/Navbar";
 import { Button } from "@/components/common/Button";
+import { ModuleStartCountdown } from "@/components/common/ModuleStartCountdown";
 import { QRModal } from "@/components/common/QRModal";
 import { ModuleSelector, WeekSelector } from "@/components/teacher/ModuleSelector";
 import { Leaderboard } from "@/components/teacher/Leaderboard";
@@ -25,6 +26,7 @@ export default function TeacherSessionPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [qrOpen, setQrOpen] = useState(false);
+  const [briefingModule, setBriefingModule] = useState<ModuleId | null>(null);
   const [joinUrl, setJoinUrl] = useState(`/student?pin=${pin}`);
 
   useEffect(() => {
@@ -99,9 +101,10 @@ export default function TeacherSessionPage() {
     void patch({ selected_week: selectedWeek, current_module: 1, module_stage: 1, is_module_started: false, fault_injected: false });
   }
 
-  function startModule(currentModule: ModuleId) {
+  async function startModule(currentModule: ModuleId) {
     if (session?.selected_week !== 1) return;
-    void patch({ current_module: currentModule, module_stage: 2, is_module_started: true, fault_injected: false });
+    const started = await patch({ current_module: currentModule, module_stage: 2, is_module_started: true, fault_injected: false });
+    if (started) setBriefingModule(currentModule);
   }
 
   async function finishModule(currentModule: ModuleId) {
@@ -175,7 +178,7 @@ export default function TeacherSessionPage() {
             moduleStage={session.module_stage}
             isModuleStarted={session.is_module_started}
             disabled={busy}
-            onStart={startModule}
+            onStart={(module) => void startModule(module)}
             onFinish={(module) => void finishModule(module)}
           />
         </section>
@@ -195,5 +198,6 @@ export default function TeacherSessionPage() {
       </div>
     </div>
     <QRModal open={qrOpen} onClose={() => setQrOpen(false)} url={joinUrl} pin={pin} />
+    {briefingModule && <ModuleStartCountdown key={briefingModule} moduleId={briefingModule} onComplete={() => setBriefingModule(null)} />}
   </main>;
 }
