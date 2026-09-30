@@ -23,8 +23,8 @@ npx supabase db push
 - Öğretmen yetkisi yalnızca açık tarayıcı sekmesinde tutulur; sekme kapatıldığında yeniden
   kullanıcı adı ve şifre doğrulaması gerekir.
 - Öğretmen paneli sunucu tarafında doğrulanan kullanıcı adı/şifre ve sekme kapsamlı imzalı
-  oturum ile korunur. Varsayılan geliştirme girişi `admin / sistem2026` olup
-  production ortamında `TEACHER_USERNAME` ve `TEACHER_PASSWORD` değiştirilmelidir.
+  oturum ile korunur. Kimlik bilgileri `TEACHER_USERNAME` ve `TEACHER_PASSWORD` ortam
+  değişkenleriyle tanımlanmalıdır; kaynak kodda varsayılan parola bulunmaz.
 - Öğrenciler PIN, okul numarası ve ad soyad ile katılır. Aynı okul numarasıyla yeniden
   katılım puanı ve ilerlemeyi korur.
 - On dört haftalık menüde Hafta 1 beş canlı modülle aktiftir; diğer haftalar yaklaşan içerik

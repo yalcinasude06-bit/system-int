@@ -89,42 +89,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .visual-core { width: 245px; padding: 26px; border-radius: 32px; text-align: center; position: relative; z-index: 2; }
 .visual-core strong { font-size: 52px; display: block; }
 .visual-core p { color: var(--muted); margin: 8px 0 0; }
-
-.home-welcome { min-height: calc(100vh - 110px); display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); align-items: center; gap: clamp(36px,6vw,78px); padding: 38px 0 64px; }
-.home-welcome-copy { min-width: 0; }
-.home-live-chip { width: fit-content; padding: 8px 13px; color: #4f46e5; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 999px; box-shadow: 0 7px 22px rgba(99,102,241,.1); font-size: 12px; font-weight: 850; letter-spacing: .03em; }
-.home-welcome h1 { max-width: 680px; margin: 17px 0 18px; font-size: clamp(43px,5.9vw,76px); line-height: .98; letter-spacing: -.06em; }
-.home-welcome .lead { max-width: 650px; margin: 0; }
-.home-access-card { margin-top: 27px; padding: 13px; background: rgba(255,255,255,.9); border: 1px solid #e2e8f0; border-radius: 24px; box-shadow: 0 22px 55px rgba(15,23,42,.1); backdrop-filter: blur(18px); }
-.home-role-tabs { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; padding: 5px; background: #f1f5f9; border-radius: 16px; }
-.home-role-tabs button { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 7px 10px; color: #64748b; background: transparent; border: 1px solid transparent; border-radius: 12px; cursor: pointer; font-size: 12px; font-weight: 800; transition: color .18s ease,background .18s ease,border-color .18s ease,box-shadow .18s ease; }
-.home-role-tabs button.active { color: #3730a3; background: #ffffff; border-color: #c7d2fe; box-shadow: 0 6px 18px rgba(99,102,241,.1); }
-.home-access-form { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; padding: 15px 4px 3px; }
-.home-access-form.teacher { grid-template-columns: 1fr; }
-.home-access-form .field { gap: 6px; }
-.home-access-form .field label { font-size: 11px; }
-.home-access-form .input { min-height: 45px; border-radius: 12px; }
-.home-pin-input { font-variant-numeric: tabular-nums; letter-spacing: .12em; font-weight: 850; }
-.home-full-field { grid-column: 1 / -1; }
-.home-access-submit { width: 100%; min-height: 50px; font-size: 14px; }
-.home-live-visual { position: relative; min-height: 590px; display: grid; align-content: center; justify-items: center; gap: 30px; padding: 70px 34px 42px; overflow: hidden; background: radial-gradient(circle at 50% 42%,rgba(224,231,255,.9),transparent 37%),linear-gradient(145deg,#ffffff,#f0fdfa); border: 1px solid #dbeafe; border-radius: 38px; box-shadow: 0 30px 80px rgba(99,102,241,.14); isolation: isolate; }
-.home-live-visual::before, .home-live-visual::after { content: ""; position: absolute; z-index: -1; border-radius: 50%; filter: blur(2px); }
-.home-live-visual::before { top: -90px; right: -70px; width: 270px; height: 270px; background: rgba(196,181,253,.4); }
-.home-live-visual::after { bottom: -105px; left: -80px; width: 300px; height: 300px; background: rgba(167,243,208,.48); }
-.home-live-visual > p { max-width: 440px; margin: 0; color: #64748b; text-align: center; font-size: 14px; font-weight: 650; line-height: 1.6; }
-.home-system-core { position: relative; width: min(100%,500px); min-height: 220px; display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr) auto minmax(0,1fr); align-items: center; gap: 9px; padding: 42px 24px; background: rgba(255,255,255,.8); border: 1px solid rgba(255,255,255,.95); border-radius: 32px; box-shadow: 0 22px 55px rgba(15,23,42,.13),inset 0 1px #ffffff; backdrop-filter: blur(20px); }
-.home-core-orbit { position: absolute; inset: 16px; border: 2px dashed rgba(99,102,241,.23); border-radius: 27px; animation: pulse 4s ease-in-out infinite; }
-.home-flow-node { position: relative; z-index: 2; min-width: 0; min-height: 92px; display: grid; place-content: center; gap: 5px; padding: 12px 8px; text-align: center; border-radius: 20px; box-shadow: 0 10px 27px rgba(15,23,42,.1); }
-.home-flow-node small { font-size: 9px; font-weight: 900; letter-spacing: .13em; }
-.home-flow-node strong { font-size: clamp(17px,2.2vw,23px); }
-.home-flow-node.input { color: #1d4ed8; background: linear-gradient(145deg,#eff6ff,#dbeafe); border: 1px solid #bfdbfe; }
-.home-flow-node.process { color: #5b21b6; background: linear-gradient(145deg,#f5f3ff,#ede9fe); border: 1px solid #ddd6fe; }
-.home-flow-node.output { color: #047857; background: linear-gradient(145deg,#ecfdf5,#d1fae5); border: 1px solid #a7f3d0; }
-.home-flow-arrow { position: relative; z-index: 2; color: #818cf8; }
-.home-float-badge { position: absolute; z-index: 4; padding: 9px 12px; color: #334155; background: rgba(255,255,255,.92); border: 1px solid #e2e8f0; border-radius: 14px; box-shadow: 0 12px 30px rgba(15,23,42,.1); font-size: 12px; font-weight: 800; backdrop-filter: blur(12px); }
-.home-float-badge.feedback { top: 43px; left: 28px; }
-.home-float-badge.anatomy { top: 90px; right: 24px; }
-.home-float-badge.black-box { right: 43px; bottom: 106px; }
+.visual-core-mark { width: 76px; height: 76px; display: grid; place-items: center; margin: 0 auto 16px; color: #4f46e5; background: linear-gradient(145deg,#eef2ff,#d1fae5); border: 1px solid rgba(129,140,248,.28); border-radius: 24px; box-shadow: 0 14px 30px rgba(79,70,229,.14); }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes pulse { 50% { opacity: .48; transform: scale(.96); } }
@@ -832,7 +797,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 
 @media (max-width: 900px) {
-  .hero, .dashboard-grid, .boundary-layout, .home-welcome { grid-template-columns: 1fr; }
+  .hero, .dashboard-grid, .boundary-layout { grid-template-columns: 1fr; }
   .hero { gap: 20px; padding-top: 72px; }
   .hero-visual { min-height: 420px; }
   .module-tabs { grid-template-columns: repeat(2, 1fr); }
@@ -855,8 +820,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .process-flow { grid-template-columns: minmax(120px,1fr) 28px minmax(190px,1.2fr) 28px minmax(120px,1fr); gap: 7px; padding-inline: 14px; }
   .matching-board { grid-template-columns: minmax(0,1fr) 48px minmax(0,1fr); gap: 7px; padding: 12px; }
   .matching-board.visual-only-board { grid-template-columns: minmax(0,1fr) 48px 80px; }
-  .home-welcome { min-height: 0; gap: 32px; padding-top: 42px; }
-  .home-live-visual { min-height: 400px; }
   .balloon-game-layout { grid-template-columns: minmax(300px,1.12fr) minmax(300px,.88fr); gap: 10px; }
 }
 
@@ -981,25 +944,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .visual-only-list > button > .system-type-illustration { height: 100%; aspect-ratio: 1 / 1; border-radius: 8px; }
   .matching-actions { margin-top: 0; }
   .matching-actions .btn { min-height: 40px; padding-block: 8px; }
-  .home-welcome { width: min(100% - 22px,1180px); gap: 24px; padding: 26px 0 50px; }
-  .home-welcome h1 { margin-top: 14px; font-size: clamp(39px,13vw,58px); }
-  .home-live-chip { font-size: 10px; }
-  .home-access-card { margin-top: 21px; padding: 10px; border-radius: 20px; }
-  .home-role-tabs button { min-height: 40px; padding-inline: 6px; font-size: 10px; }
-  .home-access-form { grid-template-columns: 1fr; gap: 10px; padding-top: 12px; }
-  .home-full-field { grid-column: auto; }
-  .home-live-visual { min-height: 290px; gap: 16px; padding: 55px 12px 24px; border-radius: 27px; }
-  .home-live-visual > p { font-size: 11px; line-height: 1.45; }
-  .home-system-core { min-height: 150px; gap: 4px; padding: 31px 11px; border-radius: 24px; }
-  .home-core-orbit { inset: 10px; border-radius: 19px; }
-  .home-flow-node { min-height: 68px; padding: 8px 4px; border-radius: 14px; }
-  .home-flow-node small { font-size: 7px; letter-spacing: .08em; }
-  .home-flow-node strong { font-size: 14px; }
-  .home-flow-arrow { width: 15px; }
-  .home-float-badge { padding: 6px 8px; border-radius: 10px; font-size: 8px; }
-  .home-float-badge.feedback { top: 18px; left: 12px; }
-  .home-float-badge.anatomy { top: 28px; right: 10px; }
-  .home-float-badge.black-box { display: none; }
   .balloon-game-layout { min-height: 0; grid-template-columns: 1fr; grid-template-areas: "arena" "pins"; gap: 10px; }
   .balloon-arena { min-height: 455px; border-radius: 23px; }
   .relation-pin-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; padding: 0 8px; }
