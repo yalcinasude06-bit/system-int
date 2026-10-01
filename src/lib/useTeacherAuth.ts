@@ -3,16 +3,16 @@
 import { useCallback, useEffect, useState } from "react";
 
 type AuthStatus = "checking" | "authenticated" | "unauthenticated";
-const storageKey = "system-lab:teacher-auth";
+export const teacherAuthStorageKey = "system-lab:teacher-auth";
 
 export function useTeacherAuth() {
   const [status, setStatus] = useState<AuthStatus>("checking");
 
   useEffect(() => {
     // Remove credentials written by older releases; teacher access is tab-scoped now.
-    localStorage.removeItem(storageKey);
+    localStorage.removeItem(teacherAuthStorageKey);
     localStorage.removeItem("system-lab:teacher-session");
-    const token = sessionStorage.getItem(storageKey);
+    const token = sessionStorage.getItem(teacherAuthStorageKey);
     if (!token) {
       const timer = window.setTimeout(() => setStatus("unauthenticated"), 0);
       return () => window.clearTimeout(timer);
@@ -20,7 +20,7 @@ export function useTeacherAuth() {
     const controller = new AbortController();
     fetch("/api/teacher/auth", { headers: { Authorization: `Bearer ${token}` }, signal: controller.signal })
       .then((response) => {
-        if (!response.ok) sessionStorage.removeItem(storageKey);
+        if (!response.ok) sessionStorage.removeItem(teacherAuthStorageKey);
         setStatus(response.ok ? "authenticated" : "unauthenticated");
       })
       .catch((error: unknown) => {
@@ -38,12 +38,12 @@ export function useTeacherAuth() {
     });
     const data = await response.json() as { token?: string; error?: string };
     if (!response.ok || !data.token) throw new Error(data.error || "Giriş yapılamadı.");
-    sessionStorage.setItem(storageKey, data.token);
+    sessionStorage.setItem(teacherAuthStorageKey, data.token);
     setStatus("authenticated");
   }, []);
 
   const logout = useCallback(() => {
-    sessionStorage.removeItem(storageKey);
+    sessionStorage.removeItem(teacherAuthStorageKey);
     setStatus("unauthenticated");
   }, []);
 

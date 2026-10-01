@@ -141,6 +141,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .notice { padding: 13px 15px; border-radius: 14px; border: 1px solid #fde68a; background: #fffbeb; color: #92400e; font-size: 14px; }
 .notice.error { border-color: #fecdd3; background: #fff1f2; color: #9f1239; }
 .notice.success { border-color: #a7f3d0; background: #ecfdf5; color: #065f46; }
+.teacher-page-actions { width: min(265px, 100%); display: grid; justify-items: stretch; gap: 8px; }
 
 .badge { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); border-radius: 999px; padding: 7px 11px; color: #475569; background: #f8fafc; font-size: 12px; font-weight: 750; }
 .badge.live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--success); box-shadow: 0 0 14px var(--success); }
@@ -796,6 +797,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 .modal-backdrop { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 20px; background: rgba(15,23,42,.38); backdrop-filter: blur(12px); }
 .modal { width: min(500px, 100%); border-radius: 25px; padding: 25px; background: #ffffff; border: 1px solid var(--line); box-shadow: 0 30px 100px rgba(15,23,42,.2); }
+.reset-modal { display: grid; gap: 20px; }
+.reset-modal h2 { margin: 5px 0 8px; letter-spacing: -.03em; }
+.reset-modal p { margin: 0; color: var(--muted); line-height: 1.65; }
+.reset-modal-icon { width: 58px; height: 58px; display: grid; place-items: center; color: #be123c; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 18px; }
+.reset-modal-actions { display: grid; grid-template-columns: 1fr 1.35fr; gap: 10px; }
 .qr-wrap { display: grid; place-items: center; background: white; padding: 18px; border-radius: 18px; width: fit-content; margin: 22px auto; }
 .empty { text-align: center; color: var(--muted); padding: 34px 18px; border: 1px dashed var(--line); border-radius: 18px; }
 .score-pop { color: var(--amber); font-weight: 850; }
@@ -868,6 +874,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .flow-track::before { display: none; }
   .system-token { display: none; }
   .section-head { flex-direction: column; }
+  .teacher-page-actions { width: 100%; grid-template-columns: 1fr; }
+  .teacher-page-actions .btn { width: 100%; }
   .brand > span:last-child { font-size: 13px; }
   .student-live-badge { max-width: 56vw; }
   .student-nav-actions { display: grid; grid-template-columns: minmax(0,1fr) auto auto; width: 100%; }
