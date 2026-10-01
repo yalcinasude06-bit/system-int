@@ -1,4 +1,4 @@
-import { Boxes, CheckCircle2, Network, Play, ScanSearch, Shapes, Square, Target } from "lucide-react";
+import { Boxes, CheckCircle2, Network, Play, ScanSearch, Shapes, Square, Target, UsersRound } from "lucide-react";
 import type { ComponentType } from "react";
 import type { ModuleId } from "@/types";
 
@@ -43,12 +43,14 @@ type ModuleSelectorProps = {
   activeModule: ModuleId;
   moduleStage: number;
   isModuleStarted: boolean;
+  submittedCount: number;
+  totalStudents: number;
   disabled?: boolean;
   onStart: (module: ModuleId) => void;
   onFinish: (module: ModuleId) => void;
 };
 
-export function ModuleSelector({ activeWeek, activeModule, moduleStage, isModuleStarted, disabled, onStart, onFinish }: ModuleSelectorProps) {
+export function ModuleSelector({ activeWeek, activeModule, moduleStage, isModuleStarted, submittedCount, totalStudents, disabled, onStart, onFinish }: ModuleSelectorProps) {
   if (activeWeek !== 1) {
     return (
       <div className="coming-soon-card" role="status">
@@ -64,11 +66,15 @@ export function ModuleSelector({ activeWeek, activeModule, moduleStage, isModule
         const isActive = activeModule === id;
         const isLive = isActive && isModuleStarted;
         const isFinished = isActive && !isModuleStarted && moduleStage >= 3;
+        const everyoneCompleted = isLive && totalStudents > 0 && submittedCount >= totalStudents;
         return (
           <article className={`dashboard-module-row ${isActive ? "active" : ""} ${isLive ? "live" : ""}`} key={id} role="listitem">
             <span className="dashboard-module-number">{String(id).padStart(2, "0")}</span>
             <span className="dashboard-module-icon"><Icon size={25} /></span>
             <h2>{title}</h2>
+            {isLive && <span className={`module-progress-badge ${everyoneCompleted ? "complete" : ""}`} aria-live="polite">
+              {everyoneCompleted ? <><CheckCircle2 size={17} /> Herkes Tamamladı!</> : <><UsersRound size={17} /> {submittedCount} / {totalStudents} Tamamladı</>}
+            </span>}
             <div className="dashboard-module-actions">
               {isLive ? <span className="on-air-badge"><i /> Canlı Yayında</span> : isFinished ? <span className="results-open-badge"><CheckCircle2 size={18} /> Sonuçlar Açık</span> : <button type="button" className="row-action start" disabled={disabled || isModuleStarted} onClick={() => onStart(id)}><Play size={19} fill="currentColor" /> Başlat</button>}
               <button type="button" className="row-action finish" disabled={disabled || !isLive} onClick={() => onFinish(id)}><Square size={18} fill="currentColor" /> Bitir &amp; Sonuçları Açıkla</button>

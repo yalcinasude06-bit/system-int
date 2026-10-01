@@ -14,7 +14,7 @@ import { getRemainingCountdown } from "@/lib/moduleCountdown";
 import { cancelSessionModuleStart, getSessionByPin, startSessionModule, updateSession } from "@/lib/session";
 import { supabase } from "@/lib/supabase";
 import { useTeacherAuth } from "@/lib/useTeacherAuth";
-import type { ModuleId, Session, Student, StudentProfile } from "@/types";
+import type { ModuleId, Session, Student, StudentProfile, Submission } from "@/types";
 
 export default function TeacherSessionPage() {
   const { pin } = useParams<{ pin: string }>();
@@ -23,6 +23,7 @@ export default function TeacherSessionPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
   const [profiles, setProfiles] = useState<StudentProfile[]>([]);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -48,14 +49,17 @@ export default function TeacherSessionPage() {
       sessionStorage.setItem("system-lab:teacher-session", JSON.stringify({ sessionId: found.id, pin: found.pin_code }));
       setSession(found);
       setBriefingModule(found.is_module_started && getRemainingCountdown(found.module_started_at) > 0 ? found.current_module : null);
-      const [{ data: people, error: peopleError }, { data: overall, error: overallError }] = await Promise.all([
+      const [{ data: people, error: peopleError }, { data: overall, error: overallError }, { data: answers, error: answersError }] = await Promise.all([
         supabase.from("students").select("*").eq("session_id", found.id).order("session_score", { ascending: false }),
         supabase.from("student_profiles").select("*").order("total_score", { ascending: false }),
+        supabase.from("submissions").select("*").eq("session_id", found.id).eq("is_submitted", true),
       ]);
       if (peopleError) throw peopleError;
       if (overallError) throw overallError;
+      if (answersError) throw answersError;
       setStudents((people || []) as Student[]);
       setProfiles((overall || []) as StudentProfile[]);
+      setSubmissions((answers || []) as Submission[]);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Oturum yüklenemedi.");
     } finally {
@@ -81,6 +85,7 @@ export default function TeacherSessionPage() {
         setBriefingModule(nextSession.is_module_started && getRemainingCountdown(nextSession.module_started_at) > 0 ? nextSession.current_module : null);
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "students", filter: `session_id=eq.${sessionId}` }, () => void load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "submissions", filter: `session_id=eq.${sessionId}` }, () => void load())
       .on("postgres_changes", { event: "*", schema: "public", table: "student_profiles" }, () => void load())
       .subscribe();
     return () => { void client.removeChannel(channel); };
@@ -188,6 +193,10 @@ export default function TeacherSessionPage() {
   if (authStatus === "unauthenticated") return <><Navbar /><main className="container page"><div className="empty">Öğretmen girişine yönlendiriliyorsunuz…</div></main></>;
   if (!session) return <><Navbar /><main className="container page"><div className="notice error">{error || "Oturum bulunamadı."}</div></main></>;
 
+  const submittedCount = new Set(submissions
+    .filter((submission) => submission.is_submitted && submission.week_id === session.selected_week && submission.module_id === session.current_module)
+    .map((submission) => submission.student_id)).size;
+
   return <main className="projection-page">
     <header className="projection-topbar teacher-topbar">
       <div className="projection-brand"><span><Radio size={23} /></span><div><strong>{session.title}</strong><small>Öğretmen Paneli</small></div></div>
@@ -209,6 +218,8 @@ export default function TeacherSessionPage() {
             activeModule={session.current_module}
             moduleStage={session.module_stage}
             isModuleStarted={session.is_module_started}
+            submittedCount={submittedCount}
+            totalStudents={students.length}
             disabled={busy}
             onStart={(module) => void startModule(module)}
             onFinish={(module) => void finishModule(module)}

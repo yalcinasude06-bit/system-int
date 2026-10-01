@@ -700,7 +700,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .dashboard-week-tabs .week-tab { min-height: 42px; padding-inline: 16px; color: #475569; background: transparent; border-color: transparent; font-size: 14px; }
 .dashboard-week-tabs .week-tab.active { color: #3730a3; background: #fff; border-color: #c7d2fe; box-shadow: 0 4px 14px rgba(99,102,241,.12); }
 .dashboard-module-list { display: grid; gap: 13px; }
-.dashboard-module-row { min-height: 94px; display: grid; grid-template-columns: auto auto minmax(170px,1fr) auto; align-items: center; gap: 15px; padding: 16px 18px; background: #fff; border: 1px solid #e2e8f0; border-radius: 19px; box-shadow: 0 4px 14px rgba(15,23,42,.04); transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
+.dashboard-module-row { min-height: 94px; display: grid; grid-template-columns: auto auto minmax(145px,1fr) auto auto; align-items: center; gap: 15px; padding: 16px 18px; background: #fff; border: 1px solid #e2e8f0; border-radius: 19px; box-shadow: 0 4px 14px rgba(15,23,42,.04); transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
 .dashboard-module-row:hover { transform: translateY(-1px); border-color: #cbd5e1; box-shadow: 0 9px 24px rgba(15,23,42,.07); }
 .dashboard-module-row.active { border-color: #a5b4fc; background: linear-gradient(100deg,#eef2ff,#fff 46%); }
 .dashboard-module-row.live { border-color: #6ee7b7; background: linear-gradient(100deg,#ecfdf5,#fff 46%); box-shadow: 0 10px 30px rgba(16,185,129,.12); }
@@ -708,6 +708,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .dashboard-module-icon { width: 50px; height: 50px; display: grid; place-items: center; color: #4f46e5; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 15px; }
 .dashboard-module-row.live .dashboard-module-icon { color: #047857; background: #d1fae5; border-color: #a7f3d0; }
 .dashboard-module-row h2 { margin: 0; color: #1e293b; font-size: clamp(18px,1.55vw,24px); letter-spacing: -.025em; }
+.module-progress-badge { min-height: 38px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 12px; color: #0369a1; background: #e0f2fe; border: 1px solid #7dd3fc; border-radius: 999px; box-shadow: 0 7px 18px rgba(14,165,233,.1); white-space: nowrap; font-size: 11px; font-weight: 900; font-variant-numeric: tabular-nums; animation: progressBadgePulse 1.8s ease-in-out infinite; }
+.module-progress-badge.complete { color: #047857; background: #d1fae5; border-color: #6ee7b7; box-shadow: 0 0 24px rgba(16,185,129,.25); }
 .dashboard-module-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
 .row-action, .on-air-badge, .results-open-badge { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 13px; border-radius: 12px; white-space: nowrap; font-size: 13px; font-weight: 850; }
 .row-action { cursor: pointer; transition: transform .18s ease, opacity .18s ease, box-shadow .18s ease; }
@@ -721,6 +723,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .on-air-badge i { width: 10px; height: 10px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 12px #ef4444; }
 .results-open-badge { color: #4338ca; background: #eef2ff; border: 1px solid #c7d2fe; }
 @keyframes onAirPulse { 50% { box-shadow: 0 0 0 7px rgba(16,185,129,.1); transform: scale(1.02); } }
+@keyframes progressBadgePulse { 50% { box-shadow: 0 0 0 6px rgba(14,165,233,.08); } }
 .teacher-dashboard-side { display: grid; gap: 24px; }
 .teacher-dashboard-side > .card { padding: 26px; }
 .teacher-card-title { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
@@ -802,6 +805,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .projection-week-picker { grid-column: 1 / -1; grid-row: 2; }
   .projection-main-grid, .projection-lower-grid { grid-template-columns: 1fr; }
   .projection-side { grid-template-columns: minmax(280px,.7fr) minmax(420px,1.3fr); }
+  .dashboard-module-row { grid-template-columns: auto auto minmax(0,1fr); }
+  .module-progress-badge { grid-column: 1 / -1; justify-self: stretch; }
+  .dashboard-module-actions { grid-column: 1 / -1; justify-content: stretch; display: grid; grid-template-columns: 1fr 1.5fr; }
+  .dashboard-module-actions .row-action, .dashboard-module-actions .on-air-badge, .dashboard-module-actions .results-open-badge { width: 100%; }
 }
 
 @media (max-width: 900px) {
