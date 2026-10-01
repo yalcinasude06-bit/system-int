@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { GraduationCap, LogIn } from "lucide-react";
 import { Button } from "@/components/common/Button";
-import { getSessionByPin, joinSession } from "@/lib/session";
+import { joinSession } from "@/lib/session";
 import { isSupabaseConfigured } from "@/lib/supabase";
 
 const avatars = ["🎓", "🧠", "🧩", "🚀", "🔭", "⚙️", "🌱", "🛰️"];
@@ -29,9 +29,7 @@ export function StudentJoinForm() {
     if (pin.length !== 6 || studentNumber.trim().length < 2 || fullName.trim().length < 2) { setError("PIN kodu, okul numarası ve ad soyad zorunludur."); return; }
     setLoading(true);
     try {
-      const session = await getSessionByPin(pin);
-      if (!session) throw new Error("Aktif oturum bulunamadı. PIN’i kontrol edin.");
-      const student = await joinSession(session.id, studentNumber, fullName, avatar);
+      const student = await joinSession(pin, studentNumber, fullName, avatar);
       localStorage.setItem(`system-lab:${pin}:student`, student.id);
       localStorage.setItem(`system-lab:${pin}:nickname`, student.nickname);
       localStorage.setItem(`system-lab:${pin}:student-number`, student.student_number);

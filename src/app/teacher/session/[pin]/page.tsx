@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import { Copy, Expand, LogOut, Power, Radio, Trophy, Users } from "lucide-react";
@@ -30,6 +30,7 @@ export default function TeacherSessionPage() {
   const [qrOpen, setQrOpen] = useState(false);
   const [briefingModule, setBriefingModule] = useState<ModuleId | null>(null);
   const [joinUrl, setJoinUrl] = useState(`/student?pin=${pin}`);
+  const refreshTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setJoinUrl(`${window.location.origin}/student?pin=${pin}`), 0);
@@ -67,6 +68,14 @@ export default function TeacherSessionPage() {
     }
   }, [authStatus, pin, router]);
 
+  const scheduleLoad = useCallback(() => {
+    if (refreshTimerRef.current !== null) window.clearTimeout(refreshTimerRef.current);
+    refreshTimerRef.current = window.setTimeout(() => {
+      refreshTimerRef.current = null;
+      void load();
+    }, 300);
+  }, [load]);
+
   useEffect(() => {
     if (authStatus === "unauthenticated") { router.replace("/teacher"); return; }
     if (authStatus !== "authenticated") return;
@@ -84,12 +93,49 @@ export default function TeacherSessionPage() {
         setSession(nextSession);
         setBriefingModule(nextSession.is_module_started && getRemainingCountdown(nextSession.module_started_at) > 0 ? nextSession.current_module : null);
       })
-      .on("postgres_changes", { event: "*", schema: "public", table: "students", filter: `session_id=eq.${sessionId}` }, () => void load())
-      .on("postgres_changes", { event: "*", schema: "public", table: "submissions", filter: `session_id=eq.${sessionId}` }, () => void load())
-      .on("postgres_changes", { event: "*", schema: "public", table: "student_profiles" }, () => void load())
-      .subscribe();
-    return () => { void client.removeChannel(channel); };
-  }, [load, sessionId]);
+      .on("postgres_changes", { event: "*", schema: "public", table: "students", filter: `session_id=eq.${sessionId}` }, (event) => {
+        const changedId = (event.eventType === "DELETE" ? event.old.id : event.new.id) as string | undefined;
+        if (!changedId) { scheduleLoad(); return; }
+        if (event.eventType === "DELETE") {
+          setStudents((current) => current.filter((student) => student.id !== changedId));
+          return;
+        }
+        const changedStudent = event.new as Student;
+        setStudents((current) => [...current.filter((student) => student.id !== changedStudent.id), changedStudent]);
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "submissions", filter: `session_id=eq.${sessionId}` }, (event) => {
+        const changedId = (event.eventType === "DELETE" ? event.old.id : event.new.id) as string | undefined;
+        if (!changedId) { scheduleLoad(); return; }
+        if (event.eventType === "DELETE") {
+          setSubmissions((current) => current.filter((submission) => submission.id !== changedId));
+          return;
+        }
+        const changedSubmission = event.new as Submission;
+        setSubmissions((current) => [...current.filter((submission) => submission.id !== changedSubmission.id), changedSubmission]);
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "student_profiles" }, (event) => {
+        const changedNumber = (event.eventType === "DELETE" ? event.old.student_number : event.new.student_number) as string | undefined;
+        if (!changedNumber) { scheduleLoad(); return; }
+        if (event.eventType === "DELETE") {
+          setProfiles((current) => current.filter((profile) => profile.student_number !== changedNumber));
+          return;
+        }
+        const changedProfile = event.new as StudentProfile;
+        setProfiles((current) => [...current.filter((profile) => profile.student_number !== changedProfile.student_number), changedProfile]);
+      })
+      .subscribe((channelStatus) => {
+        if (channelStatus === "SUBSCRIBED") scheduleLoad();
+        if (channelStatus === "CHANNEL_ERROR" || channelStatus === "TIMED_OUT") {
+          setError("Canlı bağlantı kesildi. Liste otomatik olarak yeniden eşitleniyor.");
+          scheduleLoad();
+        }
+      });
+    return () => {
+      if (refreshTimerRef.current !== null) window.clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = null;
+      void client.removeChannel(channel);
+    };
+  }, [scheduleLoad, sessionId]);
 
   async function patch(values: Parameters<typeof updateSession>[1]) {
     if (!session) return false;

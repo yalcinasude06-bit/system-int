@@ -13,7 +13,7 @@ import { Module3Boundary } from "@/components/modules/Module3_Boundary";
 import { Module4CompleteSystem } from "@/components/modules/Module4_CompleteSystem";
 import { Module5RelationBalloons } from "@/components/modules/Module5_RelationBalloons";
 import { getRemainingCountdown } from "@/lib/moduleCountdown";
-import { getSessionByPin, saveSubmission } from "@/lib/session";
+import { getStudentGameState, saveSubmission } from "@/lib/session";
 import { supabase } from "@/lib/supabase";
 import type { ModuleId, ModuleSubmission, Session, Student, StudentProfile, Submission } from "@/types";
 
@@ -38,36 +38,40 @@ export default function StudentPlayPage() {
   const load = useCallback(async () => {
     if (!supabase) { setError("Supabase yapılandırılmamış."); setLoading(false); return; }
     try {
-      const found = await getSessionByPin(pin);
-      if (!found) throw new Error("Oturum bulunamadı veya sona erdi.");
-      setSession(found);
       const studentId = localStorage.getItem(`system-lab:${pin}:student`);
       if (!studentId) { router.replace(`/student?pin=${pin}`); return; }
-      const { data, error: studentError } = await supabase.from("students").select("*").eq("id", studentId).eq("session_id", found.id).maybeSingle();
-      if (studentError || !data) {
+      const gameState = await getStudentGameState(pin, studentId);
+      setSession(gameState.session);
+      setStudent(gameState.student);
+      setSubmissions(gameState.submissions);
+      setProfile(gameState.profile);
+      setClassmates(gameState.classmates);
+    } catch (caught) {
+      const message = caught instanceof Error ? caught.message : "Oturum yüklenemedi.";
+      if (message.startsWith("Katılımcı kaydı bulunamadı")) {
         localStorage.removeItem(`system-lab:${pin}:student`);
         router.replace(`/student?pin=${pin}`);
         return;
       }
-      const loadedStudent = data as Student;
-      const [{ data: answers, error: answersError }, { data: loadedProfile, error: profileError }, { data: roster, error: rosterError }] = await Promise.all([
-        supabase.from("submissions").select("*").eq("session_id", found.id).eq("student_id", loadedStudent.id),
-        supabase.from("student_profiles").select("*").eq("student_number", loadedStudent.student_number).maybeSingle(),
-        supabase.from("students").select("*").eq("session_id", found.id).order("session_score", { ascending: false }),
-      ]);
-      if (answersError) throw answersError;
-      if (profileError) throw profileError;
-      if (rosterError) throw rosterError;
-      setStudent(loadedStudent);
-      setSubmissions((answers || []) as Submission[]);
-      setProfile(loadedProfile as StudentProfile | null);
-      setClassmates((roster || []) as Student[]);
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Oturum yüklenemedi.");
+      setError(message);
     } finally {
       setLoading(false);
     }
   }, [pin, router]);
+
+  const refreshClassmates = useCallback(async (targetSessionId: string) => {
+    if (!supabase) return;
+    const { data, error: rosterError } = await supabase
+      .from("students")
+      .select("*")
+      .eq("session_id", targetSessionId)
+      .order("session_score", { ascending: false });
+    if (rosterError) {
+      setError("Canlı sıralama yenilenemedi. Diğer işlemleriniz güvende.");
+      return;
+    }
+    setClassmates((data || []) as Student[]);
+  }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
@@ -90,13 +94,48 @@ export default function StudentPlayPage() {
     const client = supabase;
     if (!client || !sessionId || !studentId || !studentNumber) return;
     const channel = client.channel(`student:${studentId}`)
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "sessions", filter: `id=eq.${sessionId}` }, (event) => setSession(event.new as Session))
-      .on("postgres_changes", { event: "*", schema: "public", table: "students", filter: `session_id=eq.${sessionId}` }, () => void load())
-      .on("postgres_changes", { event: "*", schema: "public", table: "submissions", filter: `session_id=eq.${sessionId}` }, () => void load())
-      .on("postgres_changes", { event: "*", schema: "public", table: "student_profiles", filter: `student_number=eq.${studentNumber}` }, (event) => setProfile(event.new as StudentProfile))
+      .on("postgres_changes", { event: "*", schema: "public", table: "sessions", filter: `id=eq.${sessionId}` }, (event) => {
+        if (event.eventType === "DELETE") {
+          setError("Oturum sona erdi.");
+          return;
+        }
+        setSession(event.new as Session);
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "students", filter: `id=eq.${studentId}` }, (event) => {
+        if (event.eventType === "DELETE") {
+          localStorage.removeItem(`system-lab:${pin}:student`);
+          router.replace(`/student?pin=${pin}`);
+          return;
+        }
+        const changedStudent = event.new as Student;
+        setStudent(changedStudent);
+        setClassmates((current) => [...current.filter((item) => item.id !== changedStudent.id), changedStudent]);
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "submissions", filter: `student_id=eq.${studentId}` }, (event) => {
+        const changedId = (event.eventType === "DELETE" ? event.old.id : event.new.id) as string | undefined;
+        if (!changedId) return;
+        if (event.eventType === "DELETE") {
+          setSubmissions((current) => current.filter((item) => item.id !== changedId));
+          return;
+        }
+        const changedSubmission = event.new as Submission;
+        setSubmissions((current) => [...current.filter((item) => item.id !== changedSubmission.id), changedSubmission]);
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "student_profiles", filter: `student_number=eq.${studentNumber}` }, (event) => {
+        setProfile(event.eventType === "DELETE" ? null : event.new as StudentProfile);
+      })
       .subscribe();
     return () => { void client.removeChannel(channel); };
-  }, [load, sessionId, studentId, studentNumber]);
+  }, [pin, router, sessionId, studentId, studentNumber]);
+
+  useEffect(() => {
+    if (!resultsRevealed || !sessionId) return;
+    const timer = window.setTimeout(
+      () => void refreshClassmates(sessionId),
+      180 + Math.floor(Math.random() * 1200),
+    );
+    return () => window.clearTimeout(timer);
+  }, [refreshClassmates, resultsRevealed, sessionId]);
 
   useEffect(() => {
     if (isModuleStarted) return;
@@ -124,7 +163,6 @@ export default function StudentPlayPage() {
       setSubmissions((current) => [...current.filter((item) => item.id !== saved.submission.id), saved.submission]);
       setLocallyCompletedModuleKey(`${session.selected_week}:${moduleId}`);
       setMessage(saved.wasNew ? "Yanıtınız güvenle kaydedildi." : "Bu modül için yanıt hakkını daha önce kullandın.");
-      if (saved.wasNew) await load();
       window.setTimeout(() => setMessage(""), 3500);
       return true;
     } catch (caught) {
