@@ -3,17 +3,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
-import { Medal, Radio, Sparkles, Trophy } from "lucide-react";
+import { Medal, MessageCircleHeart, Radio, Sparkles, Trophy } from "lucide-react";
 import { Navbar } from "@/components/common/Navbar";
 import { Button } from "@/components/common/Button";
 import { ModuleStartCountdown } from "@/components/common/ModuleStartCountdown";
+import { ModuleFeedbackSurvey } from "@/components/student/ModuleFeedbackSurvey";
 import { Module1SystemBuild } from "@/components/modules/Module1_SystemBuild";
 import { Module2Relations } from "@/components/modules/Module2_Relations";
 import { Module3Boundary } from "@/components/modules/Module3_Boundary";
 import { Module4CompleteSystem } from "@/components/modules/Module4_CompleteSystem";
 import { Module5RelationBalloons } from "@/components/modules/Module5_RelationBalloons";
 import { getRemainingCountdown } from "@/lib/moduleCountdown";
-import { getStudentGameState, saveSubmission } from "@/lib/session";
+import { getStudentGameState, saveSubmission, submitModuleFeedback } from "@/lib/session";
 import { supabase } from "@/lib/supabase";
 import type { ModuleId, ModuleSubmission, Session, Student, StudentProfile, Submission } from "@/types";
 
@@ -32,7 +33,9 @@ export default function StudentPlayPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [readyModuleKey, setReadyModuleKey] = useState("");
-  const [locallyCompletedModuleKey, setLocallyCompletedModuleKey] = useState("");
+  const [feedbackKeys, setFeedbackKeys] = useState<string[]>([]);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackDismissedKey, setFeedbackDismissedKey] = useState("");
   const celebratedModuleKey = useRef("");
 
   const load = useCallback(async () => {
@@ -46,6 +49,7 @@ export default function StudentPlayPage() {
       setSubmissions(gameState.submissions);
       setProfile(gameState.profile);
       setClassmates(gameState.classmates);
+      setFeedbackKeys(gameState.feedback_keys || []);
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : "Oturum yüklenemedi.";
       if (message.startsWith("Katılımcı kaydı bulunamadı")) {
@@ -86,6 +90,13 @@ export default function StudentPlayPage() {
   const currentModule = session?.current_module;
   const isModuleStarted = session?.is_module_started;
   const resultsRevealed = !isModuleStarted && (session?.module_stage ?? 0) >= 3;
+  const activeModuleKey = currentWeek && currentModule ? `${currentWeek}:${currentModule}` : "";
+
+  useEffect(() => {
+    if (!activeSubmission || !activeModuleKey || feedbackKeys.includes(activeModuleKey) || feedbackDismissedKey === activeModuleKey) return;
+    const timer = window.setTimeout(() => setFeedbackOpen(true), 0);
+    return () => window.clearTimeout(timer);
+  }, [activeModuleKey, activeSubmission, feedbackDismissedKey, feedbackKeys]);
 
   const sessionId = session?.id;
   const studentId = student?.id;
@@ -161,7 +172,8 @@ export default function StudentPlayPage() {
     try {
       const saved = await saveSubmission({ sessionId: session.id, studentId: student.id, studentNumber: student.student_number, weekId: session.selected_week, moduleId, stage: submission.stage || 1, payload: submission.payload, score: submission.score });
       setSubmissions((current) => [...current.filter((item) => item.id !== saved.submission.id), saved.submission]);
-      setLocallyCompletedModuleKey(`${session.selected_week}:${moduleId}`);
+      setFeedbackOpen(true);
+      setFeedbackDismissedKey("");
       setMessage(saved.wasNew ? "Yanıtınız güvenle kaydedildi." : "Bu modül için yanıt hakkını daha önce kullandın.");
       window.setTimeout(() => setMessage(""), 3500);
       return true;
@@ -173,12 +185,35 @@ export default function StudentPlayPage() {
     }
   }
 
+  async function sendFeedback(input: { funRating: number; difficultyRating: number; comment: string }) {
+    if (!session || !student) throw new Error("Oturum bilgisi bulunamadı.");
+    const feedbackKey = `${session.selected_week}:${session.current_module}`;
+    await submitModuleFeedback({
+      sessionId: session.id,
+      studentId: student.id,
+      weekId: session.selected_week,
+      moduleId: session.current_module,
+      funRating: input.funRating,
+      difficultyRating: input.difficultyRating,
+      comment: input.comment,
+    });
+    setFeedbackKeys((current) => current.includes(feedbackKey) ? current : [...current, feedbackKey]);
+    setMessage("Geri bildirimin kaydedildi. Teşekkürler!");
+  }
+
+  function closeFeedback() {
+    setFeedbackOpen(false);
+    setFeedbackDismissedKey(activeModuleKey);
+  }
+
   if (loading) return <><Navbar /><main className="container page"><div className="empty">Canlı sınıfa bağlanılıyor…</div></main></>;
   if (!session || !student) return <><Navbar /><main className="container page"><div className="notice error">{error || "Katılımcı kaydı bulunamadı."}</div></main></>;
 
   const ranking = [...classmates].sort((a, b) => b.session_score - a.session_score || a.joined_at.localeCompare(b.joined_at));
   const ownRank = ranking.findIndex((item) => item.id === student.id) + 1;
-  const scoreEarned = activeSubmission?.score ?? 0;
+  const baseScoreEarned = activeSubmission?.score ?? 0;
+  const speedBonusEarned = activeSubmission?.speed_bonus ?? 0;
+  const scoreEarned = baseScoreEarned + speedBonusEarned;
   const studentNav = <Navbar studentContext={{ sessionTitle: session.title, week: session.selected_week, studentName: student.nickname, studentNumber: student.student_number, score: student.session_score, onLeave: () => { localStorage.removeItem(`system-lab:${pin}:student`); router.push("/"); } }} />;
 
   if (!session.is_active) return <>{studentNav}<main className="container page"><div className="student-result-card panel"><Trophy size={58} color="var(--amber)" /><span className="eyebrow">Oturum tamamlandı</span><h1>Harika iş çıkardın!</h1><p className="lead">Genel toplam puanın <strong className="score-pop">{profile?.total_score ?? student.score}</strong></p><Button onClick={() => router.push("/")}>Ana sayfaya dön</Button></div></main></>;
@@ -191,6 +226,7 @@ export default function StudentPlayPage() {
       <span className="result-trophy">🏆</span>
       <span className="eyebrow">Modül {session.current_module} tamamlandı</span>
       <h1>Tebrikler! <strong>+{scoreEarned} Puan</strong> Aldın!</h1>
+      <div className="score-breakdown"><span>Etkinlik puanı <b>{baseScoreEarned}</b></span><span>Hız bonusu <b>+{speedBonusEarned}</b></span></div>
       <p>Yanıtın kilitlendi. Canlı sıralama puan değiştikçe otomatik güncellenir.</p>
       {message && <div className="notice success">{message}{saving ? " · kaydediliyor" : ""}</div>}
       {error && <div className="notice error">{error}</div>}
@@ -203,21 +239,23 @@ export default function StudentPlayPage() {
     </section>
   </main></>;
 
-  if (activeSubmission && locallyCompletedModuleKey !== `${session.selected_week}:${session.current_module}`) return <>{studentNav}<main className="container page student-submission-wait-page">
+  if (activeSubmission) return <>{studentNav}<main className="container page student-submission-wait-page">
     <section className="student-submission-wait panel">
-      <span className="submission-check" aria-hidden="true">✓</span>
-      <span className="eyebrow">Yanıt Alındı</span>
-      <h1>Yanıtınız Kaydedildi!</h1>
-      <p>Öğretmen modülü bitirip sonuçları açıklayana kadar lütfen bekleyin…</p>
-      {message && <div className="notice success">{message}</div>}
-      {error && <div className="notice error">{error}</div>}
-      <div className="waiting-pulse"><i /> Sonuçlar henüz gizli</div>
+      {feedbackOpen ? <ModuleFeedbackSurvey key={activeModuleKey} moduleId={session.current_module} onSubmit={sendFeedback} onSkip={closeFeedback} /> : <>
+        <span className="submission-check" aria-hidden="true">✓</span>
+        <span className="eyebrow">Yanıt Alındı</span>
+        <h1>Yanıtınız Kaydedildi!</h1>
+        <p>Öğretmen modülü bitirip sonuçları açıklayana kadar lütfen bekleyin…</p>
+        {message && <div className="notice success">{message}</div>}
+        {error && <div className="notice error">{error}</div>}
+        {!feedbackKeys.includes(activeModuleKey) && <button type="button" className="feedback-reopen" onClick={() => setFeedbackOpen(true)}><MessageCircleHeart size={18} /> Geri bildirim ver</button>}
+        <div className="waiting-pulse"><i /> Sonuçlar henüz gizli</div>
+      </>}
     </section>
   </main></>;
 
   if (!session.is_module_started) return <>{studentNav}<main className="container page"><section className="student-waiting-card panel"><span className="waiting-illustration">⏳</span><span className="eyebrow">Hafta {session.selected_week} · Modül {session.current_module}</span><h1>Öğretmen modülü başlatmak üzere…</h1><p>Lütfen bekleyin! Etkinlik başladığında ekranınız otomatik olarak açılacak.</p><div className="waiting-pulse"><i /> Canlı bağlantı açık</div></section></main></>;
 
-  const activeModuleKey = `${session.selected_week}:${session.current_module}`;
   const countdownTimeLeft = getRemainingCountdown(session.module_started_at);
   if (!activeSubmission && session.module_started_at && countdownTimeLeft > 0 && readyModuleKey !== activeModuleKey) return <>{studentNav}<ModuleStartCountdown key={`${activeModuleKey}:${session.module_started_at}`} moduleId={session.current_module} startedAt={session.module_started_at} onComplete={() => setReadyModuleKey(activeModuleKey)} /></>;
 

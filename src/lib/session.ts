@@ -121,6 +121,7 @@ export interface StudentGameState {
   profile: StudentProfile | null;
   submissions: Submission[];
   classmates: Student[];
+  feedback_keys: string[];
 }
 
 export async function getStudentGameState(pin: string, studentId: string): Promise<StudentGameState> {
@@ -170,6 +171,30 @@ export async function saveSubmission(input: {
   if (error) throw error;
   const result = data as { submission: Submission; was_new: boolean };
   return { submission: result.submission, wasNew: result.was_new };
+}
+
+export async function submitModuleFeedback(input: {
+  sessionId: string;
+  studentId: string;
+  weekId: number;
+  moduleId: ModuleId;
+  funRating: number;
+  difficultyRating: number;
+  comment: string;
+}): Promise<{ wasNew: boolean }> {
+  const client = requireSupabase();
+  const { data, error } = await client.rpc("submit_module_feedback", {
+    target_session_id: input.sessionId,
+    target_student_id: input.studentId,
+    target_week_id: input.weekId,
+    target_module_id: input.moduleId,
+    target_fun_rating: input.funRating,
+    target_difficulty_rating: input.difficultyRating,
+    target_comment: input.comment.trim().slice(0, 500),
+  });
+  if (error) throw readableDatabaseError(error, "Geri bildirim gönderilemedi.");
+  const result = data as { was_new?: boolean } | null;
+  return { wasNew: Boolean(result?.was_new) };
 }
 
 export async function updateSession(

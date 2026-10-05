@@ -44,6 +44,7 @@ export interface Submission {
   stage: number;
   payload: Record<string, unknown>;
   score: number;
+  speed_bonus: number;
   is_submitted: boolean;
   updated_at: string;
   submitted_at: string;
