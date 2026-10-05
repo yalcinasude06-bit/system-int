@@ -46,6 +46,7 @@ export interface Submission {
   score: number;
   speed_bonus: number;
   is_submitted: boolean;
+  completion_status: "completed" | "incomplete";
   updated_at: string;
   submitted_at: string;
 }

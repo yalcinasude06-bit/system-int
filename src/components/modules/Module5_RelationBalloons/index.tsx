@@ -185,8 +185,12 @@ export function Module5RelationBalloons({ onSubmit, existingSubmission, forceSub
   }, [existingSubmission, forceSubmit, phase, roundIndex]);
 
   useEffect(() => {
-    if (forceSubmit && phase !== "complete" && !existingSubmission) void finalize(answersRef.current, "teacher-ended");
-  }, [existingSubmission, finalize, forceSubmit, phase]);
+    if (!forceSubmit || phase === "complete" || existingSubmission) return;
+    const pendingAnswer = attemptsRef.current.length > 0 && !resolved.current
+      ? [{ questionId: current.id, expected: current.type, attempts: attemptsRef.current, isCorrect: false, timedOut: false } satisfies BalloonAnswer]
+      : [];
+    void finalize([...answersRef.current, ...pendingAnswer], "teacher-ended");
+  }, [current.id, current.type, existingSubmission, finalize, forceSubmit, phase]);
 
   const shoot = useCallback(async (type: RelationType) => {
     if (phase !== "active" || inputLocked || resolved.current || existingSubmission || forceSubmit) return;
@@ -231,9 +235,10 @@ export function Module5RelationBalloons({ onSubmit, existingSubmission, forceSub
   }
 
   if (phase === "complete") {
+    const endedByTeacher = finalSubmission?.payload?.completionReason === "teacher-ended";
     return <section className="panel module-shell balloon-module-shell">
       <div className="module-title-chip">Modül 5: İlişki Türleri</div>
-      <div className="module-complete-card"><Sparkles size={42} /><h2>Balon turu tamamlandı</h2><p>Doğru patlattığın balonların puanı kaydedildi. Öğretmen sonuçları açıklayana kadar puanın gizli kalacak.</p>{submitting && <div className="notice">Yanıt kaydediliyor…</div>}{submitFailed && finalSubmission && <><div className="notice error">Yanıt kaydedilemedi. İlerlemen korundu.</div><Button loading={submitting} icon={<RotateCcw size={17} />} onClick={() => void submitResult(finalSubmission)}>Kaydı tekrar dene</Button></>}</div>
+      <div className="module-complete-card"><Sparkles size={42} /><h2>{endedByTeacher ? "Kısmi balon turun kaydediliyor" : "Balon turu tamamlandı"}</h2><p>{endedByTeacher ? "O ana kadar verdiğin yanıtlar ve kazandığın puan korunuyor." : "Doğru patlattığın balonların puanı kaydedildi."} Öğretmen sonuçları açıklayana kadar puanın gizli kalacak.</p>{submitting && <div className="notice">Yanıt kaydediliyor…</div>}{submitFailed && finalSubmission && <><div className="notice error">Yanıt kaydedilemedi. İlerlemen korundu.</div><Button loading={submitting} icon={<RotateCcw size={17} />} onClick={() => void submitResult(finalSubmission)}>Kaydı tekrar dene</Button></>}</div>
     </section>;
   }
 

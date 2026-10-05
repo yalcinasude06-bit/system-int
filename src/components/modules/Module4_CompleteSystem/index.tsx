@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { Check, LockKeyhole, RotateCcw, Sparkles, Unlink, X } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import type { LearningModuleProps, ModuleSubmission } from "@/types";
@@ -45,7 +45,7 @@ const systemRounds = [systemTypes.slice(0, 5), systemTypes.slice(5)];
 const systemRoundIds = systemRounds.map((round) => round.map((system) => system.id));
 const pointsPerMatch = 100 / systemTypes.length;
 
-export function Module4CompleteSystem({ onSubmit, existingSubmission }: LearningModuleProps) {
+export function Module4CompleteSystem({ onSubmit, existingSubmission, forceSubmit }: LearningModuleProps) {
   const [roundIndex, setRoundIndex] = useState(0);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [matches, setMatches] = useState<Record<string, string>>({});
@@ -62,6 +62,8 @@ export function Module4CompleteSystem({ onSubmit, existingSubmission }: Learning
   const visualRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const pointerDragRef = useRef<MatchPointerDrag | null>(null);
   const suppressClickRef = useRef(false);
+  const matchesRef = useRef<Record<string, string>>({});
+  const submissionStarted = useRef(false);
   const currentSystems = systemRounds[roundIndex];
   const currentSystemIds = systemRoundIds[roundIndex];
   const currentVisualCards = visualOrder
@@ -114,6 +116,34 @@ export function Module4CompleteSystem({ onSubmit, existingSubmission }: Learning
     if (accepted === false) setSubmitFailed(true);
   }, [onSubmit]);
 
+  const finalize = useCallback(async (finalMatches: Record<string, string>, completionReason: "completed" | "teacher-ended") => {
+    if (submissionStarted.current || existingSubmission) return;
+    if (completionReason === "completed" && Object.keys(finalMatches).length !== systemTypes.length) return;
+    submissionStarted.current = true;
+    const totalCorrect = systemTypes.filter((system) => finalMatches[system.id] === system.id).length;
+    const submission: ModuleSubmission = {
+      score: Math.round(totalCorrect * pointsPerMatch),
+      payload: {
+        mode: "system-type-visual-batch-matching",
+        matches: finalMatches,
+        correctCount: totalCorrect,
+        answeredCount: Object.keys(finalMatches).length,
+        matchCount: systemTypes.length,
+        pointsPerMatch,
+        completionReason,
+      },
+    };
+    setMatches(finalMatches);
+    setCorrectCount(totalCorrect);
+    setFinalSubmission(submission);
+    setEvaluated(true);
+    await submitResult(submission);
+  }, [existingSubmission, submitResult]);
+
+  useEffect(() => {
+    if (forceSubmit && !evaluated && !existingSubmission) void finalize(matchesRef.current, "teacher-ended");
+  }, [evaluated, existingSubmission, finalize, forceSubmit]);
+
   function selectType(id: string) {
     if (evaluated) return;
     setSelectedType((current) => current === id ? null : id);
@@ -126,6 +156,7 @@ export function Module4CompleteSystem({ onSubmit, existingSubmission }: Learning
       if (assignedVisual === visualId && matchedTypeId !== typeId) delete next[matchedTypeId];
     }
     next[typeId] = visualId;
+    matchesRef.current = next;
     setMatches(next);
     setSelectedType(null);
     if (roundIndex === 0 && currentSystemIds.every((id) => Boolean(next[id]))) {
@@ -190,25 +221,6 @@ export function Module4CompleteSystem({ onSubmit, existingSubmission }: Learning
     if (!suppressClickRef.current) return false;
     suppressClickRef.current = false;
     return true;
-  }
-
-  async function evaluate() {
-    if (evaluated || Object.keys(matches).length !== systemTypes.length) return;
-    const totalCorrect = systemTypes.filter((system) => matches[system.id] === system.id).length;
-    const submission: ModuleSubmission = {
-      score: Math.round(totalCorrect * pointsPerMatch),
-      payload: {
-        mode: "system-type-visual-batch-matching",
-        matches,
-        correctCount: totalCorrect,
-        matchCount: systemTypes.length,
-        pointsPerMatch,
-      },
-    };
-    setCorrectCount(totalCorrect);
-    setFinalSubmission(submission);
-    setEvaluated(true);
-    await submitResult(submission);
   }
 
   if (existingSubmission && !evaluated) {
@@ -285,13 +297,13 @@ export function Module4CompleteSystem({ onSubmit, existingSubmission }: Learning
 
     {pointerDrag?.moved && <div className="pointer-drag-ghost matching-pointer-ghost" style={{ left: pointerDrag.x, top: pointerDrag.y }} aria-hidden="true">{systemTypes.find((system) => system.id === pointerDrag.typeId)?.name}</div>}
 
-    {roundIndex === 1 && <div className="button-row matching-actions"><Button disabled={evaluated || Object.keys(matches).length !== systemTypes.length} loading={submitting} icon={<Check size={18} />} onClick={() => void evaluate()}>Eşleştirmeleri Kontrol Et</Button></div>}
+    {roundIndex === 1 && <div className="button-row matching-actions"><Button disabled={evaluated || Object.keys(matches).length !== systemTypes.length} loading={submitting} icon={<Check size={18} />} onClick={() => void finalize(matchesRef.current, "completed")}>Eşleştirmeleri Kontrol Et</Button></div>}
 
     {evaluated && <div className="modal-backdrop matching-result-backdrop" role="presentation">
       <div className="modal matching-result-modal" role="dialog" aria-modal="true" aria-labelledby="matching-result-title">
         <span className="matching-result-icon"><Sparkles size={39} /></span>
-        <span className="eyebrow">10 / 10 Eşleşme Kontrol Edildi</span>
-        <h2 id="matching-result-title">Eşleştirmelerin kaydedildi</h2>
+        <span className="eyebrow">{Object.keys(matches).length} / 10 Eşleşme Kaydedildi</span>
+        <h2 id="matching-result-title">{Object.keys(matches).length === systemTypes.length ? "Eşleştirmelerin kaydedildi" : "Kısmi eşleştirmelerin kaydediliyor"}</h2>
         <p>{correctCount} doğru eşleşme yaptın. Puanın, öğretmen sonuçları açtığında görünecek.</p>
         {wrongSystems.length > 0 && <div className="matching-modal-explanations">{wrongSystems.map((system) => <div key={system.id}><strong>{system.name}</strong><span>Doğru görsel: {system.visual}</span><p>{system.description}</p></div>)}</div>}
         {submitting && <div className="notice">Yanıt kaydediliyor…</div>}

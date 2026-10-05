@@ -160,7 +160,7 @@ function delay(milliseconds: number) {
   return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 }
 
-export function Module2Relations({ onSubmit, existingSubmission }: LearningModuleProps) {
+export function Module2Relations({ onSubmit, existingSubmission, forceSubmit }: LearningModuleProps) {
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [busy, setBusy] = useState(false);
@@ -172,6 +172,8 @@ export function Module2Relations({ onSubmit, existingSubmission }: LearningModul
   const [submitFailed, setSubmitFailed] = useState(false);
   const [finalSubmission, setFinalSubmission] = useState<ModuleSubmission | null>(null);
   const interactionLocked = useRef(false);
+  const submissionStarted = useRef(false);
+  const answersRef = useRef<Answer[]>([]);
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-240, 0, 240], [-13, 0, 13]);
   const negativeGlow = useTransform(x, [-150, -35, 0], [1, .18, 0]);
@@ -188,8 +190,41 @@ export function Module2Relations({ onSubmit, existingSubmission }: LearningModul
     if (accepted === false) setSubmitFailed(true);
   }, [onSubmit]);
 
+  const finalize = useCallback(async (finalAnswers: Answer[], completionReason: "completed" | "teacher-ended") => {
+    if (submissionStarted.current || existingSubmission) return;
+    submissionStarted.current = true;
+    const correctCount = finalAnswers.filter((item) => item.isCorrect).length;
+    const submission: ModuleSubmission = {
+      score: Math.round(correctCount * pointsPerCard),
+      payload: {
+        mode: "swipe-chain",
+        answers: finalAnswers,
+        correctCount,
+        answeredCount: finalAnswers.length,
+        cardCount: chain.length,
+        pointsPerCard,
+        finalState: finalAnswers.length === chain.length ? chain[chain.length - 1].nextState : null,
+        completionReason,
+        loopClosure: completionReason === "completed" ? {
+          from: "Sistemik Hata Oranı",
+          to: "Müşteri Memnuniyeti",
+          effect: "negative",
+          explanation: "Sistemik hata oranı arttığında müşteri deneyimi kötüleşir ve müşteri memnuniyeti azalır (− Negatif Feedback Etkisi).",
+        } : null,
+      },
+    };
+    setAnswers(finalAnswers);
+    setFinalSubmission(submission);
+    setCompleted(true);
+    setBusy(false);
+    setPhase("idle");
+    setDirection(null);
+    x.set(0);
+    await submitResult(submission);
+  }, [existingSubmission, submitResult, x]);
+
   const choose = useCallback(async (selected: SwipeDirection) => {
-    if (interactionLocked.current || busy || completed || existingSubmission) return;
+    if (interactionLocked.current || busy || completed || existingSubmission || forceSubmit) return;
     interactionLocked.current = true;
     const isCorrect = selected === current.expected;
     const answer: Answer = {
@@ -200,7 +235,8 @@ export function Module2Relations({ onSubmit, existingSubmission }: LearningModul
       expected: current.expected,
       isCorrect,
     };
-    const nextAnswers = [...answers, answer];
+    const nextAnswers = [...answersRef.current, answer];
+    answersRef.current = nextAnswers;
 
     setBusy(true);
     setDirection(selected);
@@ -216,33 +252,10 @@ export function Module2Relations({ onSubmit, existingSubmission }: LearningModul
     setPhase("exit");
     await delay(300);
 
+    if (submissionStarted.current) return;
+
     if (stepIndex === chain.length - 1) {
-      const finalScore = Math.round(nextAnswers.filter((item) => item.isCorrect).length * pointsPerCard);
-      const submission: ModuleSubmission = {
-        score: finalScore,
-        payload: {
-          mode: "swipe-chain",
-          answers: nextAnswers,
-          correctCount: nextAnswers.filter((item) => item.isCorrect).length,
-          cardCount: chain.length,
-          pointsPerCard,
-          finalState: current.nextState,
-          loopClosure: {
-            from: "Sistemik Hata Oranı",
-            to: "Müşteri Memnuniyeti",
-            effect: "negative",
-            explanation: "Sistemik hata oranı arttığında müşteri deneyimi kötüleşir ve müşteri memnuniyeti azalır (− Negatif Feedback Etkisi).",
-          },
-        },
-      };
-      setAnswers(nextAnswers);
-      setFinalSubmission(submission);
-      setCompleted(true);
-      setPhase("idle");
-      setDirection(null);
-      x.set(0);
-      await submitResult(submission);
-      setBusy(false);
+      await finalize(nextAnswers, "completed");
       return;
     }
 
@@ -254,7 +267,11 @@ export function Module2Relations({ onSubmit, existingSubmission }: LearningModul
     setBusy(false);
     interactionLocked.current = false;
     window.setTimeout(() => setFeedback(null), 900);
-  }, [answers, busy, completed, current, existingSubmission, stepIndex, submitResult, x]);
+  }, [busy, completed, current, existingSubmission, finalize, forceSubmit, stepIndex, x]);
+
+  useEffect(() => {
+    if (forceSubmit && !completed && !existingSubmission) void finalize(answersRef.current, "teacher-ended");
+  }, [completed, existingSubmission, finalize, forceSubmit]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -275,14 +292,14 @@ export function Module2Relations({ onSubmit, existingSubmission }: LearningModul
       <div className="module-title-chip">Modül 2: Sistem Dinamiği Geri Bildirim Döngüsü</div>
       <div className="swipe-complete-card feedback-loop-success">
         <Sparkles size={42} />
-        <div className="feedback-loop-visual" role="img" aria-label="Sistemik Hata Oranı, negatif feedback etkisiyle Müşteri Memnuniyetine geri bağlanır">
+        {answers.length === chain.length && <div className="feedback-loop-visual" role="img" aria-label="Sistemik Hata Oranı, negatif feedback etkisiyle Müşteri Memnuniyetine geri bağlanır">
           <strong>Sistemik Hata Oranı</strong>
           <span className="feedback-loop-arrow"><RotateCcw size={34} /></span>
           <strong>Müşteri Memnuniyeti</strong>
           <small>Negatif (−) Feedback Etkisi</small>
-        </div>
-        <h2>🎉 Tebrikler! Sistemik bir Geri Bildirim Döngüsünü (Feedback Loop) başarıyla tamamladınız!</h2>
-        <p>Sistemik hata oranı arttığında müşteri deneyimi kötüleşir ve müşteri memnuniyeti azalır (− Negatif Feedback Etkisi).</p>
+        </div>}
+        <h2>{answers.length === chain.length ? "🎉 Sistemik geri bildirim döngüsünü tamamladınız!" : "Kısmi yanıtınız kaydediliyor"}</h2>
+        <p>{answers.length === chain.length ? "Sistemik hata oranı arttığında müşteri deneyimi kötüleşir ve müşteri memnuniyeti azalır (− Negatif Feedback Etkisi)." : `${answers.length} karttaki yanıtınız ve kazandığınız puan korunuyor.`}</p>
         <p className="submission-privacy-note">Yanıtların kilitleniyor. Öğretmen sonuçları açıklayana kadar puanın gizli kalacak.</p>
         {submitting && <div className="notice">Yanıt kaydediliyor…</div>}
         {submitFailed && finalSubmission && <><div className="notice error">Yanıt kaydedilemedi. Seçimlerin korundu.</div><Button loading={submitting} icon={<RotateCcw size={17} />} onClick={() => void submitResult(finalSubmission)}>Kaydı tekrar dene</Button></>}

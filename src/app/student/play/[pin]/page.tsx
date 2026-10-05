@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
-import { Medal, MessageCircleHeart, Radio, Sparkles, Trophy } from "lucide-react";
+import { MessageCircleHeart, Radio, Sparkles, Trophy } from "lucide-react";
 import { Navbar } from "@/components/common/Navbar";
 import { Button } from "@/components/common/Button";
 import { ModuleStartCountdown } from "@/components/common/ModuleStartCountdown";
@@ -18,14 +18,11 @@ import { getStudentGameState, saveSubmission, submitModuleFeedback } from "@/lib
 import { supabase } from "@/lib/supabase";
 import type { ModuleId, ModuleSubmission, Session, Student, StudentProfile, Submission } from "@/types";
 
-const medals = ["🥇", "🥈", "🥉"];
-
 export default function StudentPlayPage() {
   const { pin } = useParams<{ pin: string }>();
   const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
   const [student, setStudent] = useState<Student | null>(null);
-  const [classmates, setClassmates] = useState<Student[]>([]);
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,7 +45,6 @@ export default function StudentPlayPage() {
       setStudent(gameState.student);
       setSubmissions(gameState.submissions);
       setProfile(gameState.profile);
-      setClassmates(gameState.classmates);
       setFeedbackKeys(gameState.feedback_keys || []);
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : "Oturum yüklenemedi.";
@@ -63,27 +59,13 @@ export default function StudentPlayPage() {
     }
   }, [pin, router]);
 
-  const refreshClassmates = useCallback(async (targetSessionId: string) => {
-    if (!supabase) return;
-    const { data, error: rosterError } = await supabase
-      .from("students")
-      .select("*")
-      .eq("session_id", targetSessionId)
-      .order("session_score", { ascending: false });
-    if (rosterError) {
-      setError("Canlı sıralama yenilenemedi. Diğer işlemleriniz güvende.");
-      return;
-    }
-    setClassmates((data || []) as Student[]);
-  }, []);
-
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
     return () => window.clearTimeout(timer);
   }, [load]);
 
   const activeSubmission = useMemo(
-    () => submissions.find((item) => item.week_id === session?.selected_week && item.module_id === session?.current_module) || null,
+    () => submissions.find((item) => item.is_submitted && item.week_id === session?.selected_week && item.module_id === session?.current_module) || null,
     [session?.current_module, session?.selected_week, submissions],
   );
   const currentWeek = session?.selected_week;
@@ -91,6 +73,8 @@ export default function StudentPlayPage() {
   const isModuleStarted = session?.is_module_started;
   const resultsRevealed = !isModuleStarted && (session?.module_stage ?? 0) >= 3;
   const activeModuleKey = currentWeek && currentModule ? `${currentWeek}:${currentModule}` : "";
+  const activeCompletionStatus = activeSubmission?.completion_status
+    ?? (activeSubmission?.payload?.completionReason === "teacher-ended" ? "incomplete" : "completed");
 
   useEffect(() => {
     if (!activeSubmission || !activeModuleKey || feedbackKeys.includes(activeModuleKey) || feedbackDismissedKey === activeModuleKey) return;
@@ -120,7 +104,6 @@ export default function StudentPlayPage() {
         }
         const changedStudent = event.new as Student;
         setStudent(changedStudent);
-        setClassmates((current) => [...current.filter((item) => item.id !== changedStudent.id), changedStudent]);
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "submissions", filter: `student_id=eq.${studentId}` }, (event) => {
         const changedId = (event.eventType === "DELETE" ? event.old.id : event.new.id) as string | undefined;
@@ -140,22 +123,13 @@ export default function StudentPlayPage() {
   }, [pin, router, sessionId, studentId, studentNumber]);
 
   useEffect(() => {
-    if (!resultsRevealed || !sessionId) return;
-    const timer = window.setTimeout(
-      () => void refreshClassmates(sessionId),
-      180 + Math.floor(Math.random() * 1200),
-    );
-    return () => window.clearTimeout(timer);
-  }, [refreshClassmates, resultsRevealed, sessionId]);
-
-  useEffect(() => {
     if (isModuleStarted) return;
     const timer = window.setTimeout(() => setReadyModuleKey(""), 0);
     return () => window.clearTimeout(timer);
   }, [currentModule, currentWeek, isModuleStarted]);
 
   useEffect(() => {
-    if (!resultsRevealed || !currentWeek || !currentModule) return;
+    if (!resultsRevealed || !activeSubmission || !currentWeek || !currentModule || activeCompletionStatus === "incomplete") return;
     const moduleKey = `${currentWeek}:${currentModule}`;
     if (celebratedModuleKey.current === moduleKey) return;
     celebratedModuleKey.current = moduleKey;
@@ -163,7 +137,13 @@ export default function StudentPlayPage() {
       confetti({ particleCount: 130, spread: 82, origin: { y: .72 }, colors: ["#10b981", "#6366f1", "#f59e0b", "#f472b6"] });
     }, 120);
     return () => window.clearTimeout(timer);
-  }, [currentModule, currentWeek, resultsRevealed]);
+  }, [activeCompletionStatus, activeSubmission, currentModule, currentWeek, resultsRevealed]);
+
+  useEffect(() => {
+    if (!resultsRevealed || activeSubmission) return;
+    const timer = window.setTimeout(() => void load(), 350);
+    return () => window.clearTimeout(timer);
+  }, [activeSubmission, load, resultsRevealed]);
 
   async function submit(moduleId: ModuleId, submission: ModuleSubmission) {
     if (!session || !student || !session.is_module_started) return false;
@@ -209,8 +189,6 @@ export default function StudentPlayPage() {
   if (loading) return <><Navbar /><main className="container page"><div className="empty">Canlı sınıfa bağlanılıyor…</div></main></>;
   if (!session || !student) return <><Navbar /><main className="container page"><div className="notice error">{error || "Katılımcı kaydı bulunamadı."}</div></main></>;
 
-  const ranking = [...classmates].sort((a, b) => b.session_score - a.session_score || a.joined_at.localeCompare(b.joined_at));
-  const ownRank = ranking.findIndex((item) => item.id === student.id) + 1;
   const baseScoreEarned = activeSubmission?.score ?? 0;
   const speedBonusEarned = activeSubmission?.speed_bonus ?? 0;
   const scoreEarned = baseScoreEarned + speedBonusEarned;
@@ -220,21 +198,18 @@ export default function StudentPlayPage() {
 
   if (session.selected_week !== 1) return <>{studentNav}<main className="container page"><div className="student-waiting-card panel"><span className="waiting-illustration">🚧</span><span className="eyebrow">Hafta {session.selected_week}</span><h1>Yeni içerikler hazırlanıyor</h1><p>Bu haftanın modülleri ve interaktif içerikleri yakında eklenecektir.</p><div className="waiting-pulse"><i /> Öğretmenin yönlendirmesini bekleyin</div></div></main></>;
 
+  if (resultsRevealed && !activeSubmission) return <>{studentNav}<main className="container page"><section className="student-waiting-card panel"><span className="waiting-illustration">⏳</span><span className="eyebrow">Sonuç hazırlanıyor</span><h1>Puanın hesaplanıyor…</h1><div className="waiting-pulse"><i /> Sonuç kaydı alınıyor</div></section></main></>;
+
   if (resultsRevealed) return <>{studentNav}<main className="container page student-result-page">
     <section className="student-result-card panel">
       <div className="result-spark"><Sparkles size={30} /></div>
       <span className="result-trophy">🏆</span>
-      <span className="eyebrow">Modül {session.current_module} tamamlandı</span>
-      <h1>Tebrikler! <strong>+{scoreEarned} Puan</strong> Aldın!</h1>
-      <div className="score-breakdown"><span>Etkinlik puanı <b>{baseScoreEarned}</b></span><span>Hız bonusu <b>+{speedBonusEarned}</b></span></div>
-      <p>Yanıtın kilitlendi. Canlı sıralama puan değiştikçe otomatik güncellenir.</p>
+      <span className="eyebrow">Modül {session.current_module} sonucu</span>
+      <h1>{activeCompletionStatus === "completed" ? <>Tebrikler, <strong>{scoreEarned} puan</strong> aldın!</> : <>Bu turda <strong>{scoreEarned} puan</strong> topladın.</>}</h1>
+      <span className={`student-result-status ${activeCompletionStatus}`}>{activeCompletionStatus === "completed" ? "Modül tamamlandı" : "Modül tamamlanmadı"}</span>
+      <div className="score-breakdown"><span>Etkinlik <b>{baseScoreEarned}</b></span><span>Hız bonusu <b>+{speedBonusEarned}</b></span><span>Toplam <b>{scoreEarned}</b></span></div>
       {message && <div className="notice success">{message}{saving ? " · kaydediliyor" : ""}</div>}
       {error && <div className="notice error">{error}</div>}
-      <div className="student-mini-leaderboard">
-        <div className="mini-leaderboard-title"><Medal size={19} /><strong>Canlı liderlik</strong></div>
-        <ol>{ranking.slice(0, 3).map((item, index) => <li key={item.id} className={item.id === student.id ? "is-me" : ""}><span>{medals[index]}</span><b>{item.nickname}</b><strong>{item.session_score} puan</strong></li>)}</ol>
-        <div className="own-rank"><span>Senin sıran</span><strong>{ownRank > 0 ? `${ownRank}.` : "—"}</strong><small>{student.session_score} puan</small></div>
-      </div>
       <div className="next-module-wait"><Radio size={18} /><span>Öğretmen bir sonraki modülü başlatana kadar beklemede kalın…</span></div>
     </section>
   </main></>;
@@ -260,10 +235,10 @@ export default function StudentPlayPage() {
   if (!activeSubmission && session.module_started_at && countdownTimeLeft > 0 && readyModuleKey !== activeModuleKey) return <>{studentNav}<ModuleStartCountdown key={`${activeModuleKey}:${session.module_started_at}`} moduleId={session.current_module} startedAt={session.module_started_at} onComplete={() => setReadyModuleKey(activeModuleKey)} /></>;
 
   const modules = {
-    1: <Module1SystemBuild existingSubmission={activeSubmission} onSubmit={(submission) => submit(1, submission)} />,
-    2: <Module2Relations existingSubmission={activeSubmission} onSubmit={(submission) => submit(2, submission)} />,
+    1: <Module1SystemBuild existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onSubmit={(submission) => submit(1, submission)} />,
+    2: <Module2Relations existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onSubmit={(submission) => submit(2, submission)} />,
     3: <Module3Boundary existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onSubmit={(submission) => submit(3, submission)} />,
-    4: <Module4CompleteSystem existingSubmission={activeSubmission} onSubmit={(submission) => submit(4, submission)} />,
+    4: <Module4CompleteSystem existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onSubmit={(submission) => submit(4, submission)} />,
     5: <Module5RelationBalloons existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onSubmit={(submission) => submit(5, submission)} />,
   };
 

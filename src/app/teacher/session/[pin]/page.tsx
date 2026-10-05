@@ -11,7 +11,7 @@ import { QRModal } from "@/components/common/QRModal";
 import { ModuleSelector, WeekSelector } from "@/components/teacher/ModuleSelector";
 import { Leaderboard } from "@/components/teacher/Leaderboard";
 import { getRemainingCountdown } from "@/lib/moduleCountdown";
-import { cancelSessionModuleStart, getSessionByPin, startSessionModule, updateSession } from "@/lib/session";
+import { cancelSessionModuleStart, finishSessionModule, getSessionByPin, startSessionModule, updateSession } from "@/lib/session";
 import { supabase } from "@/lib/supabase";
 import { useTeacherAuth } from "@/lib/useTeacherAuth";
 import type { ModuleId, Session, Student, StudentProfile, Submission } from "@/types";
@@ -198,13 +198,25 @@ export default function TeacherSessionPage() {
     setBusy(true);
     setError("");
     try {
-      if (currentModule === 3 || currentModule === 5) {
-        await updateSession(session.id, { module_stage: 4 });
-        setSession((current) => current ? { ...current, module_stage: 4 } : current);
-        await new Promise((resolve) => window.setTimeout(resolve, 2500));
+      await updateSession(session.id, { module_stage: 4 });
+      setSession((current) => current ? { ...current, module_stage: 4 } : current);
+
+      const deadline = Date.now() + 6500;
+      while (Date.now() < deadline) {
+        const { count } = await supabase!
+          .from("submissions")
+          .select("id", { count: "exact", head: true })
+          .eq("session_id", session.id)
+          .eq("week_id", session.selected_week)
+          .eq("module_id", currentModule)
+          .eq("is_submitted", true);
+        if ((count ?? 0) >= students.length) break;
+        await new Promise((resolve) => window.setTimeout(resolve, 450));
       }
-      await updateSession(session.id, { is_module_started: false, module_started_at: null, module_stage: 3 });
-      setSession((current) => current ? { ...current, is_module_started: false, module_started_at: null, module_stage: 3 } : current);
+
+      const finishedSession = await finishSessionModule(session.id);
+      setSession(finishedSession);
+      await load();
       setResultsViewOpen(true);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Modül sonlandırılamadı.");
@@ -224,10 +236,11 @@ export default function TeacherSessionPage() {
     setBusy(true);
     setError("");
     try {
-      if (session.is_module_started && (session.current_module === 3 || session.current_module === 5)) {
+      if (session.is_module_started) {
         await updateSession(session.id, { module_stage: 4 });
         setSession((current) => current ? { ...current, module_stage: 4 } : current);
-        await new Promise((resolve) => window.setTimeout(resolve, 2500));
+        await new Promise((resolve) => window.setTimeout(resolve, 3000));
+        await finishSessionModule(session.id);
       }
       await updateSession(session.id, { is_active: false, is_module_started: false, module_started_at: null, module_stage: 3 });
       sessionStorage.removeItem("system-lab:teacher-session");
@@ -246,6 +259,9 @@ export default function TeacherSessionPage() {
   const currentSubmissions = submissions.filter((submission) => submission.is_submitted && submission.week_id === session.selected_week && submission.module_id === session.current_module);
   const submittedCount = new Set(currentSubmissions
     .map((submission) => submission.student_id)).size;
+  const completedCount = new Set(currentSubmissions
+    .filter((submission) => submission.completion_status === "completed" && submission.payload?.completionReason !== "teacher-ended")
+    .map((submission) => submission.student_id)).size;
   const resultRows = currentSubmissions.map((submission) => {
     const participant = students.find((student) => student.id === submission.student_id);
     return {
@@ -255,6 +271,7 @@ export default function TeacherSessionPage() {
       baseScore: submission.score,
       bonus: submission.speed_bonus ?? 0,
       total: submission.score + (submission.speed_bonus ?? 0),
+      completed: submission.completion_status === "completed" && submission.payload?.completionReason !== "teacher-ended",
     };
   }).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, "tr"));
   const resultAverage = resultRows.length ? Math.round(resultRows.reduce((total, row) => total + row.total, 0) / resultRows.length) : 0;
@@ -284,7 +301,7 @@ export default function TeacherSessionPage() {
         </div>
 
         <div className="teacher-result-metrics">
-          <div><Users size={22} /><span>Tamamlayan</span><strong>{submittedCount} / {students.length}</strong></div>
+          <div><Users size={22} /><span>Tamamlayan</span><strong>{completedCount} / {students.length}</strong></div>
           <div><BarChart3 size={22} /><span>Ortalama puan</span><strong>{resultAverage}</strong></div>
           <div><Award size={22} /><span>En yüksek puan</span><strong>{highestResult}</strong></div>
         </div>
@@ -293,7 +310,7 @@ export default function TeacherSessionPage() {
           <div className="teacher-result-list-head"><span>Sıra ve öğrenci</span><span>Puan dökümü</span></div>
           {resultRows.length ? <ol>{resultRows.map((row, index) => <li key={row.id}>
             <span className="teacher-result-rank">{index + 1}</span>
-            <span className="teacher-result-student"><strong>{row.name}</strong><small>{row.number}</small></span>
+            <span className="teacher-result-student"><strong>{row.name}</strong><small>{row.number}</small><em className={row.completed ? "completed" : "incomplete"}>{row.completed ? "Tamamladı" : "Tamamlamadı"}</em></span>
             <span className="teacher-result-score"><small>{row.baseScore} + {row.bonus} hız</small><strong>{row.total}</strong></span>
           </li>)}</ol> : <div className="empty">Bu modül için gönderim bulunmuyor.</div>}
         </div>

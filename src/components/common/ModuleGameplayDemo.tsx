@@ -21,7 +21,7 @@ function ModuleOneDemo() {
       <motion.span animate={{ opacity: [0, 0, 1, 1, 0], scale: [.5, .5, 1.2, 1, .5] }} transition={{ ...loop, times: [0, .48, .62, .8, 1] }}>✓</motion.span>
     </motion.div>
     <div className="module-demo-arrow">→</div>
-    <motion.span className="demo-hand demo-hand-one" animate={{ x: [0, 0, 220, 220, 0], y: [0, -5, -5, -5, 0], scale: [1, .9, 1, 1, 1] }} transition={{ ...loop, times: [0, .18, .55, .78, 1] }}>☝️</motion.span>
+    <motion.span className="demo-hand demo-hand-one" animate={{ x: [0, 0, 220, 220, 0], y: [0, -5, -5, -5, 0], scale: [1, .9, 1, 1, 1] }} transition={{ ...loop, times: [0, .18, .55, .78, 1] }}>👆</motion.span>
   </div>;
 }
 
@@ -29,14 +29,14 @@ function ModuleTwoDemo() {
   return <div className="module-demo module-demo-two" aria-hidden="true">
     <motion.div className="relation-demo-scene" animate={{ opacity: [1, 1, 0, 0, 1] }} transition={{ duration: 6, repeat: Infinity, times: [0, .43, .5, .93, 1] }}>
       <span className="relation-demo-trigger">Fiyat ↑</span>
-      <motion.div className="relation-demo-deck negative" animate={{ x: [0, -96, -96, 0], rotate: [0, -8, -8, 0] }} transition={{ duration: 3, repeat: Infinity, times: [0, .48, .78, 1] }}><span>Talep ↓</span></motion.div>
-      <motion.span className="demo-hand relation-demo-hand" animate={{ x: [0, -96, -96, 0], rotate: [0, -18, -18, 0] }} transition={{ duration: 3, repeat: Infinity, times: [0, .48, .78, 1] }}>☝️</motion.span>
+      <div className="relation-demo-deck negative"><motion.div className="relation-demo-front" animate={{ x: [0, -96, -96, 0], rotate: [0, -8, -8, 0], opacity: [1, 1, 0, 1] }} transition={{ duration: 3, repeat: Infinity, times: [0, .48, .78, 1] }}><span>Talep ↓</span></motion.div></div>
+      <motion.span className="demo-hand relation-demo-hand" animate={{ x: [0, -96, -96, 0], rotate: [0, -18, -18, 0] }} transition={{ duration: 3, repeat: Infinity, times: [0, .48, .78, 1] }}>👆</motion.span>
       <b className="relation-demo-sign negative">Negatif −</b>
     </motion.div>
     <motion.div className="relation-demo-scene" animate={{ opacity: [0, 0, 1, 1, 0] }} transition={{ duration: 6, repeat: Infinity, times: [0, .43, .5, .93, 1] }}>
       <span className="relation-demo-trigger">Reklam ↑</span>
-      <motion.div className="relation-demo-deck positive" animate={{ x: [0, 96, 96, 0], rotate: [0, 8, 8, 0] }} transition={{ duration: 3, repeat: Infinity, times: [0, .48, .78, 1] }}><span>Satış ↑</span></motion.div>
-      <motion.span className="demo-hand relation-demo-hand" animate={{ x: [0, 96, 96, 0], rotate: [0, 18, 18, 0] }} transition={{ duration: 3, repeat: Infinity, times: [0, .48, .78, 1] }}>☝️</motion.span>
+      <div className="relation-demo-deck positive"><motion.div className="relation-demo-front" animate={{ x: [0, 96, 96, 0], rotate: [0, 8, 8, 0], opacity: [1, 1, 0, 1] }} transition={{ duration: 3, repeat: Infinity, times: [0, .48, .78, 1] }}><span>Satış ↑</span></motion.div></div>
+      <motion.span className="demo-hand relation-demo-hand" animate={{ x: [0, 96, 96, 0], rotate: [0, 18, 18, 0] }} transition={{ duration: 3, repeat: Infinity, times: [0, .48, .78, 1] }}>👆</motion.span>
       <b className="relation-demo-sign positive">Pozitif +</b>
     </motion.div>
   </div>;
@@ -55,7 +55,7 @@ function ModuleThreeDemo() {
       <motion.span animate={{ color: ["#64748b", "#64748b", "#065f46", "#065f46", "#64748b"], backgroundColor: ["#fff", "#fff", "#d1fae5", "#d1fae5", "#fff"], scale: [1, 1, 1.08, 1.08, 1] }} transition={{ ...loop, times: [0, .4, .56, .82, 1] }}>Öğütme ✓</motion.span>
       <span>Soğutma</span>
     </div>
-    <motion.span className="demo-hand demo-hand-three" animate={{ y: [9, 9, -2, -2, 9], scale: [1, 1, .84, 1, 1] }} transition={{ ...loop, times: [0, .35, .48, .64, 1] }}>☝️</motion.span>
+    <motion.span className="demo-hand demo-hand-three" animate={{ y: [9, 9, -2, -2, 9], scale: [1, 1, .84, 1, 1] }} transition={{ ...loop, times: [0, .35, .48, .64, 1] }}>👆</motion.span>
   </div>;
 }
 
@@ -64,7 +64,7 @@ function ModuleFourDemo() {
     <motion.div className="match-demo-type" animate={{ borderColor: ["#cbd5e1", "#10b981", "#10b981", "#cbd5e1"], backgroundColor: ["#fff", "#d1fae5", "#d1fae5", "#fff"], scale: [1, 1.05, 1.05, 1] }} transition={{ ...loop, times: [0, .25, .75, 1] }}>Doğal Sistem</motion.div>
     <svg className="match-demo-line" viewBox="0 0 100 24" preserveAspectRatio="none"><motion.path d="M 3 12 C 30 12, 65 12, 97 12" fill="none" stroke="#10b981" strokeWidth="4" strokeLinecap="round" initial={{ pathLength: 0 }} animate={{ pathLength: [0, 0, 1, 1, 0] }} transition={{ ...loop, times: [0, .22, .55, .82, 1] }} /></svg>
     <motion.div className="match-demo-visual" animate={{ boxShadow: ["0 0 0 0 rgba(16,185,129,0)", "0 0 0 0 rgba(16,185,129,0)", "0 0 0 7px rgba(16,185,129,.16)", "0 0 0 0 rgba(16,185,129,0)"] }} transition={{ ...loop, times: [0, .48, .66, 1] }}><span>🏞️</span><small>Doğa</small></motion.div>
-    <motion.span className="demo-hand demo-hand-four" animate={{ x: [0, 0, 237, 237, 0], y: [0, -5, 0, 0, 0], scale: [1, .82, 1, .82, 1] }} transition={{ ...loop, times: [0, .2, .5, .66, 1] }}>☝️</motion.span>
+    <motion.span className="demo-hand demo-hand-four" animate={{ x: [0, 0, 237, 237, 0], y: [0, -5, 0, 0, 0], scale: [1, .82, 1, .82, 1] }} transition={{ ...loop, times: [0, .2, .5, .66, 1] }}>👆</motion.span>
   </div>;
 }
 
@@ -78,7 +78,7 @@ function ModuleFiveDemo() {
       <motion.div className="needle-demo-item selected" animate={{ x: [0, 0, 66, 66], y: [0, 0, -43, -43], rotate: [0, 0, -24, -24] }} transition={{ duration: 3.4, repeat: Infinity, times: [0, .54, .73, 1], repeatDelay: .35 }}><span>📌</span><b>Zamansal</b></motion.div>
       <div className="needle-demo-item"><span>📌</span><b>Mekânsal</b></div>
     </div>
-    <motion.span className="demo-hand demo-hand-five" animate={{ x: [0, 0, 0, 66], y: [0, 0, -5, -48], scale: [1, 1, .8, 1] }} transition={{ duration: 3.4, repeat: Infinity, times: [0, .48, .58, .76], repeatDelay: .35 }}>☝️</motion.span>
+    <motion.span className="demo-hand demo-hand-five" animate={{ x: [0, 0, 0, 66], y: [0, 0, -5, -48], scale: [1, 1, .8, 1] }} transition={{ duration: 3.4, repeat: Infinity, times: [0, .48, .58, .76], repeatDelay: .35 }}>👆</motion.span>
     <motion.div className="balloon-pop" animate={{ opacity: [0, 0, 1, 0], scale: [.3, .3, 1.4, 1.8] }} transition={{ duration: 3.4, repeat: Infinity, times: [0, .72, .79, .94], repeatDelay: .35 }}>✦</motion.div>
   </div>;
 }

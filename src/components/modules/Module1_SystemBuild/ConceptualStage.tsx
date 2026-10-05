@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { CheckCircle2, LockKeyhole, RotateCcw, XCircle } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import type { Submission } from "@/types";
@@ -142,9 +142,10 @@ function SystemSceneArt() {
   </svg>;
 }
 
-export function ConceptualStage({ onComplete, initialSubmission }: {
-  onComplete: (result: { score: number; placements: Record<string, string>; mistakes: string[] }) => Promise<boolean>;
+export function ConceptualStage({ onComplete, initialSubmission, forceSubmit }: {
+  onComplete: (result: { score: number; placements: Record<string, string>; mistakes: string[]; answeredCount: number; itemCount: number; completionReason: "completed" | "teacher-ended" }) => Promise<boolean>;
   initialSubmission?: Submission | null;
+  forceSubmit?: boolean;
 }) {
   const initial = savedPlacements(initialSubmission);
   const [placements, setPlacements] = useState<Record<string, string>>(initial);
@@ -156,6 +157,7 @@ export function ConceptualStage({ onComplete, initialSubmission }: {
   const [pointerDrag, setPointerDrag] = useState<PointerDrag | null>(null);
   const pointerDragRef = useRef<PointerDrag | null>(null);
   const suppressClickRef = useRef(false);
+  const submissionStarted = useRef(Boolean(initialSubmission?.is_submitted));
   const available = useMemo(() => cards.filter((card) => !Object.values(placements).includes(card)), [placements]);
 
   function place(zoneId: ZoneId, card: string, suppliedSource?: ZoneId) {
@@ -236,16 +238,36 @@ export function ConceptualStage({ onComplete, initialSubmission }: {
     return true;
   }
 
-  async function submit() {
-    if (locked || Object.keys(placements).length !== cards.length) return;
+  const finalize = useCallback(async (completionReason: "completed" | "teacher-ended") => {
+    if (locked || submissionStarted.current || (completionReason === "completed" && Object.keys(placements).length !== cards.length)) return;
+    submissionStarted.current = true;
     const entries = Object.entries(anatomy) as Array<[ZoneId, (typeof anatomy)[ZoneId]]>;
     const mistakes = entries.filter(([id, item]) => placements[id] !== item.answer).map(([, item]) => item.answer);
     const resultScore = Math.round(((entries.length - mistakes.length) / entries.length) * 100);
     setSubmitting(true);
-    const saved = await onComplete({ score: resultScore, placements, mistakes });
+    const saved = await onComplete({
+      score: resultScore,
+      placements,
+      mistakes,
+      answeredCount: Object.keys(placements).length,
+      itemCount: entries.length,
+      completionReason,
+    });
     setSubmitting(false);
-    if (saved) { setScore(resultScore); setLocked(true); setSelected(null); }
-  }
+    if (saved) {
+      setScore(resultScore);
+      setLocked(true);
+      setSelected(null);
+    } else {
+      submissionStarted.current = false;
+    }
+  }, [locked, onComplete, placements]);
+
+  useEffect(() => {
+    if (!forceSubmit || locked) return;
+    const timer = window.setTimeout(() => void finalize("teacher-ended"), 0);
+    return () => window.clearTimeout(timer);
+  }, [finalize, forceSubmit, locked]);
 
   const allCorrect = locked && score === 100;
   const slotProps = { placements, selected, locked, dragOver, pointerCard: pointerDrag?.card || null, onPlace: place, onSelect: setSelected, onDragOver: (zone: ZoneId | null) => setDragOver(zone), getPointerHandlers, consumeSuppressedClick };
@@ -272,6 +294,6 @@ export function ConceptualStage({ onComplete, initialSubmission }: {
     {pointerDrag?.moved && <div className="pointer-drag-ghost anatomy-pointer-ghost" style={{ left: pointerDrag.x, top: pointerDrag.y }} aria-hidden="true">{pointerDrag.card}</div>}
 
     {locked && <div className={allCorrect ? "notice success" : "notice error"}>{allCorrect ? "Tebrikler! Sistem anatomisinin tamamını doğru kurdun. Puanın sonuçlar açıklanana kadar gizli." : "Yanıtın kilitlendi. Doğru ve yanlış yerleşimler işaretlendi; puanın sonuçlar açıklanana kadar gizli."}</div>}
-    <div className="button-row module-actions"><Button loading={submitting} onClick={() => void submit()} disabled={locked || Object.keys(placements).length !== cards.length}>{locked ? "Yanıt gönderildi" : "Kontrol Et"}</Button><Button variant="secondary" icon={<RotateCcw size={16} />} disabled={locked || submitting} onClick={() => { setPlacements({}); setSelected(null); }}>Sıfırla</Button></div>
+    <div className="button-row module-actions"><Button loading={submitting} onClick={() => void finalize("completed")} disabled={locked || Object.keys(placements).length !== cards.length}>{locked ? "Yanıt gönderildi" : "Kontrol Et"}</Button><Button variant="secondary" icon={<RotateCcw size={16} />} disabled={locked || submitting} onClick={() => { setPlacements({}); setSelected(null); }}>Sıfırla</Button></div>
   </div>;
 }

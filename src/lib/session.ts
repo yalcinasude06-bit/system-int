@@ -224,3 +224,12 @@ export async function cancelSessionModuleStart(sessionId: string): Promise<Sessi
   if (error) throw error;
   return data as Session;
 }
+
+export async function finishSessionModule(sessionId: string): Promise<Session> {
+  const client = requireSupabase();
+  const { data, error } = await client.rpc("finish_session_module", {
+    target_session_id: sessionId,
+  });
+  if (error) throw error;
+  return data as Session;
+}
