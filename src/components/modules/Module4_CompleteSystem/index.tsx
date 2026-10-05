@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { Check, LockKeyhole, RotateCcw, Sparkles, Unlink, X } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import type { LearningModuleProps, ModuleSubmission } from "@/types";
@@ -10,6 +10,7 @@ type SystemType = {
   id: string;
   name: string;
   visual: string;
+  visualLabel: string;
   description: string;
   color: string;
 };
@@ -24,17 +25,19 @@ type ConnectionLine = {
   status: "pending" | "correct" | "wrong";
 };
 
+type MatchPointerDrag = { typeId: string; pointerId: number; x: number; y: number; startX: number; startY: number; moved: boolean };
+
 const systemTypes: SystemType[] = [
-  { id: "natural", name: "Doğal Sistem", visual: "Akarsu ve doğal vadi", description: "Sistem insan müdahalesi olmadan doğal yollarla oluşmuştur.", color: "#38bdf8" },
-  { id: "human-made", name: "İnsan Yapımı Sistem", visual: "Büyük beton baraj", description: "İnsan tarafından tasarlanmış ve inşa edilmiştir.", color: "#818cf8" },
-  { id: "static", name: "Statik Sistem", visual: "Üzerinde araç olmayan boş köprü", description: "Yapı faaliyetsizdir ve durumunu korur.", color: "#94a3b8" },
-  { id: "dynamic", name: "Dinamik Sistem", visual: "Çalışan fabrika robotları ve montaj hattı", description: "Makineler ve akış sürekli hareket ve değişim içindedir.", color: "#f59e0b" },
-  { id: "closed", name: "Kapalı Sistem", visual: "Mühürlü cam deney kapsülü", description: "Dış ortamla madde ve enerji alışverişi yoktur.", color: "#a78bfa" },
-  { id: "open", name: "Açık Sistem", visual: "Güneş ve su alan canlı bitki", description: "Çevresiyle sürekli madde ve enerji alışverişi yapar.", color: "#34d399" },
-  { id: "deterministic", name: "Deterministik Sistem", visual: "Kenetlenmiş metal dişli mekanizması", description: "Bir parçanın hareketi diğerini kesin biçimde belirler.", color: "#64748b" },
-  { id: "stochastic", name: "Stokastik Sistem", visual: "Havaya atılmış iki oyun zarı", description: "Sonuç önceden kesin bilinemez, olasılığa bağlıdır.", color: "#f472b6" },
-  { id: "physical", name: "Fiziksel Sistem", visual: "Gerçek metal çaydanlık", description: "Maddi varlığı olan ve fiziksel olarak görülebilen sistemdir.", color: "#fb923c" },
-  { id: "conceptual", name: "Kavramsal Sistem", visual: "Mimari blueprint planı", description: "Fiziksel nesne değil, düşünce ve planın sembollerle gösterimidir.", color: "#60a5fa" },
+  { id: "natural", name: "Doğal Sistem", visual: "Akarsu ve doğal vadi", visualLabel: "Akarsu", description: "Sistem insan müdahalesi olmadan doğal yollarla oluşmuştur.", color: "#38bdf8" },
+  { id: "human-made", name: "İnsan Yapımı Sistem", visual: "Büyük beton baraj", visualLabel: "Baraj", description: "İnsan tarafından tasarlanmış ve inşa edilmiştir.", color: "#818cf8" },
+  { id: "static", name: "Statik Sistem", visual: "Üzerinde araç olmayan boş köprü", visualLabel: "Boş Köprü", description: "Yapı faaliyetsizdir ve durumunu korur.", color: "#94a3b8" },
+  { id: "dynamic", name: "Dinamik Sistem", visual: "Çalışan fabrika robotları ve montaj hattı", visualLabel: "Fabrika", description: "Makineler ve akış sürekli hareket ve değişim içindedir.", color: "#f59e0b" },
+  { id: "closed", name: "Kapalı Sistem", visual: "Mühürlü cam deney kapsülü", visualLabel: "Cam Kapsül", description: "Dış ortamla madde ve enerji alışverişi yoktur.", color: "#a78bfa" },
+  { id: "open", name: "Açık Sistem", visual: "Güneş ve su alan canlı bitki", visualLabel: "Canlı Bitki", description: "Çevresiyle sürekli madde ve enerji alışverişi yapar.", color: "#34d399" },
+  { id: "deterministic", name: "Deterministik Sistem", visual: "Kenetlenmiş metal dişli mekanizması", visualLabel: "Dişli Mekanizması", description: "Bir parçanın hareketi diğerini kesin biçimde belirler.", color: "#64748b" },
+  { id: "stochastic", name: "Stokastik Sistem", visual: "Havaya atılmış iki oyun zarı", visualLabel: "Oyun Zarları", description: "Sonuç önceden kesin bilinemez, olasılığa bağlıdır.", color: "#f472b6" },
+  { id: "physical", name: "Fiziksel Sistem", visual: "Gerçek metal çaydanlık", visualLabel: "Çaydanlık", description: "Maddi varlığı olan ve fiziksel olarak görülebilen sistemdir.", color: "#fb923c" },
+  { id: "conceptual", name: "Kavramsal Sistem", visual: "Mimari blueprint planı", visualLabel: "Sistem Planı", description: "Fiziksel nesne değil, düşünce ve planın sembollerle gösterimidir.", color: "#60a5fa" },
 ];
 
 const visualOrder = ["stochastic", "open", "human-made", "conceptual", "dynamic", "natural", "physical", "closed", "deterministic", "static"];
@@ -52,9 +55,13 @@ export function Module4CompleteSystem({ onSubmit, existingSubmission }: Learning
   const [submitting, setSubmitting] = useState(false);
   const [submitFailed, setSubmitFailed] = useState(false);
   const [finalSubmission, setFinalSubmission] = useState<ModuleSubmission | null>(null);
+  const [pointerDrag, setPointerDrag] = useState<MatchPointerDrag | null>(null);
+  const [dragOverVisual, setDragOverVisual] = useState<string | null>(null);
   const boardRef = useRef<HTMLDivElement | null>(null);
   const typeRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const visualRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const pointerDragRef = useRef<MatchPointerDrag | null>(null);
+  const suppressClickRef = useRef(false);
   const currentSystems = systemRounds[roundIndex];
   const currentSystemIds = systemRoundIds[roundIndex];
   const currentVisualCards = visualOrder
@@ -112,20 +119,77 @@ export function Module4CompleteSystem({ onSubmit, existingSubmission }: Learning
     setSelectedType((current) => current === id ? null : id);
   }
 
-  function assignVisual(visualId: string) {
+  function assignMatch(typeId: string, visualId: string) {
     if (evaluated) return;
-    if (!selectedType) return;
     const next = { ...matches };
-    for (const [typeId, assignedVisual] of Object.entries(next)) {
-      if (assignedVisual === visualId && typeId !== selectedType) delete next[typeId];
+    for (const [matchedTypeId, assignedVisual] of Object.entries(next)) {
+      if (assignedVisual === visualId && matchedTypeId !== typeId) delete next[matchedTypeId];
     }
-    next[selectedType] = visualId;
+    next[typeId] = visualId;
     setMatches(next);
     setSelectedType(null);
     if (roundIndex === 0 && currentSystemIds.every((id) => Boolean(next[id]))) {
       setLines([]);
       setRoundIndex(1);
     }
+  }
+
+  function assignVisual(visualId: string) {
+    if (!selectedType) return;
+    assignMatch(selectedType, visualId);
+  }
+
+  function visualTargetAt(x: number, y: number) {
+    const target = document.elementFromPoint(x, y) as HTMLElement | null;
+    return target?.closest<HTMLElement>("[data-match-visual]")?.dataset.matchVisual || null;
+  }
+
+  function resetPointerDrag() {
+    pointerDragRef.current = null;
+    setPointerDrag(null);
+    setDragOverVisual(null);
+  }
+
+  function getTypePointerHandlers(typeId: string) {
+    return {
+      onPointerDown: (event: ReactPointerEvent<HTMLButtonElement>) => {
+        if (evaluated || event.button !== 0) return;
+        const next = { typeId, pointerId: event.pointerId, x: event.clientX, y: event.clientY, startX: event.clientX, startY: event.clientY, moved: false };
+        pointerDragRef.current = next;
+        setPointerDrag(next);
+        event.currentTarget.setPointerCapture(event.pointerId);
+      },
+      onPointerMove: (event: ReactPointerEvent<HTMLButtonElement>) => {
+        const current = pointerDragRef.current;
+        if (!current || current.pointerId !== event.pointerId) return;
+        event.preventDefault();
+        const moved = current.moved || Math.hypot(event.clientX - current.startX, event.clientY - current.startY) > 6;
+        const next = { ...current, x: event.clientX, y: event.clientY, moved };
+        pointerDragRef.current = next;
+        setPointerDrag(next);
+        setDragOverVisual(moved ? visualTargetAt(event.clientX, event.clientY) : null);
+      },
+      onPointerUp: (event: ReactPointerEvent<HTMLButtonElement>) => {
+        const current = pointerDragRef.current;
+        if (!current || current.pointerId !== event.pointerId) return;
+        const visualId = current.moved ? visualTargetAt(event.clientX, event.clientY) : null;
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+        resetPointerDrag();
+        if (!current.moved) return;
+        suppressClickRef.current = true;
+        window.setTimeout(() => { suppressClickRef.current = false; }, 0);
+        if (visualId && currentSystemIds.includes(visualId)) assignMatch(current.typeId, visualId);
+      },
+      onPointerCancel: (event: ReactPointerEvent<HTMLButtonElement>) => {
+        if (pointerDragRef.current?.pointerId === event.pointerId) resetPointerDrag();
+      },
+    };
+  }
+
+  function consumeSuppressedClick() {
+    if (!suppressClickRef.current) return false;
+    suppressClickRef.current = false;
+    return true;
   }
 
   async function evaluate() {
@@ -162,6 +226,8 @@ export function Module4CompleteSystem({ onSubmit, existingSubmission }: Learning
       <strong>{Object.keys(matches).length} / {systemTypes.length} · Tur {roundIndex + 1} / 2</strong>
     </div>
 
+    <p className="touch-drag-hint"><span aria-hidden="true">☝️</span> Sistem türünü görsele sürükleyin. İsterseniz türü ve ardından görseli seçebilirsiniz.</p>
+
     <div className="matching-board visual-only-board" ref={boardRef} key={roundIndex}>
       <svg className="matching-lines" aria-hidden="true">
         {lines.map((line) => {
@@ -187,7 +253,9 @@ export function Module4CompleteSystem({ onSubmit, existingSubmission }: Learning
               ref={(node) => { typeRefs.current[system.id] = node; }}
               className={`${selectedType === system.id ? "selected" : ""} ${assigned ? "assigned" : ""} ${status}`}
               disabled={evaluated}
-              onClick={() => selectType(system.id)}
+              {...getTypePointerHandlers(system.id)}
+              onClick={() => { if (!consumeSuppressedClick()) selectType(system.id); }}
+              data-pointer-source={pointerDrag?.typeId === system.id ? "true" : undefined}
             ><span>{index + 1}</span><strong>{system.name}</strong>{assigned && !evaluated && <i aria-hidden="true"><Unlink size={15} /></i>}{status === "correct" && <Check size={18} />}{status === "wrong" && <X size={18} />}</button>
             {status === "wrong" && <div className="type-result-explanation"><strong>Doğru görsel:</strong> {system.visual}. {system.description}</div>}
           </div>;
@@ -205,14 +273,17 @@ export function Module4CompleteSystem({ onSubmit, existingSubmission }: Learning
             type="button"
             key={system.id}
             ref={(node) => { visualRefs.current[system.id] = node; }}
-            className={`${assignedType ? "assigned" : ""} ${status}`}
+            className={`${assignedType ? "assigned" : ""} ${status} ${dragOverVisual === system.id ? "drag-over" : ""}`}
             disabled={evaluated}
             onClick={() => assignVisual(system.id)}
             aria-label={system.visual}
-          ><SystemTypeIllustration type={system.id} />{assignedType && !evaluated && <i aria-hidden="true">●</i>}{status === "correct" && <i><Check size={17} /></i>}{status === "wrong" && <i><X size={17} /></i>}</button>;
+            data-match-visual={system.id}
+          ><SystemTypeIllustration type={system.id} /><span className="system-visual-name">{system.visualLabel}</span>{assignedType && !evaluated && <i aria-hidden="true">●</i>}{status === "correct" && <i><Check size={17} /></i>}{status === "wrong" && <i><X size={17} /></i>}</button>;
         })}
       </div>
     </div>
+
+    {pointerDrag?.moved && <div className="pointer-drag-ghost matching-pointer-ghost" style={{ left: pointerDrag.x, top: pointerDrag.y }} aria-hidden="true">{systemTypes.find((system) => system.id === pointerDrag.typeId)?.name}</div>}
 
     {roundIndex === 1 && <div className="button-row matching-actions"><Button disabled={evaluated || Object.keys(matches).length !== systemTypes.length} loading={submitting} icon={<Check size={18} />} onClick={() => void evaluate()}>Eşleştirmeleri Kontrol Et</Button></div>}
 

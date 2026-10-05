@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { CheckCircle2, LockKeyhole, RotateCcw, XCircle } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import type { Submission } from "@/types";
@@ -18,6 +18,13 @@ const anatomy = {
 } as const;
 
 type ZoneId = keyof typeof anatomy;
+type PointerDrag = { card: string; sourceZone?: ZoneId; pointerId: number; x: number; y: number; startX: number; startY: number; moved: boolean };
+type CardPointerHandlers = {
+  onPointerDown: (event: ReactPointerEvent<HTMLButtonElement>) => void;
+  onPointerMove: (event: ReactPointerEvent<HTMLButtonElement>) => void;
+  onPointerUp: (event: ReactPointerEvent<HTMLButtonElement>) => void;
+  onPointerCancel: (event: ReactPointerEvent<HTMLButtonElement>) => void;
+};
 const cardOrder: ZoneId[] = ["components", "relations", "boundary", "purpose", "environment", "interface", "input", "output", "constraint"];
 const cards = cardOrder.map((id) => anatomy[id].answer);
 const legacyNames: Record<string, string> = { "Ara yüzler": "Arayüz", Kısıt: "Kısıtlar" };
@@ -29,15 +36,18 @@ function savedPlacements(submission?: Submission | null) {
   return Object.fromEntries(Object.entries(value).map(([zone, card]) => [zone, typeof card === "string" ? legacyNames[card] || card : card]).filter(([zone, card]) => zone in anatomy && typeof card === "string" && cards.includes(card as (typeof cards)[number]))) as Record<string, string>;
 }
 
-function AnatomySlot({ id, placements, selected, locked, dragOver, onPlace, onSelect, onDragOver }: {
+function AnatomySlot({ id, placements, selected, locked, dragOver, pointerCard, onPlace, onSelect, onDragOver, getPointerHandlers, consumeSuppressedClick }: {
   id: ZoneId;
   placements: Record<string, string>;
   selected: string | null;
   locked: boolean;
   dragOver: string | null;
+  pointerCard: string | null;
   onPlace: (zoneId: ZoneId, card: string, sourceZone?: ZoneId) => void;
   onSelect: (card: string) => void;
   onDragOver: (zoneId: ZoneId | null) => void;
+  getPointerHandlers: (card: string, sourceZone?: ZoneId) => CardPointerHandlers;
+  consumeSuppressedClick: () => boolean;
 }) {
   const zone = anatomy[id];
   const value = placements[id];
@@ -46,6 +56,7 @@ function AnatomySlot({ id, placements, selected, locked, dragOver, onPlace, onSe
 
   return <div
     className={`scene-slot slot-${id} ${value ? "filled" : ""} ${correct ? "correct" : ""} ${wrong ? "wrong" : ""} ${dragOver === id ? "drag-over" : ""} ${locked ? "locked" : ""}`}
+    data-anatomy-drop={id}
     onDragEnter={(event) => { if (!locked) { event.preventDefault(); onDragOver(id); } }}
     onDragOver={(event) => { if (!locked) event.preventDefault(); }}
     onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) onDragOver(null); }}
@@ -61,10 +72,10 @@ function AnatomySlot({ id, placements, selected, locked, dragOver, onPlace, onSe
     <span className="slot-number" aria-hidden="true">{slotNumbers[id]}</span>
     {value && <button
       type="button"
-      draggable={!locked}
-      className={`placed-anatomy-card ${selected === value ? "selected" : ""}`}
-      onClick={(event) => { event.stopPropagation(); if (!locked) onSelect(value); }}
-      onDragStart={(event) => { event.dataTransfer.setData("text/plain", value); event.dataTransfer.setData("application/x-system-zone", id); }}
+      draggable={false}
+      className={`placed-anatomy-card ${selected === value ? "selected" : ""} ${pointerCard === value ? "pointer-source" : ""}`}
+      {...getPointerHandlers(value, id)}
+      onClick={(event) => { event.stopPropagation(); if (consumeSuppressedClick()) return; if (!locked) onSelect(value); }}
     >{value}</button>}
     {correct && <CheckCircle2 className="slot-check" size={18} aria-label="Doğru" />}
     {wrong && <XCircle className="slot-check wrong-check" size={18} aria-label="Yanlış" />}
@@ -142,6 +153,9 @@ export function ConceptualStage({ onComplete, initialSubmission }: {
   const [score, setScore] = useState(initialSubmission?.score ?? null);
   const [submitting, setSubmitting] = useState(false);
   const [dragOver, setDragOver] = useState<string | null>(null);
+  const [pointerDrag, setPointerDrag] = useState<PointerDrag | null>(null);
+  const pointerDragRef = useRef<PointerDrag | null>(null);
+  const suppressClickRef = useRef(false);
   const available = useMemo(() => cards.filter((card) => !Object.values(placements).includes(card)), [placements]);
 
   function place(zoneId: ZoneId, card: string, suppliedSource?: ZoneId) {
@@ -167,6 +181,61 @@ export function ConceptualStage({ onComplete, initialSubmission }: {
     setSelected(null);
   }
 
+  function dropTargetAt(x: number, y: number) {
+    const target = document.elementFromPoint(x, y) as HTMLElement | null;
+    return target?.closest<HTMLElement>("[data-anatomy-drop]")?.dataset.anatomyDrop || null;
+  }
+
+  function resetPointerDrag() {
+    pointerDragRef.current = null;
+    setPointerDrag(null);
+    setDragOver(null);
+  }
+
+  function getPointerHandlers(card: string, sourceZone?: ZoneId): CardPointerHandlers {
+    return {
+      onPointerDown: (event) => {
+        if (locked || event.button !== 0) return;
+        const next = { card, sourceZone, pointerId: event.pointerId, x: event.clientX, y: event.clientY, startX: event.clientX, startY: event.clientY, moved: false };
+        pointerDragRef.current = next;
+        setPointerDrag(next);
+        event.currentTarget.setPointerCapture(event.pointerId);
+      },
+      onPointerMove: (event) => {
+        const current = pointerDragRef.current;
+        if (!current || current.pointerId !== event.pointerId) return;
+        event.preventDefault();
+        const moved = current.moved || Math.hypot(event.clientX - current.startX, event.clientY - current.startY) > 6;
+        const next = { ...current, x: event.clientX, y: event.clientY, moved };
+        pointerDragRef.current = next;
+        setPointerDrag(next);
+        setDragOver(moved ? dropTargetAt(event.clientX, event.clientY) : null);
+      },
+      onPointerUp: (event) => {
+        const current = pointerDragRef.current;
+        if (!current || current.pointerId !== event.pointerId) return;
+        const target = current.moved ? dropTargetAt(event.clientX, event.clientY) : null;
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+        resetPointerDrag();
+        if (!current.moved) return;
+        suppressClickRef.current = true;
+        window.setTimeout(() => { suppressClickRef.current = false; }, 0);
+        if (target === "pool") returnToPool(current.card);
+        else if (target && target in anatomy) place(target as ZoneId, current.card, current.sourceZone);
+      },
+      onPointerCancel: (event) => {
+        if (pointerDragRef.current?.pointerId !== event.pointerId) return;
+        resetPointerDrag();
+      },
+    };
+  }
+
+  function consumeSuppressedClick() {
+    if (!suppressClickRef.current) return false;
+    suppressClickRef.current = false;
+    return true;
+  }
+
   async function submit() {
     if (locked || Object.keys(placements).length !== cards.length) return;
     const entries = Object.entries(anatomy) as Array<[ZoneId, (typeof anatomy)[ZoneId]]>;
@@ -179,24 +248,28 @@ export function ConceptualStage({ onComplete, initialSubmission }: {
   }
 
   const allCorrect = locked && score === 100;
-  const slotProps = { placements, selected, locked, dragOver, onPlace: place, onSelect: setSelected, onDragOver: (zone: ZoneId | null) => setDragOver(zone) };
+  const slotProps = { placements, selected, locked, dragOver, pointerCard: pointerDrag?.card || null, onPlace: place, onSelect: setSelected, onDragOver: (zone: ZoneId | null) => setDragOver(zone), getPointerHandlers, consumeSuppressedClick };
 
   return <div className="module-shell">
+    <p className="touch-drag-hint"><span aria-hidden="true">☝️</span> Kartı basılı tutup hedef yuvaya sürükleyin. Dokunarak yerleştirme de kullanılabilir.</p>
     <div
       className={`card-tray anatomy-card-tray ${available.length ? "" : "is-empty"} ${dragOver === "pool" ? "drag-over" : ""}`}
       aria-label="Bekleyen kavram kartları"
+      data-anatomy-drop="pool"
       onDragEnter={(event) => { if (!locked) { event.preventDefault(); setDragOver("pool"); } }}
       onDragOver={(event) => { if (!locked) event.preventDefault(); }}
       onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragOver(null); }}
       onDrop={(event) => { event.preventDefault(); setDragOver(null); returnToPool(event.dataTransfer.getData("text/plain")); }}
       onClick={() => { if (selected) returnToPool(selected); }}
     >
-      {available.map((card) => <button draggable={!locked} key={card} type="button" className={`drag-card ${selected === card ? "selected" : ""}`} onDragStart={(event) => event.dataTransfer.setData("text/plain", card)} onClick={(event) => { event.stopPropagation(); if (!locked) setSelected(card); }}>{card}</button>)}
+      {available.map((card) => <button draggable={false} key={card} type="button" className={`drag-card ${selected === card ? "selected" : ""} ${pointerDrag?.card === card ? "pointer-source" : ""}`} {...getPointerHandlers(card)} onClick={(event) => { event.stopPropagation(); if (consumeSuppressedClick()) return; if (!locked) setSelected(card); }}>{card}</button>)}
       {!available.length && !locked && <span className="anatomy-tray-empty">Tüm kartlar şemada · Geri almak için buraya bırak.</span>}
       {locked && <span className="locked-badge"><LockKeyhole size={14} /> Gönderildi · puan gizli</span>}
     </div>
 
     <div className="system-scene-scroll"><div className="system-scene"><SystemSceneArt /><AnatomySlot id="constraint" {...slotProps} /><AnatomySlot id="components" {...slotProps} /><AnatomySlot id="relations" {...slotProps} /><AnatomySlot id="boundary" {...slotProps} /><AnatomySlot id="purpose" {...slotProps} /><AnatomySlot id="environment" {...slotProps} /><AnatomySlot id="interface" {...slotProps} /><AnatomySlot id="input" {...slotProps} /><AnatomySlot id="output" {...slotProps} /></div></div>
+
+    {pointerDrag?.moved && <div className="pointer-drag-ghost anatomy-pointer-ghost" style={{ left: pointerDrag.x, top: pointerDrag.y }} aria-hidden="true">{pointerDrag.card}</div>}
 
     {locked && <div className={allCorrect ? "notice success" : "notice error"}>{allCorrect ? "Tebrikler! Sistem anatomisinin tamamını doğru kurdun. Puanın sonuçlar açıklanana kadar gizli." : "Yanıtın kilitlendi. Doğru ve yanlış yerleşimler işaretlendi; puanın sonuçlar açıklanana kadar gizli."}</div>}
     <div className="button-row module-actions"><Button loading={submitting} onClick={() => void submit()} disabled={locked || Object.keys(placements).length !== cards.length}>{locked ? "Yanıt gönderildi" : "Kontrol Et"}</Button><Button variant="secondary" icon={<RotateCcw size={16} />} disabled={locked || submitting} onClick={() => { setPlacements({}); setSelected(null); }}>Sıfırla</Button></div>

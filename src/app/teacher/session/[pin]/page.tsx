@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
-import { Copy, Expand, LogOut, Power, Radio, Trophy, Users } from "lucide-react";
+import { ArrowLeft, Award, BarChart3, CheckCircle2, Copy, Expand, LogOut, Power, Radio, Trophy, Users } from "lucide-react";
 import { Navbar } from "@/components/common/Navbar";
 import { Button } from "@/components/common/Button";
 import { ModuleStartCountdown } from "@/components/common/ModuleStartCountdown";
@@ -28,6 +28,7 @@ export default function TeacherSessionPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [qrOpen, setQrOpen] = useState(false);
+  const [resultsViewOpen, setResultsViewOpen] = useState(false);
   const [briefingModule, setBriefingModule] = useState<ModuleId | null>(null);
   const [joinUrl, setJoinUrl] = useState(`/student?pin=${pin}`);
   const refreshTimerRef = useRef<number | null>(null);
@@ -155,6 +156,7 @@ export default function TeacherSessionPage() {
 
   function chooseWeek(selectedWeek: number) {
     if (selectedWeek === session?.selected_week) return;
+    setResultsViewOpen(false);
     void patch({ selected_week: selectedWeek, current_module: 1, module_stage: 1, is_module_started: false, module_started_at: null, fault_injected: false });
   }
 
@@ -162,6 +164,7 @@ export default function TeacherSessionPage() {
     if (!session || session.selected_week !== 1) return;
     setBusy(true);
     setError("");
+    setResultsViewOpen(false);
     try {
       const startedSession = await startSessionModule(session.id, currentModule);
       setSession(startedSession);
@@ -202,6 +205,7 @@ export default function TeacherSessionPage() {
       }
       await updateSession(session.id, { is_module_started: false, module_started_at: null, module_stage: 3 });
       setSession((current) => current ? { ...current, is_module_started: false, module_started_at: null, module_stage: 3 } : current);
+      setResultsViewOpen(true);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Modül sonlandırılamadı.");
     } finally {
@@ -239,9 +243,23 @@ export default function TeacherSessionPage() {
   if (authStatus === "unauthenticated") return <><Navbar /><main className="container page"><div className="empty">Öğretmen girişine yönlendiriliyorsunuz…</div></main></>;
   if (!session) return <><Navbar /><main className="container page"><div className="notice error">{error || "Oturum bulunamadı."}</div></main></>;
 
-  const submittedCount = new Set(submissions
-    .filter((submission) => submission.is_submitted && submission.week_id === session.selected_week && submission.module_id === session.current_module)
+  const currentSubmissions = submissions.filter((submission) => submission.is_submitted && submission.week_id === session.selected_week && submission.module_id === session.current_module);
+  const submittedCount = new Set(currentSubmissions
     .map((submission) => submission.student_id)).size;
+  const resultRows = currentSubmissions.map((submission) => {
+    const participant = students.find((student) => student.id === submission.student_id);
+    return {
+      id: submission.id,
+      name: participant?.nickname || submission.student_number,
+      number: submission.student_number,
+      baseScore: submission.score,
+      bonus: submission.speed_bonus ?? 0,
+      total: submission.score + (submission.speed_bonus ?? 0),
+    };
+  }).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, "tr"));
+  const resultAverage = resultRows.length ? Math.round(resultRows.reduce((total, row) => total + row.total, 0) / resultRows.length) : 0;
+  const highestResult = resultRows[0]?.total ?? 0;
+  const resultsRevealed = !session.is_module_started && session.module_stage >= 3;
 
   return <main className="projection-page">
     <header className="projection-topbar teacher-topbar">
@@ -255,7 +273,33 @@ export default function TeacherSessionPage() {
 
     <div className="projection-content teacher-dashboard-content">
       {error && <div className="notice error">{error}</div>}
-      <div className="teacher-dashboard-grid">
+      {resultsViewOpen && resultsRevealed ? <section className="panel teacher-results-view">
+        <div className="teacher-results-head">
+          <div>
+            <span className="eyebrow">Hafta {session.selected_week} · Modül {session.current_module}</span>
+            <h1>Modül sonuçları</h1>
+            <p>Sonuçlar öğrencilere açıldı. Taban puan ve doğrulukla ağırlıklandırılmış hız bonusu birlikte gösteriliyor.</p>
+          </div>
+          <span className="teacher-results-status"><CheckCircle2 size={20} /> Yayında</span>
+        </div>
+
+        <div className="teacher-result-metrics">
+          <div><Users size={22} /><span>Tamamlayan</span><strong>{submittedCount} / {students.length}</strong></div>
+          <div><BarChart3 size={22} /><span>Ortalama puan</span><strong>{resultAverage}</strong></div>
+          <div><Award size={22} /><span>En yüksek puan</span><strong>{highestResult}</strong></div>
+        </div>
+
+        <div className="teacher-result-list" aria-label="Modül sonuç sıralaması">
+          <div className="teacher-result-list-head"><span>Sıra ve öğrenci</span><span>Puan dökümü</span></div>
+          {resultRows.length ? <ol>{resultRows.map((row, index) => <li key={row.id}>
+            <span className="teacher-result-rank">{index + 1}</span>
+            <span className="teacher-result-student"><strong>{row.name}</strong><small>{row.number}</small></span>
+            <span className="teacher-result-score"><small>{row.baseScore} + {row.bonus} hız</small><strong>{row.total}</strong></span>
+          </li>)}</ol> : <div className="empty">Bu modül için gönderim bulunmuyor.</div>}
+        </div>
+
+        <Button variant="secondary" icon={<ArrowLeft size={18} />} onClick={() => setResultsViewOpen(false)}>Ders akışına dön</Button>
+      </section> : <div className="teacher-dashboard-grid">
         <section className="panel teacher-module-manager">
           <div className="teacher-panel-heading"><span className="eyebrow">Ders Akışı</span><h1>Hafta ve Modül Yönetimi</h1></div>
           <WeekSelector activeWeek={session.selected_week} disabled={busy || session.is_module_started} onChange={chooseWeek} />
@@ -284,7 +328,7 @@ export default function TeacherSessionPage() {
             <Leaderboard students={students} profiles={profiles} />
           </section>
         </aside>
-      </div>
+      </div>}
     </div>
     <QRModal open={qrOpen} onClose={() => setQrOpen(false)} url={joinUrl} pin={pin} />
     {briefingModule && session.is_module_started && session.module_started_at && <ModuleStartCountdown key={`${briefingModule}:${session.module_started_at}`} moduleId={briefingModule} startedAt={session.module_started_at} canceling={busy} onCancel={() => void cancelModuleStart()} onComplete={() => setBriefingModule(null)} />}
