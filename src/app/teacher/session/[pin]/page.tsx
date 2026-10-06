@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import { ArrowLeft, Award, BarChart3, CheckCircle2, Copy, Expand, LogOut, Power, Radio, Trophy, Users } from "lucide-react";
 import { Navbar } from "@/components/common/Navbar";
+import { LanguageSwitcher } from "@/components/common/LanguageSwitcher";
 import { Button } from "@/components/common/Button";
 import { ModuleStartCountdown } from "@/components/common/ModuleStartCountdown";
 import { QRModal } from "@/components/common/QRModal";
@@ -280,9 +281,10 @@ export default function TeacherSessionPage() {
 
   return <main className="projection-page">
     <header className="projection-topbar teacher-topbar">
-      <div className="projection-brand"><span><Radio size={23} /></span><div><strong>{session.title}</strong><small>Öğretmen Paneli</small></div></div>
+      <div className="projection-brand"><span><Radio size={23} /></span><div><strong data-i18n-skip>{session.title}</strong><small>Öğretmen Paneli</small></div></div>
       <div className="projection-session-facts">
         <span className="projection-student-count"><Users size={19} /><b>{students.length}</b><small>bağlı öğrenci</small></span>
+        <LanguageSwitcher />
         <Button size="small" variant="secondary" icon={<Power size={16} />} onClick={() => void closeSession()}>Oturumu Kapat</Button>
         <Button size="small" variant="secondary" icon={<LogOut size={16} />} onClick={leaveTeacherPanel}>Çıkış</Button>
       </div>
@@ -310,7 +312,7 @@ export default function TeacherSessionPage() {
           <div className="teacher-result-list-head"><span>Sıra ve öğrenci</span><span>Puan dökümü</span></div>
           {resultRows.length ? <ol>{resultRows.map((row, index) => <li key={row.id}>
             <span className="teacher-result-rank">{index + 1}</span>
-            <span className="teacher-result-student"><strong>{row.name}</strong><small>{row.number}</small><em className={row.completed ? "completed" : "incomplete"}>{row.completed ? "Tamamladı" : "Tamamlamadı"}</em></span>
+            <span className="teacher-result-student"><strong data-i18n-skip>{row.name}</strong><small data-i18n-skip>{row.number}</small><em className={row.completed ? "completed" : "incomplete"}>{row.completed ? "Tamamladı" : "Tamamlamadı"}</em></span>
             <span className="teacher-result-score"><small>{row.baseScore} + {row.bonus} hız</small><strong>{row.total}</strong></span>
           </li>)}</ol> : <div className="empty">Bu modül için gönderim bulunmuyor.</div>}
         </div>

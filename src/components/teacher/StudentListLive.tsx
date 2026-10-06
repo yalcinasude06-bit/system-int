@@ -21,7 +21,7 @@ export function StudentListLive({ students, submissions, week, module, isStarted
       const status = completed ? "Tamamladı" : incomplete ? "Tamamlamadı" : isStarted ? "Çözüyor" : "Bekliyor";
       return <div className={`student-chip ${completed ? "completed" : incomplete ? "incomplete" : isStarted ? "solving" : "waiting"}`} key={student.id}>
         <b>{student.avatar}</b>
-        <span className="student-identity"><strong>{student.nickname}</strong><small>No: {student.student_number}</small></span>
+        <span className="student-identity" data-i18n-skip><strong>{student.nickname}</strong><small>No: {student.student_number}</small></span>
         <span className="student-live-status"><i />{completed ? "✅" : incomplete ? "⏱️" : isStarted ? "🟢" : "🟡"} {status}</span>
       </div>;
     })}

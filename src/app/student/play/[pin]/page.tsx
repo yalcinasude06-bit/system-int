@@ -25,6 +25,7 @@ export default function StudentPlayPage() {
   const [student, setStudent] = useState<Student | null>(null);
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [classmates, setClassmates] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -44,6 +45,7 @@ export default function StudentPlayPage() {
       setSession(gameState.session);
       setStudent(gameState.student);
       setSubmissions(gameState.submissions);
+      setClassmates(gameState.classmates);
       setProfile(gameState.profile);
       setFeedbackKeys(gameState.feedback_keys || []);
     } catch (caught) {
@@ -96,14 +98,20 @@ export default function StudentPlayPage() {
         }
         setSession(event.new as Session);
       })
-      .on("postgres_changes", { event: "*", schema: "public", table: "students", filter: `id=eq.${studentId}` }, (event) => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "students", filter: `session_id=eq.${sessionId}` }, (event) => {
+        const changedId = (event.eventType === "DELETE" ? event.old.id : event.new.id) as string | undefined;
+        if (!changedId) return;
         if (event.eventType === "DELETE") {
-          localStorage.removeItem(`system-lab:${pin}:student`);
-          router.replace(`/student?pin=${pin}`);
+          setClassmates((current) => current.filter((item) => item.id !== changedId));
+          if (changedId === studentId) {
+            localStorage.removeItem(`system-lab:${pin}:student`);
+            router.replace(`/student?pin=${pin}`);
+          }
           return;
         }
         const changedStudent = event.new as Student;
-        setStudent(changedStudent);
+        setClassmates((current) => [...current.filter((item) => item.id !== changedStudent.id), changedStudent]);
+        if (changedStudent.id === studentId) setStudent(changedStudent);
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "submissions", filter: `student_id=eq.${studentId}` }, (event) => {
         const changedId = (event.eventType === "DELETE" ? event.old.id : event.new.id) as string | undefined;
@@ -189,9 +197,9 @@ export default function StudentPlayPage() {
   if (loading) return <><Navbar /><main className="container page"><div className="empty">Canlı sınıfa bağlanılıyor…</div></main></>;
   if (!session || !student) return <><Navbar /><main className="container page"><div className="notice error">{error || "Katılımcı kaydı bulunamadı."}</div></main></>;
 
-  const baseScoreEarned = activeSubmission?.score ?? 0;
-  const speedBonusEarned = activeSubmission?.speed_bonus ?? 0;
-  const scoreEarned = baseScoreEarned + speedBonusEarned;
+  const scoreEarned = (activeSubmission?.score ?? 0) + (activeSubmission?.speed_bonus ?? 0);
+  const ranking = [...classmates].sort((a, b) => b.session_score - a.session_score || a.joined_at.localeCompare(b.joined_at));
+  const ownRank = ranking.findIndex((item) => item.id === student.id) + 1;
   const studentNav = <Navbar studentContext={{ sessionTitle: session.title, week: session.selected_week, studentName: student.nickname, studentNumber: student.student_number, score: student.session_score, onLeave: () => { localStorage.removeItem(`system-lab:${pin}:student`); router.push("/"); } }} />;
 
   if (!session.is_active) return <>{studentNav}<main className="container page"><div className="student-result-card panel"><Trophy size={58} color="var(--amber)" /><span className="eyebrow">Oturum tamamlandı</span><h1>Harika iş çıkardın!</h1><p className="lead">Genel toplam puanın <strong className="score-pop">{profile?.total_score ?? student.score}</strong></p><Button onClick={() => router.push("/")}>Ana sayfaya dön</Button></div></main></>;
@@ -207,7 +215,11 @@ export default function StudentPlayPage() {
       <span className="eyebrow">Modül {session.current_module} sonucu</span>
       <h1>{activeCompletionStatus === "completed" ? <>Tebrikler, <strong>{scoreEarned} puan</strong> aldın!</> : <>Bu turda <strong>{scoreEarned} puan</strong> topladın.</>}</h1>
       <span className={`student-result-status ${activeCompletionStatus}`}>{activeCompletionStatus === "completed" ? "Modül tamamlandı" : "Modül tamamlanmadı"}</span>
-      <div className="score-breakdown"><span>Etkinlik <b>{baseScoreEarned}</b></span><span>Hız bonusu <b>+{speedBonusEarned}</b></span><span>Toplam <b>{scoreEarned}</b></span></div>
+      <div className="student-mini-leaderboard">
+        <strong className="mini-leaderboard-title"><Trophy size={18} /> Canlı Liderlik</strong>
+        <ol>{ranking.slice(0, 3).map((item, index) => <li key={item.id} className={item.id === student.id ? "is-me" : ""}><span aria-hidden="true">{["🥇", "🥈", "🥉"][index]}</span><b><span>{index + 1}. </span><span data-i18n-skip>{item.nickname}</span></b><strong>{item.session_score} puan</strong></li>)}</ol>
+        <div className="own-rank"><span><small>Senin sıran</small><b>{ownRank ? `${ownRank}.` : "—"}</b></span><strong><small>Oturum puanın</small>{student.session_score} puan</strong></div>
+      </div>
       {message && <div className="notice success">{message}{saving ? " · kaydediliyor" : ""}</div>}
       {error && <div className="notice error">{error}</div>}
       <div className="next-module-wait"><Radio size={18} /><span>Öğretmen bir sonraki modülü başlatana kadar beklemede kalın…</span></div>
