@@ -1,37 +1,45 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isSupabaseAdminConfigured, requireSupabaseAdmin } from "@/lib/supabaseAdmin";
-import { isValidTeacherToken, readBearerToken } from "@/lib/teacherAuthServer";
+import { getTeacherUsernameFromToken, readBearerToken } from "@/lib/teacherAuthServer";
 
 export const runtime = "nodejs";
 
-const resetTargets = [
-  { table: "submissions", key: "id" },
-  { table: "students", key: "id" },
-  { table: "student_profiles", key: "student_number" },
-  { table: "sessions", key: "id" },
-] as const;
+type Counts = Record<"submissions" | "students" | "student_profiles" | "sessions", number>;
 
-type ResetTable = (typeof resetTargets)[number]["table"];
-type Counts = Record<ResetTable, number>;
-
-async function getCounts() {
+async function getCounts(teacherUsername: string) {
   const client = requireSupabaseAdmin();
-  const counts = {} as Counts;
+  const { data: sessions, error: sessionLookupError } = await client
+    .from("sessions")
+    .select("id")
+    .eq("teacher_username", teacherUsername);
+  if (sessionLookupError) throw sessionLookupError;
+  const sessionIds = (sessions || []).map((session) => session.id);
 
-  for (const target of resetTargets) {
-    const { count, error } = await client
-      .from(target.table)
-      .select(target.key, { count: "exact", head: true });
-    if (error) throw error;
-    counts[target.table] = count ?? 0;
+  const [sessionCount, profileCount, studentCount, submissionCount] = await Promise.all([
+    client.from("sessions").select("id", { count: "exact", head: true }).eq("teacher_username", teacherUsername),
+    client.from("student_profiles").select("student_number", { count: "exact", head: true }).eq("teacher_username", teacherUsername),
+    sessionIds.length > 0
+      ? client.from("students").select("id", { count: "exact", head: true }).in("session_id", sessionIds)
+      : Promise.resolve({ count: 0, error: null }),
+    sessionIds.length > 0
+      ? client.from("submissions").select("id", { count: "exact", head: true }).in("session_id", sessionIds)
+      : Promise.resolve({ count: 0, error: null }),
+  ]);
+  for (const result of [sessionCount, profileCount, studentCount, submissionCount]) {
+    if (result.error) throw result.error;
   }
-
-  return counts;
+  return {
+    sessions: sessionCount.count ?? 0,
+    student_profiles: profileCount.count ?? 0,
+    students: studentCount.count ?? 0,
+    submissions: submissionCount.count ?? 0,
+  };
 }
 
 export async function POST(request: NextRequest) {
   const token = readBearerToken(request.headers.get("authorization"));
-  if (!isValidTeacherToken(token)) {
+  const teacherUsername = getTeacherUsernameFromToken(token);
+  if (!teacherUsername) {
     return NextResponse.json({ error: "Bu işlem için öğretmen yetkisi gerekli." }, { status: 401 });
   }
   if (!isSupabaseAdminConfigured) {
@@ -45,14 +53,15 @@ export async function POST(request: NextRequest) {
 
   try {
     const client = requireSupabaseAdmin();
-    const deleted = await getCounts();
+    const deleted = await getCounts(teacherUsername);
 
-    for (const target of resetTargets) {
-      const { error } = await client.from(target.table).delete().not(target.key, "is", null);
-      if (error) throw error;
-    }
+    // Deleting the teacher's sessions cascades to their students and submissions only.
+    const { error: sessionDeleteError } = await client.from("sessions").delete().eq("teacher_username", teacherUsername);
+    if (sessionDeleteError) throw sessionDeleteError;
+    const { error: profileDeleteError } = await client.from("student_profiles").delete().eq("teacher_username", teacherUsername);
+    if (profileDeleteError) throw profileDeleteError;
 
-    const remaining = await getCounts();
+    const remaining = await getCounts(teacherUsername);
     if (Object.values(remaining).some((count) => count !== 0)) {
       throw new Error("Sıfırlama sonrasında bazı kayıtlar kaldı.");
     }

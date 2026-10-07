@@ -18,7 +18,6 @@ import { Week3MissingProcess } from "@/components/modules/Week3_MissingProcess";
 import { Week3FlowchartSymbols } from "@/components/modules/Week3_FlowchartSymbols";
 import { getRemainingCountdown } from "@/lib/moduleCountdown";
 import { getStudentGameState, saveSubmission, submitModuleFeedback } from "@/lib/session";
-import { supabase } from "@/lib/supabase";
 import type { ModuleId, ModuleSubmission, Session, Student, StudentProfile, Submission } from "@/types";
 
 export default function StudentPlayPage() {
@@ -40,7 +39,6 @@ export default function StudentPlayPage() {
   const celebratedModuleKey = useRef("");
 
   const load = useCallback(async () => {
-    if (!supabase) { setError("Supabase yapılandırılmamış."); setLoading(false); return; }
     try {
       const studentId = localStorage.getItem(`system-lab:${pin}:student`);
       if (!studentId) { router.replace(`/student?pin=${pin}`); return; }
@@ -87,51 +85,10 @@ export default function StudentPlayPage() {
     return () => window.clearTimeout(timer);
   }, [activeModuleKey, activeSubmission, feedbackDismissedKey, feedbackKeys]);
 
-  const sessionId = session?.id;
-  const studentId = student?.id;
-  const studentNumber = student?.student_number;
   useEffect(() => {
-    const client = supabase;
-    if (!client || !sessionId || !studentId || !studentNumber) return;
-    const channel = client.channel(`student:${studentId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "sessions", filter: `id=eq.${sessionId}` }, (event) => {
-        if (event.eventType === "DELETE") {
-          setError("Oturum sona erdi.");
-          return;
-        }
-        setSession(event.new as Session);
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "students", filter: `session_id=eq.${sessionId}` }, (event) => {
-        const changedId = (event.eventType === "DELETE" ? event.old.id : event.new.id) as string | undefined;
-        if (!changedId) return;
-        if (event.eventType === "DELETE") {
-          setClassmates((current) => current.filter((item) => item.id !== changedId));
-          if (changedId === studentId) {
-            localStorage.removeItem(`system-lab:${pin}:student`);
-            router.replace(`/student?pin=${pin}`);
-          }
-          return;
-        }
-        const changedStudent = event.new as Student;
-        setClassmates((current) => [...current.filter((item) => item.id !== changedStudent.id), changedStudent]);
-        if (changedStudent.id === studentId) setStudent(changedStudent);
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "submissions", filter: `student_id=eq.${studentId}` }, (event) => {
-        const changedId = (event.eventType === "DELETE" ? event.old.id : event.new.id) as string | undefined;
-        if (!changedId) return;
-        if (event.eventType === "DELETE") {
-          setSubmissions((current) => current.filter((item) => item.id !== changedId));
-          return;
-        }
-        const changedSubmission = event.new as Submission;
-        setSubmissions((current) => [...current.filter((item) => item.id !== changedSubmission.id), changedSubmission]);
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "student_profiles", filter: `student_number=eq.${studentNumber}` }, (event) => {
-        setProfile(event.eventType === "DELETE" ? null : event.new as StudentProfile);
-      })
-      .subscribe();
-    return () => { void client.removeChannel(channel); };
-  }, [pin, router, sessionId, studentId, studentNumber]);
+    const interval = window.setInterval(() => void load(), 2500);
+    return () => window.clearInterval(interval);
+  }, [load]);
 
   useEffect(() => {
     if (isModuleStarted) return;

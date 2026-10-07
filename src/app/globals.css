@@ -1387,6 +1387,16 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .flowchart-status.error { color: #be123c; background: #fff1f2; border-color: #fda4af; }
 .flowchart-actions { display: flex; justify-content: center; }
 .flowchart-actions .button { min-width: 156px; }
+.teacher-home-page { display: grid; gap: 18px; }
+.teacher-session-list { padding: 20px; }
+.teacher-session-list .section-head { gap: 14px; align-items: center; }
+.teacher-session-list h2 { margin: 4px 0 0; font-size: 20px; }
+.teacher-session-list-items { display: grid; gap: 10px; }
+.teacher-session-list-item { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 13px; }
+.teacher-session-list-item > div:first-child { min-width: 0; display: grid; gap: 5px; }
+.teacher-session-list-item strong { overflow: hidden; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
+.teacher-session-list-item span { color: #64748b; font-size: 12px; }
+.teacher-session-list-actions { display: flex; flex: 0 0 auto; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
 .flowchart-touch-symbol { position: fixed; z-index: 300; left: -82px; top: -28px; min-width: 164px; min-height: 45px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 7px 10px; color: #1e3a8a; background: rgba(239,246,255,.97); border: 2px solid #3b82f6; border-radius: 12px; box-shadow: 0 17px 36px rgba(15,23,42,.25); pointer-events: none; font-size: 10px; font-weight: 900; }
 .flowchart-touch-symbol .flow-symbol-glyph { transform: scale(.9); }
 @keyframes flowSlotPulse { 50% { border-color: #3b82f6; box-shadow: 0 0 0 5px rgba(59,130,246,.08); } }
@@ -1501,9 +1511,16 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .flowchart-diagram-heading h2 { font-size: 12px; }
   .flowchart-diagram-heading p { padding: 3px 5px; font-size: 7px; }
   .flowchart-vertical-viewport { min-height: 315px; height: calc(100svh - 308px); max-height: 410px; border-radius: 10px; }
-  .flowchart-svg-node-label { font-size: 10px; }
+  .flowchart-svg-node-label { font-size: 12px; line-height: 1.04; }
+  .flowchart-edge text { font-size: 11px; }
   .flowchart-status { min-height: 34px; padding: 7px 9px; font-size: 9px; }
   .flowchart-actions .button { min-width: 132px; min-height: 36px; }
+  .teacher-session-list { padding: 14px; }
+  .teacher-session-list .section-head { align-items: flex-start; }
+  .teacher-session-list h2 { font-size: 17px; }
+  .teacher-session-list-item { align-items: flex-start; flex-direction: column; gap: 10px; padding: 12px; }
+  .teacher-session-list-actions { width: 100%; justify-content: stretch; }
+  .teacher-session-list-actions .button { flex: 1; }
 }
 
 /* Compact, legible start-card previews for Week 3. */

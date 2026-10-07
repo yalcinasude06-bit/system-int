@@ -11,6 +11,7 @@ export interface Session {
   module_started_at: string | null;
   is_active: boolean;
   fault_injected: boolean;
+  teacher_username?: string;
   created_at: string;
 }
 
@@ -27,6 +28,7 @@ export interface Student {
 }
 
 export interface StudentProfile {
+  teacher_username?: string;
   student_number: string;
   full_name: string;
   total_score: number;

@@ -1,5 +1,5 @@
 import type { ModuleId, Session, Student, StudentProfile, Submission } from "@/types";
-import { requireSupabase, supabase } from "./supabase";
+import { requireSupabase } from "./supabase";
 
 type DatabaseFailure = { code?: string; message?: string };
 
@@ -33,56 +33,6 @@ function readableDatabaseError(error: unknown, fallback: string) {
 function retryDelay(attempt: number) {
   const base = Math.min(180 * (2 ** attempt), 1800);
   return new Promise((resolve) => setTimeout(resolve, base + Math.floor(Math.random() * 140)));
-}
-
-export function createPin(): string {
-  return String(Math.floor(100000 + Math.random() * 900000));
-}
-
-export async function createSession(title: string): Promise<Session> {
-  const client = requireSupabase();
-  let lastError: unknown;
-  for (let attempt = 0; attempt < 7; attempt += 1) {
-    try {
-      const { data, error } = await client
-        .from("sessions")
-        .insert({ title: title.trim() || "Sistem Analizi Dersi", pin_code: createPin() })
-        .select()
-        .single();
-      if (!error && data) return data as Session;
-      lastError = error;
-      if (error?.code !== "23505" && !isTransientDatabaseFailure(error)) throw error;
-    } catch (caught) {
-      lastError = caught;
-      if (!isTransientDatabaseFailure(caught)) throw readableDatabaseError(caught, "Oturum oluşturulamadı.");
-    }
-    if (attempt < 6) await retryDelay(attempt);
-  }
-  throw readableDatabaseError(lastError, "Oturum oluşturulamadı. Lütfen tekrar deneyin.");
-}
-
-export async function getSessionByPin(pin: string): Promise<Session | null> {
-  if (!supabase) return null;
-  let lastError: unknown;
-
-  for (let attempt = 0; attempt < 4; attempt += 1) {
-    try {
-      const { data, error } = await supabase
-        .from("sessions")
-        .select("*")
-        .eq("pin_code", pin)
-        .eq("is_active", true)
-        .maybeSingle();
-      if (error) throw error;
-      return data as Session | null;
-    } catch (caught) {
-      lastError = caught;
-      if (!isTransientDatabaseFailure(caught) || attempt === 3) break;
-      await retryDelay(attempt);
-    }
-  }
-
-  throw readableDatabaseError(lastError, "Oturum yüklenemedi.");
 }
 
 export async function joinSession(
@@ -195,41 +145,4 @@ export async function submitModuleFeedback(input: {
   if (error) throw readableDatabaseError(error, "Geri bildirim gönderilemedi.");
   const result = data as { was_new?: boolean } | null;
   return { wasNew: Boolean(result?.was_new) };
-}
-
-export async function updateSession(
-  sessionId: string,
-  patch: Partial<Pick<Session, "selected_week" | "current_module" | "module_stage" | "is_module_started" | "module_started_at" | "fault_injected" | "is_active">>,
-): Promise<void> {
-  const client = requireSupabase();
-  const { error } = await client.from("sessions").update(patch).eq("id", sessionId);
-  if (error) throw error;
-}
-
-export async function startSessionModule(sessionId: string, moduleId: ModuleId): Promise<Session> {
-  const client = requireSupabase();
-  const { data, error } = await client.rpc("start_session_module", {
-    target_session_id: sessionId,
-    target_module_id: moduleId,
-  });
-  if (error) throw error;
-  return data as Session;
-}
-
-export async function cancelSessionModuleStart(sessionId: string): Promise<Session> {
-  const client = requireSupabase();
-  const { data, error } = await client.rpc("cancel_session_module_start", {
-    target_session_id: sessionId,
-  });
-  if (error) throw error;
-  return data as Session;
-}
-
-export async function finishSessionModule(sessionId: string): Promise<Session> {
-  const client = requireSupabase();
-  const { data, error } = await client.rpc("finish_session_module", {
-    target_session_id: sessionId,
-  });
-  if (error) throw error;
-  return data as Session;
 }
