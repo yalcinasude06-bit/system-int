@@ -1547,3 +1547,51 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .flowchart-demo-mini-palette { right: 8px; transform: scale(.86); transform-origin: top right; }
   .flowchart-demo-caption { right: 7px; font-size: 7px; }
 }
+
+/* Shared SVG glyphs: palette, onboarding, and canvas always draw the same symbols. */
+.flow-symbol-glyph { width: 31px; height: 20px; display: block; overflow: visible; color: inherit; background: none; border: 0; border-radius: 0; box-shadow: none; transform: none; }
+.flow-symbol-glyph.flow-symbol-startEnd,.flow-symbol-glyph.flow-symbol-process,.flow-symbol-glyph.flow-symbol-decision,.flow-symbol-glyph.flow-symbol-data,.flow-symbol-glyph.flow-symbol-document,.flow-symbol-glyph.flow-symbol-delay,.flow-symbol-glyph.flow-symbol-control { width: 31px; margin: 0; background: none; border: 0; border-radius: 0; box-shadow: none; clip-path: none; transform: none; }
+.flow-symbol-glyph.flow-symbol-document::after { content: none; }
+.flowchart-svg-control-lines { vector-effect: non-scaling-stroke; }
+
+/* Week 3 · Module 1 onboarding: deck at left, empty hierarchy at right. */
+.hierarchy-brief-demo::before { content: none; }
+.hierarchy-demo-board { position: absolute; inset: 0; }
+.hierarchy-demo-deck { z-index: 3; left: 16px; top: 18px; width: 132px; gap: 5px; }
+.hierarchy-demo-deck > span { min-height: 26px; padding: 4px 6px; color: #334155; background: #fff; border: 1px solid #cbd5e1; border-radius: 7px; font-size: 7px; }
+.hierarchy-demo-moving-card { position: relative; z-index: 6; box-shadow: 0 5px 12px rgba(30,64,175,.18); }
+.hierarchy-demo-pyramid { z-index: 2; right: 22px; top: 18px; width: 178px; height: auto; display: grid; justify-items: center; gap: 4px; }
+.hierarchy-demo-layer { width: 100%; min-height: 27px; display: grid; place-items: center; padding: 4px 7px; color: #475569; background: rgba(255,255,255,.9); border: 1.5px dashed #94a3b8; border-radius: 7px; text-align: center; }
+.hierarchy-demo-layer small { font-size: 7px; font-weight: 900; line-height: 1.05; }
+.hierarchy-demo-layer.layer-1 { width: 58%; border-radius: 8px 8px 4px 4px; }
+.hierarchy-demo-layer.layer-2 { width: 78%; }
+.hierarchy-demo-layer.layer-3 { width: 100%; border-radius: 4px 4px 8px 8px; }
+.hierarchy-demo-scene.success .hierarchy-demo-layer.layer-3 { color: #047857; background: #ecfdf5; border-color: #34d399; }
+.hierarchy-demo-pyramid.wrong .hierarchy-demo-layer.layer-3 { color: #be123c; background: #fff1f2; border-color: #ef4444; }
+.hierarchy-demo-hand { left: 101px; top: 77px; font-size: 20px; }
+.hierarchy-demo-scene.error .hierarchy-demo-hand { top: 20px; }
+.hierarchy-demo-caption { left: 50%; right: auto; bottom: 7px; max-width: calc(100% - 18px); padding: 4px 7px; transform: translateX(-50%); white-space: nowrap; }
+
+/* Week 3 · Module 3 onboarding: diagram at left, real symbol chips at right. */
+.flowchart-demo-vertical { left: 28px; top: 10px; width: 108px; }
+.flowchart-demo-mini-palette { z-index: 4; right: 21px; top: 14px; width: 69px; gap: 4px; }
+.flowchart-demo-palette-chip { width: 69px; min-height: 29px; display: grid; grid-template-columns: 34px minmax(0,1fr); align-items: center; gap: 3px; padding: 3px; color: #334155; background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; box-shadow: 0 3px 7px rgba(15,23,42,.07); }
+.flowchart-demo-palette-chip.moving { position: relative; z-index: 7; }
+.flowchart-demo-palette-chip small { overflow: hidden; font-size: 5.5px; font-weight: 900; line-height: 1.03; text-align: center; }
+.flowchart-demo-symbol { width: 32px; height: 16px; display: block; overflow: visible; }
+.flowchart-demo-slot { overflow: visible; }
+.flowchart-demo-slot > small { z-index: 2; }
+.flowchart-demo-placed-symbol { position: absolute; z-index: 3; bottom: 5px; width: 48px; height: 20px; display: block; }
+.flowchart-demo-placed-symbol .flowchart-demo-symbol { width: 48px; height: 20px; }
+.flowchart-demo-hand { left: 390px; top: 21px; font-size: 20px; }
+.flowchart-demo-scene.error .flowchart-demo-hand { top: 54px; }
+.flowchart-demo-caption { left: 50%; right: auto; bottom: 7px; max-width: calc(100% - 18px); transform: translateX(-50%); white-space: nowrap; }
+
+@media (max-width: 620px) {
+  .hierarchy-demo-deck { left: 8px; width: 100px; }
+  .hierarchy-demo-pyramid { right: 9px; width: 144px; }
+  .hierarchy-demo-caption,.flowchart-demo-caption { font-size: 6.5px; }
+  .flowchart-demo-vertical { left: 13px; }
+  .flowchart-demo-mini-palette { right: 9px; transform: none; }
+  .flowchart-demo-hand { left: auto; right: 56px; }
+}

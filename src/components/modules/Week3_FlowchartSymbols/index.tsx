@@ -8,6 +8,7 @@ import { Button } from "@/components/common/Button";
 import type { Locale } from "@/lib/i18n/dictionaries";
 import { useI18n } from "@/lib/i18n/I18nContext";
 import type { LearningModuleProps, ModuleSubmission } from "@/types";
+import { FlowSymbolShape } from "./FlowSymbolShape";
 import {
   buildFlowchartSymbolRounds,
   flowSymbolLabels,
@@ -113,7 +114,7 @@ function diagramSize(diagram: FlowchartDiagram) {
 }
 
 function SymbolGlyph({ symbol }: { symbol: FlowSymbol }) {
-  return <span className={`flow-symbol-glyph flow-symbol-${symbol}`} aria-hidden="true"><i /></span>;
+  return <svg className={`flow-symbol-glyph flow-symbol-${symbol}`} viewBox="0 0 152 58" aria-hidden="true" preserveAspectRatio="xMidYMid meet"><FlowSymbolShape symbol={symbol} /></svg>;
 }
 
 function FlowEdges({ diagram, locale }: { diagram: FlowchartDiagram; locale: Locale }) {
@@ -147,29 +148,9 @@ function FlowEdges({ diagram, locale }: { diagram: FlowchartDiagram; locale: Loc
   </g>;
 }
 
-const symbolColors: Record<FlowSymbol, { fill: string; stroke: string }> = {
-  startEnd: { fill: "#dbeafe", stroke: "#475569" },
-  process: { fill: "#dcfce7", stroke: "#4d7c0f" },
-  decision: { fill: "#fef3c7", stroke: "#a16207" },
-  data: { fill: "#dbeafe", stroke: "#0369a1" },
-  document: { fill: "#fff7ed", stroke: "#a16207" },
-  delay: { fill: "#ffedd5", stroke: "#c2410c" },
-  control: { fill: "#f3e8ff", stroke: "#7e22ce" },
-};
-
 function FlowNodeShape({ symbol, x, y, placeholder }: { symbol: FlowSymbol | null; x: number; y: number; placeholder: boolean }) {
   if (placeholder) return <rect x={x} y={y} width={nodeWidth} height={nodeHeight} rx="12" className="flowchart-svg-placeholder" />;
-  const colors = symbolColors[symbol!];
-  const common = { fill: colors.fill, stroke: colors.stroke, strokeWidth: 2, className: "flowchart-svg-shape" };
-  switch (symbol) {
-    case "startEnd": return <rect {...common} x={x} y={y} width={nodeWidth} height={nodeHeight} rx={nodeHeight / 2} />;
-    case "process": return <rect {...common} x={x} y={y} width={nodeWidth} height={nodeHeight} rx="6" />;
-    case "decision": return <polygon {...common} points={`${x + nodeWidth / 2},${y} ${x + nodeWidth},${y + nodeHeight / 2} ${x + nodeWidth / 2},${y + nodeHeight} ${x},${y + nodeHeight / 2}`} />;
-    case "data": return <polygon {...common} points={`${x + 18},${y} ${x + nodeWidth},${y} ${x + nodeWidth - 18},${y + nodeHeight} ${x},${y + nodeHeight}`} />;
-    case "document": return <path {...common} d={`M ${x} ${y} H ${x + nodeWidth} V ${y + nodeHeight - 10} Q ${x + nodeWidth * .87} ${y + nodeHeight + 1} ${x + nodeWidth * .75} ${y + nodeHeight - 6} Q ${x + nodeWidth * .62} ${y + nodeHeight - 13} ${x + nodeWidth / 2} ${y + nodeHeight - 6} Q ${x + nodeWidth * .37} ${y + nodeHeight + 1} ${x + nodeWidth * .25} ${y + nodeHeight - 6} Q ${x + nodeWidth * .12} ${y + nodeHeight - 13} ${x} ${y + nodeHeight - 6} Z`} />;
-    case "delay": return <path {...common} d={`M ${x} ${y} H ${x + nodeWidth - 29} A 29 29 0 0 1 ${x + nodeWidth - 29} ${y + nodeHeight} H ${x} Z`} />;
-    case "control": return <g><rect {...common} x={x} y={y} width={nodeWidth} height={nodeHeight} rx="6" /><path d={`M ${x + 10} ${y + 4} V ${y + nodeHeight - 4} M ${x + nodeWidth - 10} ${y + 4} V ${y + nodeHeight - 4}`} stroke="#7e22ce" strokeWidth="3" /></g>;
-  }
+  return <FlowSymbolShape symbol={symbol!} x={x} y={y} width={nodeWidth} height={nodeHeight} />;
 }
 
 export function Week3FlowchartSymbols({
