@@ -63,6 +63,19 @@ const weekThreeModuleTwoBrief: Record<"tr" | "en", ModuleBrief> = {
   },
 };
 
+const weekThreeModuleThreeBrief: Record<"tr" | "en", ModuleBrief> = {
+  tr: {
+    icon: "◇",
+    title: "Modül 3: Akış Diyagramı Sembolleri",
+    description: "Akış diyagramındaki boş adımlara doğru sembolü sürükle. Süre yok; hazır olunca Kontrol Et'e bas. Tümü doğruysa sıradaki seviyeye, yanlış varsa kırmızı yanıp sıradaki seviyeye geçilir. Kolay → Orta → Zor, 3 seviye.",
+  },
+  en: {
+    icon: "◇",
+    title: "Module 3: Flowchart Symbols",
+    description: "Drag the correct symbol into each blank flowchart step. There is no time limit; press Check when ready. All correct moves to the next level; incorrect choices flash red before the next level. Easy → Medium → Hard, 3 levels.",
+  },
+};
+
 type ModuleStartCountdownProps = {
   weekId?: number;
   moduleId: ModuleId;
@@ -80,6 +93,8 @@ export function ModuleStartCountdown({ weekId = 1, moduleId, startedAt, onComple
     ? weekThreeModuleOneBrief[locale]
     : weekId === 3 && moduleId === 2
       ? weekThreeModuleTwoBrief[locale]
+      : weekId === 3 && moduleId === 3
+        ? weekThreeModuleThreeBrief[locale]
       : moduleBriefs[moduleId];
 
   useEffect(() => {

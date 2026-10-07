@@ -133,6 +133,24 @@ function WeekThreeMissingStepDemo() {
   </div>;
 }
 
+function WeekThreeFlowchartDemo() {
+  const { locale } = useI18n();
+  const duration = 10;
+  const tr = locale === "tr";
+  return <div className="module-demo flowchart-brief-demo" aria-hidden="true">
+    <motion.div className="flowchart-demo-scene success" animate={{ opacity: [1, 1, 1, 0, 0, 0, 1] }} transition={{ duration, repeat: Infinity, times: [0, .37, .45, .5, .95, .98, 1] }}>
+      <div className="flowchart-demo-mini-palette"><motion.span className="flowchart-demo-diamond" animate={{ x: [0, 0, 146, 146, 146, 0], y: [0, 0, 19, 19, 19, 0], scale: [1, 1, .84, 1, 1, 1] }} transition={{ duration, repeat: Infinity, times: [0, .12, .3, .38, .72, 1] }}><i /></motion.span><small>{tr ? "Karar" : "Decision"}</small></div>
+      <div className="flowchart-demo-nodes"><span>{tr ? "Başla" : "Start"}</span><b>→</b><motion.span className="flowchart-demo-slot" animate={{ borderColor: ["#94a3b8", "#94a3b8", "#34d399", "#34d399", "#94a3b8", "#94a3b8"], backgroundColor: ["#f8fafc", "#f8fafc", "#d1fae5", "#d1fae5", "#f8fafc", "#f8fafc"] }} transition={{ duration, repeat: Infinity, times: [0, .24, .37, .44, .72, 1] }}><motion.i animate={{ opacity: [1, 1, 0, 0, 1, 1] }} transition={{ duration, repeat: Infinity, times: [0, .26, .32, .45, .7, 1] }}>?</motion.i><motion.b className="flowchart-demo-diamond in-slot" animate={{ opacity: [0, 0, 1, 1, 0, 0] }} transition={{ duration, repeat: Infinity, times: [0, .28, .35, .43, .47, 1] }}><i /></motion.b></motion.span><b>→</b><span>{tr ? "Bitir" : "End"}</span></div>
+      <motion.strong className="flowchart-demo-caption" animate={{ opacity: [0, 0, 1, 1, 0, 0] }} transition={{ duration, repeat: Infinity, times: [0, .32, .39, .45, .49, 1] }}>{tr ? "Doğru yerleşim ✓" : "Correct placement ✓"}</motion.strong>
+      <motion.span className="demo-hand flowchart-demo-hand" animate={{ x: [0, 0, 146, 146, 146, 0], y: [0, -5, 15, 15, 15, 0], opacity: [1, 1, 1, 0, 0, 1] }} transition={{ duration, repeat: Infinity, times: [0, .12, .3, .37, .72, 1] }}>👆</motion.span>
+    </motion.div>
+    <motion.div className="flowchart-demo-scene error" animate={{ opacity: [0, 0, 0, 1, 1, 0, 0] }} transition={{ duration, repeat: Infinity, times: [0, .45, .5, .55, .83, .88, 1] }}>
+      <div className="flowchart-demo-nodes wrong"><span>{tr ? "Başla" : "Start"}</span><b>→</b><motion.span className="flowchart-demo-slot wrong" animate={{ backgroundColor: ["#fff1f2", "#fee2e2", "#fff1f2"], borderColor: ["#f87171", "#ef4444", "#f87171"] }} transition={{ duration: 1.8, repeat: Infinity }}><b className="flowchart-demo-process">{tr ? "İşlem" : "Process"}</b></motion.span><b>→</b><span>{tr ? "Bitir" : "End"}</span></div>
+      <strong className="flowchart-demo-caption wrong">{tr ? "Yanlış sembol kırmızı yanar" : "Wrong symbol flashes red"}</strong>
+    </motion.div>
+  </div>;
+}
+
 const demos: Record<ModuleId, () => ReactNode> = {
   1: ModuleOneDemo,
   2: ModuleTwoDemo,
@@ -146,6 +164,8 @@ export function ModuleGameplayDemo({ moduleId, weekId = 1 }: { moduleId: ModuleI
     ? WeekThreeHierarchyDemo
     : weekId === 3 && moduleId === 2
       ? WeekThreeMissingStepDemo
+      : weekId === 3 && moduleId === 3
+        ? WeekThreeFlowchartDemo
       : demos[moduleId];
   return <MotionConfig reducedMotion="user"><Demo /></MotionConfig>;
 }

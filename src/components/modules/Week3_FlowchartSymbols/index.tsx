@@ -1,0 +1,440 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent, type PointerEvent } from "react";
+import confetti from "canvas-confetti";
+import { AnimatePresence, motion } from "framer-motion";
+import { Check, GripVertical, LockKeyhole, MousePointerClick, RotateCcw, Sparkles, Undo2, X } from "lucide-react";
+import { Button } from "@/components/common/Button";
+import type { Locale } from "@/lib/i18n/dictionaries";
+import { useI18n } from "@/lib/i18n/I18nContext";
+import type { LearningModuleProps, ModuleSubmission } from "@/types";
+import {
+  buildFlowchartSymbolRounds,
+  flowSymbolLabels,
+  flowSymbolOrder,
+  type FlowchartDiagram,
+  type FlowNode,
+  type FlowRow,
+  type FlowSymbol,
+} from "./flowchartContent";
+
+type Placement = Record<string, FlowSymbol | null>;
+type PlacementResult = {
+  slotId: string;
+  selectedSymbol: FlowSymbol | null;
+  expectedSymbol: FlowSymbol;
+  correct: boolean;
+};
+type LevelResult = {
+  level: number;
+  difficulty: "easy" | "medium" | "hard";
+  diagramId: string;
+  placements: PlacementResult[];
+  correctCount: number;
+};
+type TouchDrag = { symbol: FlowSymbol; x: number; y: number; overSlotId: string | null };
+
+const POINTS_PER_BLANK = 10;
+const nodeWidth = 138;
+const nodeHeight = 92;
+const columnGap = 172;
+const rows: Record<FlowRow, number> = { top: 26, main: 176, bottom: 326 };
+
+const copy = {
+  tr: {
+    title: "Hafta 3 · Modül 3: Akış Diyagramı Sembolleri",
+    levels: ["Kolay", "Orta", "Zor"],
+    paletteTitle: "Sembol paleti",
+    paletteHint: "Sembolü sürükleyin veya seçip boş yuvaya dokunun. İsterseniz önce yuvaya, sonra sembole de dokunabilirsiniz. Yerleştirilmiş bir sembole dokunarak geri alabilirsiniz.",
+    selected: "seçildi; şimdi bir boş yuvaya dokunun",
+    selectedShort: "Seçili",
+    emptySlot: "Eksik sembol",
+    emptySlotHint: "Sembol yerleştirmek için tıklayın",
+    slotSelected: "Yuva seçildi; şimdi paletten bir sembole dokunun.",
+    remove: "Yerleştirilen sembolü geri al",
+    check: "Kontrol Et",
+    fillSlots: "Kontrol etmek için tüm boş yuvaları doldurun",
+    allFilled: "Tüm boşlar dolu. Hazır olduğunuzda Kontrol Et'e basın.",
+    success: "Harika! Tüm semboller doğru. Sıradaki seviyeye geçiliyor…",
+    wrong: "Yanlış semboller kırmızı yandı; doğruları kısa süre gösteriliyor…",
+    complete: "Üç seviye tamamlandı",
+    partial: "Öğretmen modülü bitirdi",
+    completeDetail: "Akış diyagramındaki doğru semboller puanınıza eklendi. Öğretmen sonuçları açıklayana kadar puanınız gizli kalacak.",
+    partialDetail: "Kontrol edilmiş seviyelerdeki doğru semboller kaydedildi. Kontrol edilmemiş yerleştirmeler puanlanmadı.",
+    locked: "Bu modül tamamlandı",
+    lockedDetail: "Yanıtınız kilitlendi. Öğretmen sonuçları açıklayana kadar bekleyin.",
+    saving: "Yanıt kaydediliyor…",
+    saveError: "Yanıt kaydedilemedi. İlerlemeniz korundu.",
+    retry: "Kaydı tekrar dene",
+    round: "Seviye",
+    placed: "yerleştirildi",
+  },
+  en: {
+    title: "Week 3 · Module 3: Flowchart Symbols",
+    levels: ["Easy", "Medium", "Hard"],
+    paletteTitle: "Symbol palette",
+    paletteHint: "Drag a symbol, or select it and tap an empty slot. You can also tap a slot first, then choose a symbol. Tap a placed symbol to return it.",
+    selected: "selected; now tap an empty slot",
+    selectedShort: "Selected",
+    emptySlot: "Missing symbol",
+    emptySlotHint: "Click to place a symbol",
+    slotSelected: "Slot selected; now choose a symbol from the palette.",
+    remove: "Return placed symbol",
+    check: "Check",
+    fillSlots: "Fill every empty slot before checking",
+    allFilled: "All slots are filled. Press Check when you are ready.",
+    success: "Great! Every symbol is correct. Moving to the next level…",
+    wrong: "Incorrect symbols flashed red; the correct symbols are shown briefly…",
+    complete: "All three levels are complete",
+    partial: "The teacher ended the module",
+    completeDetail: "Correct flowchart symbols were added to your score. Your score remains hidden until the teacher reveals results.",
+    partialDetail: "Correct symbols from checked levels were saved. Unchecked placements were not scored.",
+    locked: "This module is complete",
+    lockedDetail: "Your answer is locked. Wait until the teacher reveals results.",
+    saving: "Saving your answer…",
+    saveError: "The answer could not be saved. Your progress is preserved.",
+    retry: "Try saving again",
+    round: "Level",
+    placed: "placed",
+  },
+};
+
+function blankPlacements(diagram: FlowchartDiagram): Placement {
+  return Object.fromEntries(diagram.nodes.filter((node) => node.blank).map((node) => [node.id, null]));
+}
+
+function rowFor(node: FlowNode) {
+  return rows[node.row ?? "main"];
+}
+
+function nodePosition(node: FlowNode) {
+  return { x: 32 + node.column * columnGap, y: rowFor(node) };
+}
+
+function SymbolGlyph({ symbol }: { symbol: FlowSymbol }) {
+  return <span className={`flow-symbol-glyph flow-symbol-${symbol}`} aria-hidden="true"><i /></span>;
+}
+
+function FlowEdges({ diagram, locale }: { diagram: FlowchartDiagram; locale: Locale }) {
+  const nodeById = new Map(diagram.nodes.map((node) => [node.id, node]));
+  return <svg className="flowchart-edges" viewBox={`0 0 ${Math.max(980, (Math.max(...diagram.nodes.map((node) => node.column)) + 1) * columnGap + 64)} 460`} aria-hidden="true">
+    <defs><marker id="flowchart-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" /></marker></defs>
+    {diagram.edges.map((edge, index) => {
+      const from = nodeById.get(edge.from);
+      const to = nodeById.get(edge.to);
+      if (!from || !to) return null;
+      const fromPosition = nodePosition(from);
+      const toPosition = nodePosition(to);
+      const goesRight = toPosition.x >= fromPosition.x;
+      const startX = goesRight ? fromPosition.x + nodeWidth : fromPosition.x;
+      const endX = goesRight ? toPosition.x : toPosition.x + nodeWidth;
+      const startY = fromPosition.y + nodeHeight / 2;
+      const endY = toPosition.y + nodeHeight / 2;
+      const direction = goesRight ? 1 : -1;
+      const controlDistance = Math.max(48, Math.abs(endX - startX) * .42);
+      const path = edge.loop
+        ? `M ${startX} ${startY} C ${startX + direction * 64} 448, ${endX - direction * 64} 448, ${endX} ${endY}`
+        : `M ${startX} ${startY} C ${startX + direction * controlDistance} ${startY}, ${endX - direction * controlDistance} ${endY}, ${endX} ${endY}`;
+      const labelX = edge.loop ? (startX + endX) / 2 : (startX + endX) / 2;
+      const labelY = edge.loop ? 440 : (startY + endY) / 2 - 8;
+      return <g className={edge.loop ? "flowchart-edge loop" : "flowchart-edge"} key={`${edge.from}:${edge.to}:${index}`}>
+        <path d={path} markerEnd="url(#flowchart-arrow)" />
+        {edge.label && <text x={labelX} y={labelY}>{edge.label[locale]}</text>}
+      </g>;
+    })}
+  </svg>;
+}
+
+export function Week3FlowchartSymbols({
+  onSubmit,
+  existingSubmission,
+  forceSubmit,
+  sessionId,
+}: LearningModuleProps & { sessionId: string }) {
+  const { locale } = useI18n();
+  const text = copy[locale];
+  const rounds = useMemo(() => buildFlowchartSymbolRounds(sessionId), [sessionId]);
+  const [levelIndex, setLevelIndex] = useState(0);
+  const [placements, setPlacements] = useState<Placement>(() => blankPlacements(rounds[0]));
+  const [selectedSymbol, setSelectedSymbol] = useState<FlowSymbol | null>(null);
+  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
+  const [phase, setPhase] = useState<"active" | "success" | "error" | "complete">("active");
+  const [result, setResult] = useState<LevelResult | null>(null);
+  const [announcement, setAnnouncement] = useState("");
+  const [touchDrag, setTouchDrag] = useState<TouchDrag | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitFailed, setSubmitFailed] = useState(false);
+  const [finalSubmission, setFinalSubmission] = useState<ModuleSubmission | null>(null);
+  const resultsRef = useRef<LevelResult[]>([]);
+  const transitionTimer = useRef<number | null>(null);
+  const submissionStarted = useRef(false);
+  const touchStart = useRef<{ symbol: FlowSymbol; x: number; y: number; dragging: boolean } | null>(null);
+  const suppressPaletteClick = useRef(false);
+  const current = rounds[Math.min(levelIndex, rounds.length - 1)];
+  const blankNodes = current.nodes.filter((node) => node.blank);
+  const allFilled = blankNodes.every((node) => placements[node.id]);
+
+  const submitResult = useCallback(async (submission: ModuleSubmission) => {
+    setSubmitting(true);
+    setSubmitFailed(false);
+    const accepted = await onSubmit(submission);
+    setSubmitting(false);
+    if (accepted === false) setSubmitFailed(true);
+  }, [onSubmit]);
+
+  const finalize = useCallback(async (checkedLevels: LevelResult[], completionReason: "completed" | "teacher-ended", activePlacements?: Placement) => {
+    if (submissionStarted.current || existingSubmission) return;
+    submissionStarted.current = true;
+    if (transitionTimer.current !== null) window.clearTimeout(transitionTimer.current);
+    const correctCount = checkedLevels.reduce((total, level) => total + level.correctCount, 0);
+    const submission: ModuleSubmission = {
+      stage: 1,
+      score: correctCount * POINTS_PER_BLANK,
+      payload: {
+        mode: "flowchart-symbol-placement",
+        selectedDiagramIds: rounds.map((round) => round.id),
+        levels: checkedLevels,
+        correctCount,
+        evaluatedBlankCount: checkedLevels.reduce((total, level) => total + level.placements.length, 0),
+        totalBlankCount: 10,
+        pointsPerBlank: POINTS_PER_BLANK,
+        activeLevel: completionReason === "teacher-ended" ? {
+          level: levelIndex + 1,
+          diagramId: current.id,
+          placements: activePlacements ?? placements,
+          evaluated: false,
+        } : undefined,
+        completionReason,
+      },
+    };
+    setFinalSubmission(submission);
+    setPhase("complete");
+    await submitResult(submission);
+  }, [current.id, existingSubmission, levelIndex, placements, rounds, submitResult]);
+
+  const advance = useCallback((nextResults: LevelResult[]) => {
+    if (levelIndex === rounds.length - 1) {
+      void finalize(nextResults, "completed");
+      return;
+    }
+    const next = rounds[levelIndex + 1];
+    setLevelIndex((index) => index + 1);
+    setPlacements(blankPlacements(next));
+    setSelectedSymbol(null);
+    setSelectedSlotId(null);
+    setResult(null);
+    setAnnouncement("");
+    setPhase("active");
+  }, [finalize, levelIndex, rounds]);
+
+  const checkAnswers = useCallback(() => {
+    if (!allFilled || phase !== "active" || forceSubmit || existingSubmission) return;
+    const nextResult: LevelResult = {
+      level: levelIndex + 1,
+      difficulty: current.difficulty,
+      diagramId: current.id,
+      placements: blankNodes.map((node) => ({
+        slotId: node.id,
+        selectedSymbol: placements[node.id],
+        expectedSymbol: node.symbol,
+        correct: placements[node.id] === node.symbol,
+      })),
+      correctCount: 0,
+    };
+    nextResult.correctCount = nextResult.placements.filter((placement) => placement.correct).length;
+    const allCorrect = nextResult.correctCount === blankNodes.length;
+    const nextResults = [...resultsRef.current, nextResult];
+    resultsRef.current = nextResults;
+    setResult(nextResult);
+    setSelectedSymbol(null);
+    setPhase(allCorrect ? "success" : "error");
+    setAnnouncement(allCorrect ? text.success : text.wrong);
+    if (allCorrect) confetti({ particleCount: 42, spread: 64, startVelocity: 21, origin: { x: .62, y: .58 }, colors: ["#10b981", "#fbbf24", "#ffffff"] });
+    transitionTimer.current = window.setTimeout(() => advance(nextResults), allCorrect ? 1250 : 2500);
+  }, [advance, allFilled, blankNodes, current.difficulty, current.id, existingSubmission, forceSubmit, levelIndex, phase, placements, text.success, text.wrong]);
+
+  const placeSymbol = useCallback((slotId: string, symbol: FlowSymbol) => {
+    if (phase !== "active" || forceSubmit || existingSubmission) return;
+    setPlacements((currentPlacements) => ({ ...currentPlacements, [slotId]: symbol }));
+    setSelectedSymbol(null);
+    setSelectedSlotId(null);
+    setAnnouncement("");
+  }, [existingSubmission, forceSubmit, phase]);
+
+  const activateSlot = useCallback((slotId: string) => {
+    if (phase !== "active" || forceSubmit || existingSubmission) return;
+    if (selectedSymbol) {
+      placeSymbol(slotId, selectedSymbol);
+      return;
+    }
+    if (placements[slotId]) {
+      setPlacements((currentPlacements) => ({ ...currentPlacements, [slotId]: null }));
+      setSelectedSlotId(null);
+      setAnnouncement(text.remove);
+      return;
+    }
+    setSelectedSlotId((currentSlot) => currentSlot === slotId ? null : slotId);
+    setAnnouncement(selectedSlotId === slotId ? text.paletteHint : text.slotSelected);
+  }, [existingSubmission, forceSubmit, phase, placements, placeSymbol, selectedSlotId, selectedSymbol, text.paletteHint, text.remove, text.slotSelected]);
+
+  useEffect(() => {
+    if (!forceSubmit || phase === "complete" || existingSubmission) return;
+    void finalize(resultsRef.current, "teacher-ended", placements);
+  }, [existingSubmission, finalize, forceSubmit, phase, placements]);
+
+  useEffect(() => () => {
+    if (transitionTimer.current !== null) window.clearTimeout(transitionTimer.current);
+  }, []);
+
+  function chooseSymbol(symbol: FlowSymbol) {
+    if (suppressPaletteClick.current) {
+      suppressPaletteClick.current = false;
+      return;
+    }
+    if (phase !== "active") return;
+    if (selectedSlotId) {
+      placeSymbol(selectedSlotId, symbol);
+      return;
+    }
+    setSelectedSymbol((currentSymbol) => currentSymbol === symbol ? null : symbol);
+    setAnnouncement(selectedSymbol === symbol ? text.paletteHint : `${flowSymbolLabels[symbol][locale]} ${text.selected}`);
+  }
+
+  function handleSlotKey(event: KeyboardEvent<HTMLElement>, slotId: string) {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    activateSlot(slotId);
+  }
+
+  function beginTouchDrag(event: PointerEvent<HTMLButtonElement>, symbol: FlowSymbol) {
+    if (event.pointerType === "mouse" || phase !== "active") return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    touchStart.current = { symbol, x: event.clientX, y: event.clientY, dragging: false };
+  }
+
+  function moveTouchDrag(event: PointerEvent<HTMLButtonElement>) {
+    const start = touchStart.current;
+    if (!start) return;
+    if (!start.dragging && Math.hypot(event.clientX - start.x, event.clientY - start.y) < 8) return;
+    start.dragging = true;
+    event.preventDefault();
+    const target = document.elementFromPoint(event.clientX, event.clientY);
+    const slot = target?.closest<HTMLElement>("[data-flow-slot]");
+    setTouchDrag({ symbol: start.symbol, x: event.clientX, y: event.clientY, overSlotId: slot?.dataset.flowSlot ?? null });
+  }
+
+  function endTouchDrag(event: PointerEvent<HTMLButtonElement>) {
+    const start = touchStart.current;
+    if (!start) return;
+    const target = document.elementFromPoint(event.clientX, event.clientY);
+    const slotId = target?.closest<HTMLElement>("[data-flow-slot]")?.dataset.flowSlot;
+    if (start.dragging) {
+      suppressPaletteClick.current = true;
+      if (slotId) placeSymbol(slotId, start.symbol);
+    }
+    touchStart.current = null;
+    setTouchDrag(null);
+  }
+
+  function startNativeDrag(event: DragEvent<HTMLButtonElement>, symbol: FlowSymbol) {
+    event.dataTransfer.effectAllowed = "copy";
+    event.dataTransfer.setData("text/flowchart-symbol", symbol);
+    setSelectedSymbol(symbol);
+  }
+
+  function dropOnSlot(event: DragEvent<HTMLElement>, slotId: string) {
+    event.preventDefault();
+    const symbol = event.dataTransfer.getData("text/flowchart-symbol") as FlowSymbol;
+    if (flowSymbolOrder.includes(symbol)) placeSymbol(slotId, symbol);
+  }
+
+  if (existingSubmission && phase !== "complete") {
+    return <section className="panel module-shell flowchart-module-shell"><div className="module-title-chip">{text.title}</div><div className="module-complete-card"><LockKeyhole size={42} /><h2>{text.locked}</h2><p>{text.lockedDetail}</p></div></section>;
+  }
+
+  if (phase === "complete") {
+    const endedByTeacher = finalSubmission?.payload?.completionReason === "teacher-ended";
+    return <section className="panel module-shell flowchart-module-shell">
+      <div className="module-title-chip">{text.title}</div>
+      <div className="module-complete-card"><Sparkles size={42} /><h2>{endedByTeacher ? text.partial : text.complete}</h2><p>{endedByTeacher ? text.partialDetail : text.completeDetail}</p>{submitting && <div className="notice">{text.saving}</div>}{submitFailed && finalSubmission && <><div className="notice error">{text.saveError}</div><Button loading={submitting} icon={<RotateCcw size={17} />} onClick={() => void submitResult(finalSubmission)}>{text.retry}</Button></>}</div>
+    </section>;
+  }
+
+  const maxColumn = Math.max(...current.nodes.map((node) => node.column));
+  const canvasWidth = Math.max(980, (maxColumn + 1) * columnGap + 64);
+  const resultBySlot = new Map(result?.placements.map((placement) => [placement.slotId, placement]));
+
+  return <section className="panel module-shell flowchart-module-shell">
+    <div className="module-topline flowchart-topline">
+      <div className="module-title-chip">{text.title}</div>
+      <strong>{text.round} {levelIndex + 1}/3 · {text.levels[levelIndex]}</strong>
+    </div>
+    <div className="flowchart-level-progress" aria-label={`${text.round} ${levelIndex + 1}/3`}>
+      {rounds.map((round, index) => <span className={index < levelIndex ? "done" : index === levelIndex ? "active" : ""} key={round.id}>{text.levels[index]}</span>)}
+    </div>
+
+    <AnimatePresence mode="wait">
+      <motion.div key={current.id} className={`flowchart-game ${phase}`} initial={{ opacity: 0, y: 14 }} animate={phase === "error" ? { opacity: 1, x: [0, -7, 7, -5, 4, 0] } : { opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: phase === "error" ? .48 : .3 }}>
+        <aside className="flowchart-palette" aria-label={text.paletteTitle}>
+          <div className="flowchart-palette-head"><div><h2>{text.paletteTitle}</h2><p>{text.paletteHint}</p></div><MousePointerClick size={18} aria-hidden="true" /></div>
+          <div className="flowchart-symbol-list">
+            {flowSymbolOrder.map((symbol) => <button
+              type="button"
+              key={symbol}
+              className={`flowchart-symbol-chip ${selectedSymbol === symbol ? "selected" : ""}`}
+              draggable={phase === "active"}
+              aria-pressed={selectedSymbol === symbol}
+              aria-label={`${flowSymbolLabels[symbol][locale]}${selectedSymbol === symbol ? `, ${text.selectedShort}` : ""}`}
+              title={flowSymbolLabels[symbol][locale]}
+              onClick={() => chooseSymbol(symbol)}
+              onDragStart={(event) => startNativeDrag(event, symbol)}
+              onPointerDown={(event) => beginTouchDrag(event, symbol)}
+              onPointerMove={moveTouchDrag}
+              onPointerUp={endTouchDrag}
+              onPointerCancel={() => { touchStart.current = null; setTouchDrag(null); }}
+            ><GripVertical size={13} aria-hidden="true" /><SymbolGlyph symbol={symbol} /><span data-i18n-skip>{flowSymbolLabels[symbol][locale]}</span><MousePointerClick size={12} className="flowchart-pointer" aria-hidden="true" /></button>)}
+          </div>
+        </aside>
+
+        <div className="flowchart-diagram-card">
+          <header className="flowchart-diagram-heading"><div><span>{text.levels[levelIndex]}</span><h2 data-i18n-skip>{current.title[locale]}</h2></div><p>{blankNodes.length} {locale === "tr" ? "boş sembol" : "empty symbols"}</p></header>
+          <div className="flowchart-scroll">
+            <div className="flowchart-canvas" style={{ "--flowchart-width": `${canvasWidth}px` } as CSSProperties}>
+              <FlowEdges diagram={current} locale={locale} />
+              {current.nodes.map((node) => {
+                const placement = node.blank ? placements[node.id] : null;
+                const slotResult = resultBySlot.get(node.id);
+                const showExpected = phase === "error" && slotResult && !slotResult.correct;
+                const displaySymbol = node.blank ? (showExpected ? node.symbol : placement) : node.symbol;
+                const position = nodePosition(node);
+                const nodeState = node.blank ? (placement ? "filled" : "empty") : "fixed";
+                return <div
+                  key={node.id}
+                  role={node.blank ? "button" : undefined}
+                  tabIndex={node.blank && phase === "active" ? 0 : undefined}
+                  data-flow-slot={node.blank ? node.id : undefined}
+                  className={`flowchart-node ${displaySymbol ? `flow-symbol-${displaySymbol}` : "flow-slot-placeholder"} ${nodeState} ${node.blank ? "interactive" : ""} ${selectedSymbol && node.blank ? "can-drop" : ""} ${selectedSlotId === node.id ? "selected-slot" : ""} ${touchDrag?.overSlotId === node.id ? "drag-over" : ""} ${phase === "success" && slotResult?.correct ? "correct" : ""} ${phase === "error" && slotResult && !slotResult.correct ? "wrong reveal-correct" : ""}`}
+                  style={{ left: position.x, top: position.y } as CSSProperties}
+                  aria-label={node.blank ? `${node.text[locale]}: ${displaySymbol ? `${flowSymbolLabels[displaySymbol][locale]}, ${text.placed}` : text.emptySlotHint}` : node.text[locale]}
+                  onClick={() => node.blank && activateSlot(node.id)}
+                  onKeyDown={(event) => node.blank && handleSlotKey(event, node.id)}
+                  onDragOver={(event) => node.blank && event.preventDefault()}
+                  onDrop={(event) => node.blank && dropOnSlot(event, node.id)}
+                >
+                  {node.blank && !displaySymbol ? <><span className="flowchart-question">?</span><small>{text.emptySlot}</small></> : <><span className="flowchart-node-symbol"><SymbolGlyph symbol={displaySymbol!} /></span><strong data-i18n-skip>{node.text[locale]}</strong>{node.blank && <small className="flowchart-placed-label" data-i18n-skip>{flowSymbolLabels[displaySymbol!][locale]}</small>}</>}
+                  {node.blank && placement && phase === "active" && !selectedSymbol && <Undo2 className="flowchart-undo" size={13} aria-hidden="true" />}
+                  {phase === "success" && slotResult?.correct && <Check className="flowchart-verdict" size={18} aria-hidden="true" />}
+                  {phase === "error" && slotResult && !slotResult.correct && <X className="flowchart-verdict" size={18} aria-hidden="true" />}
+                </div>;
+              })}
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </AnimatePresence>
+
+    <div className={`flowchart-status ${phase}`} aria-live="assertive">{announcement || (allFilled ? text.allFilled : text.fillSlots)}</div>
+    <div className="flowchart-actions"><Button disabled={!allFilled || phase !== "active"} icon={<Check size={18} />} onClick={checkAnswers}>{text.check}</Button></div>
+    {touchDrag && <div className="flowchart-touch-symbol" style={{ transform: `translate3d(${touchDrag.x}px, ${touchDrag.y}px, 0)` }}><SymbolGlyph symbol={touchDrag.symbol} /><span>{flowSymbolLabels[touchDrag.symbol][locale]}</span></div>}
+  </section>;
+}
