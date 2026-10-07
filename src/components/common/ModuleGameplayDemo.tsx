@@ -91,26 +91,15 @@ function WeekThreeHierarchyDemo() {
   const production = processHierarchyPool.find((item) => item.id === "production")!;
   const duration = 10;
   return <div className="module-demo hierarchy-brief-demo" aria-hidden="true">
-    <motion.div className="hierarchy-demo-scene success" animate={{ opacity: [1, 1, 0, 0, 1] }} transition={{ duration, repeat: Infinity, times: [0, .44, .5, .94, 1] }}>
-      <div className="hierarchy-demo-palette-label">{locale === "tr" ? "Karışık örnekler" : "Mixed examples"}</div>
-      <motion.span className="hierarchy-demo-card core" data-i18n-skip animate={{ x: [0, 0, 205, 205], y: [0, 0, 7, 7] }} transition={{ duration: 4, repeat: Infinity, times: [0, .1, .28, 1] }}>{production.core[locale]}</motion.span>
-      <motion.span className="hierarchy-demo-card subprocess" data-i18n-skip animate={{ x: [0, 0, 191, 191], y: [0, 0, 8, 8] }} transition={{ duration: 4, repeat: Infinity, times: [0, .3, .5, 1] }}>{production.subprocess[locale]}</motion.span>
-      <motion.span className="hierarchy-demo-card activity" data-i18n-skip animate={{ x: [0, 0, 174, 174], y: [0, 0, 8, 8] }} transition={{ duration: 4, repeat: Infinity, times: [0, .52, .72, 1] }}>{production.activity[locale]}</motion.span>
-      <motion.div className="hierarchy-demo-pyramid" animate={{ filter: ["drop-shadow(0 0 0 rgba(16,185,129,0))", "drop-shadow(0 0 0 rgba(16,185,129,0))", "drop-shadow(0 0 13px rgba(16,185,129,.75))"], opacity: [1, 1, 1, 0] }} transition={{ duration: 4, repeat: Infinity, times: [0, .69, .78, 1] }}>
-        <i /><i /><i />
-      </motion.div>
-      <motion.b className="hierarchy-demo-verdict" data-i18n-skip animate={{ opacity: [0, 0, 1, 1, 0], scale: [.8, .8, 1.08, 1, .8] }} transition={{ duration: 4, repeat: Infinity, times: [0, .69, .76, .9, 1] }}>{locale === "tr" ? "Üçü de doğru ✓" : "All three correct ✓"}</motion.b>
-      <span className="hierarchy-demo-caption">{locale === "tr" ? "Kartı doğru piramit yuvasına bırak" : "Drop a card in the correct pyramid slot"}</span>
+    <motion.div className="hierarchy-demo-scene success" animate={{ opacity: [1, 1, 0, 0, 1] }} transition={{ duration, repeat: Infinity, times: [0, .42, .49, .94, 1] }}>
+      <div className="hierarchy-demo-deck"><span data-i18n-skip>{production.core[locale]}</span><span data-i18n-skip>{production.subprocess[locale]}</span><motion.span data-i18n-skip animate={{ x: [0, 0, 126, 126, 0], y: [0, 0, -5, -5, 0], opacity: [1, 1, 1, 0, 1] }} transition={{ duration, repeat: Infinity, times: [0, .14, .31, .42, 1] }}>{production.activity[locale]}</motion.span></div>
+      <motion.div className="hierarchy-demo-pyramid simple" animate={{ filter: ["none", "none", "drop-shadow(0 0 9px rgba(16,185,129,.7))", "drop-shadow(0 0 9px rgba(16,185,129,.7))", "none"] }} transition={{ duration, repeat: Infinity, times: [0, .28, .35, .42, 1] }}><i>{locale === "tr" ? "Ana süreç" : "Core"}</i><i>{locale === "tr" ? "Alt süreç" : "Sub"}</i><i>{locale === "tr" ? "Aktivite" : "Activity"}</i></motion.div>
+      <span className="hierarchy-demo-caption">{locale === "tr" ? "Kart doğru katmana gider ✓" : "Card goes to the right layer ✓"}</span>
     </motion.div>
-
-    <motion.div className="hierarchy-demo-scene error" animate={{ opacity: [0, 0, 1, 1, 0] }} transition={{ duration, repeat: Infinity, times: [0, .44, .5, .94, 1] }}>
-      <div className="hierarchy-demo-palette-label">{locale === "tr" ? "Karışık örnekler" : "Mixed examples"}</div>
-      <motion.span className="hierarchy-demo-card core" data-i18n-skip animate={{ x: [0, 0, 175, 175], y: [0, 0, 88, 88] }} transition={{ duration: 4, repeat: Infinity, times: [0, .16, .43, 1] }}>{production.core[locale]}</motion.span>
-      <motion.div className="hierarchy-demo-pyramid" animate={{ x: [0, 0, -6, 6, -4, 0], opacity: [1, 1, 1, 1, 1, 0] }} transition={{ duration: 4, repeat: Infinity, times: [0, .42, .48, .53, .58, 1] }}>
-        <i /><i /><motion.i animate={{ backgroundColor: ["#ecfdf5", "#ecfdf5", "#fee2e2", "#fee2e2"], borderColor: ["#86efac", "#86efac", "#f87171", "#f87171"] }} transition={{ duration: 4, repeat: Infinity, times: [0, .42, .5, 1] }} />
-      </motion.div>
-      <motion.b className="hierarchy-demo-verdict wrong" data-i18n-skip animate={{ opacity: [0, 0, 1, 1, 0] }} transition={{ duration: 4, repeat: Infinity, times: [0, .48, .56, .9, 1] }}>{locale === "tr" ? "Yanlış katman ✕" : "Wrong layer ✕"}</motion.b>
-      <span className="hierarchy-demo-caption wrong">{locale === "tr" ? "Yanlış kart kırmızı yanar" : "A wrong card flashes red"}</span>
+    <motion.div className="hierarchy-demo-scene error" animate={{ opacity: [0, 0, 1, 1, 0] }} transition={{ duration, repeat: Infinity, times: [0, .44, .5, .87, .93] }}>
+      <div className="hierarchy-demo-deck"><motion.span data-i18n-skip animate={{ x: [0, 120, 116, 124, 0], y: [0, 72, 72, 72, 0] }} transition={{ duration: 2.5, repeat: Infinity }}>{production.core[locale]}</motion.span><span data-i18n-skip>{production.subprocess[locale]}</span></div>
+      <motion.div className="hierarchy-demo-pyramid simple wrong" animate={{ x: [0, -4, 4, -3, 0] }} transition={{ duration: .5, repeat: Infinity }}><i>{locale === "tr" ? "Ana süreç" : "Core"}</i><i>{locale === "tr" ? "Alt süreç" : "Sub"}</i><i>{locale === "tr" ? "Aktivite" : "Activity"}</i></motion.div>
+      <span className="hierarchy-demo-caption wrong">{locale === "tr" ? "Yanlış katman kırmızı yanar" : "Wrong layer flashes red"}</span>
     </motion.div>
   </div>;
 }
@@ -142,14 +131,20 @@ function WeekThreeFlowchartDemo() {
   const duration = 10;
   const tr = locale === "tr";
   return <div className="module-demo flowchart-brief-demo" aria-hidden="true">
-    <motion.div className="flowchart-demo-scene success" animate={{ opacity: [1, 1, 1, 0, 0, 0, 1] }} transition={{ duration, repeat: Infinity, times: [0, .37, .45, .5, .95, .98, 1] }}>
-      <div className="flowchart-demo-mini-palette"><motion.span className="flowchart-demo-diamond" animate={{ x: [0, 0, 146, 146, 146, 0], y: [0, 0, 19, 19, 19, 0], scale: [1, 1, .84, 1, 1, 1] }} transition={{ duration, repeat: Infinity, times: [0, .12, .3, .38, .72, 1] }}><i /></motion.span><small>{tr ? "Karar" : "Decision"}</small></div>
-      <div className="flowchart-demo-nodes"><span>{tr ? "Başla" : "Start"}</span><b>→</b><motion.span className="flowchart-demo-slot" animate={{ borderColor: ["#94a3b8", "#94a3b8", "#34d399", "#34d399", "#94a3b8", "#94a3b8"], backgroundColor: ["#f8fafc", "#f8fafc", "#d1fae5", "#d1fae5", "#f8fafc", "#f8fafc"] }} transition={{ duration, repeat: Infinity, times: [0, .24, .37, .44, .72, 1] }}><motion.i animate={{ opacity: [1, 1, 0, 0, 1, 1] }} transition={{ duration, repeat: Infinity, times: [0, .26, .32, .45, .7, 1] }}>?</motion.i><motion.b className="flowchart-demo-diamond in-slot" animate={{ opacity: [0, 0, 1, 1, 0, 0] }} transition={{ duration, repeat: Infinity, times: [0, .28, .35, .43, .47, 1] }}><i /></motion.b></motion.span><b>→</b><span>{tr ? "Bitir" : "End"}</span></div>
-      <motion.strong className="flowchart-demo-caption" animate={{ opacity: [0, 0, 1, 1, 0, 0] }} transition={{ duration, repeat: Infinity, times: [0, .32, .39, .45, .49, 1] }}>{tr ? "Doğru yerleşim ✓" : "Correct placement ✓"}</motion.strong>
-      <motion.span className="demo-hand flowchart-demo-hand" animate={{ x: [0, 0, 146, 146, 146, 0], y: [0, -5, 15, 15, 15, 0], opacity: [1, 1, 1, 0, 0, 1] }} transition={{ duration, repeat: Infinity, times: [0, .12, .3, .37, .72, 1] }}>👆</motion.span>
+    <motion.div className="flowchart-demo-scene success" animate={{ opacity: [1, 1, 0, 0, 1] }} transition={{ duration, repeat: Infinity, times: [0, .42, .48, .94, 1] }}>
+      <div className="flowchart-demo-vertical">
+        <span className="flowchart-demo-terminal">{tr ? "Başla" : "Start"}</span><b>↓</b>
+        <motion.span className="flowchart-demo-slot" animate={{ borderColor: ["#94a3b8", "#94a3b8", "#34d399", "#34d399", "#94a3b8"], backgroundColor: ["#f8fafc", "#f8fafc", "#d1fae5", "#d1fae5", "#f8fafc"] }} transition={{ duration, repeat: Infinity, times: [0, .2, .31, .42, 1] }}><small>{tr ? "İstek kontrol edilir" : "Request is checked"}</small><motion.i animate={{ opacity: [1, 1, 0, 0, 1] }} transition={{ duration, repeat: Infinity, times: [0, .22, .3, .43, 1] }}>?</motion.i><motion.b className="flowchart-demo-diamond in-slot" animate={{ opacity: [0, 0, 1, 1, 0], scale: [.5, .5, 1, 1, .5] }} transition={{ duration, repeat: Infinity, times: [0, .23, .31, .41, 1] }}><i /></motion.b></motion.span><b>↓</b>
+        <span className="flowchart-demo-terminal">{tr ? "Bitir" : "End"}</span>
+      </div>
+      <div className="flowchart-demo-mini-palette"><motion.span className="flowchart-demo-diamond" animate={{ x: [0, 0, -105, -105, 0], y: [0, 0, 36, 36, 0], opacity: [1, 1, 1, 0, 1] }} transition={{ duration, repeat: Infinity, times: [0, .12, .28, .37, 1] }}><i /></motion.span><span className="flowchart-demo-process-chip">{tr ? "İşlem" : "Process"}</span><span className="flowchart-demo-data-chip">{tr ? "Veri" : "Data"}</span></div>
+      <motion.strong className="flowchart-demo-caption" animate={{ opacity: [0, 0, 1, 1, 0] }} transition={{ duration, repeat: Infinity, times: [0, .3, .36, .43, 1] }}>{tr ? "Doğru yerleşim ✓" : "Correct placement ✓"}</motion.strong>
     </motion.div>
-    <motion.div className="flowchart-demo-scene error" animate={{ opacity: [0, 0, 0, 1, 1, 0, 0] }} transition={{ duration, repeat: Infinity, times: [0, .45, .5, .55, .83, .88, 1] }}>
-      <div className="flowchart-demo-nodes wrong"><span>{tr ? "Başla" : "Start"}</span><b>→</b><motion.span className="flowchart-demo-slot wrong" animate={{ backgroundColor: ["#fff1f2", "#fee2e2", "#fff1f2"], borderColor: ["#f87171", "#ef4444", "#f87171"] }} transition={{ duration: 1.8, repeat: Infinity }}><b className="flowchart-demo-process">{tr ? "İşlem" : "Process"}</b></motion.span><b>→</b><span>{tr ? "Bitir" : "End"}</span></div>
+    <motion.div className="flowchart-demo-scene error" animate={{ opacity: [0, 0, 1, 1, 0] }} transition={{ duration, repeat: Infinity, times: [0, .44, .49, .86, .92] }}>
+      <div className="flowchart-demo-vertical">
+        <span className="flowchart-demo-terminal">{tr ? "Başla" : "Start"}</span><b>↓</b><motion.span className="flowchart-demo-slot wrong" animate={{ x: [0, -4, 4, -3, 0], borderColor: ["#f87171", "#ef4444", "#f87171"] }} transition={{ duration: .52, repeat: Infinity }}><small>{tr ? "İstek kontrol edilir" : "Request is checked"}</small><b className="flowchart-demo-process">{tr ? "İşlem" : "Process"}</b></motion.span><b>↓</b><span className="flowchart-demo-terminal">{tr ? "Bitir" : "End"}</span>
+      </div>
+      <div className="flowchart-demo-mini-palette faded"><span className="flowchart-demo-diamond"><i /></span><span className="flowchart-demo-process-chip">{tr ? "İşlem" : "Process"}</span><span className="flowchart-demo-data-chip">{tr ? "Veri" : "Data"}</span></div>
       <strong className="flowchart-demo-caption wrong">{tr ? "Yanlış sembol kırmızı yanar" : "Wrong symbol flashes red"}</strong>
     </motion.div>
   </div>;

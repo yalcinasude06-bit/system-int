@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent, type PointerEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent, type PointerEvent } from "react";
 import confetti from "canvas-confetti";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, GripVertical, LockKeyhole, MousePointerClick, RotateCcw, Sparkles, Undo2, X } from "lucide-react";
+import { Check, GripVertical, LockKeyhole, MousePointerClick, RotateCcw, Sparkles } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import type { Locale } from "@/lib/i18n/dictionaries";
 import { useI18n } from "@/lib/i18n/I18nContext";
@@ -35,10 +35,10 @@ type LevelResult = {
 type TouchDrag = { symbol: FlowSymbol; x: number; y: number; overSlotId: string | null };
 
 const POINTS_PER_BLANK = 10;
-const nodeWidth = 138;
-const nodeHeight = 92;
-const columnGap = 172;
-const rows: Record<FlowRow, number> = { top: 26, main: 176, bottom: 326 };
+const nodeWidth = 152;
+const nodeHeight = 58;
+const columnGap = 76;
+const rows: Record<FlowRow, number> = { top: 14, main: 194, bottom: 374 };
 
 const copy = {
   tr: {
@@ -103,12 +103,13 @@ function blankPlacements(diagram: FlowchartDiagram): Placement {
   return Object.fromEntries(diagram.nodes.filter((node) => node.blank).map((node) => [node.id, null]));
 }
 
-function rowFor(node: FlowNode) {
-  return rows[node.row ?? "main"];
+function nodePosition(node: FlowNode) {
+  return { x: rows[node.row ?? "main"], y: 18 + node.column * columnGap };
 }
 
-function nodePosition(node: FlowNode) {
-  return { x: 32 + node.column * columnGap, y: rowFor(node) };
+function diagramSize(diagram: FlowchartDiagram) {
+  const maxColumn = Math.max(...diagram.nodes.map((node) => node.column));
+  return { width: 540, height: maxColumn * columnGap + nodeHeight + 38 };
 }
 
 function SymbolGlyph({ symbol }: { symbol: FlowSymbol }) {
@@ -117,7 +118,8 @@ function SymbolGlyph({ symbol }: { symbol: FlowSymbol }) {
 
 function FlowEdges({ diagram, locale }: { diagram: FlowchartDiagram; locale: Locale }) {
   const nodeById = new Map(diagram.nodes.map((node) => [node.id, node]));
-  return <svg className="flowchart-edges" viewBox={`0 0 ${Math.max(980, (Math.max(...diagram.nodes.map((node) => node.column)) + 1) * columnGap + 64)} 460`} aria-hidden="true">
+  const { width } = diagramSize(diagram);
+  return <g aria-hidden="true">
     <defs><marker id="flowchart-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" /></marker></defs>
     {diagram.edges.map((edge, index) => {
       const from = nodeById.get(edge.from);
@@ -125,24 +127,49 @@ function FlowEdges({ diagram, locale }: { diagram: FlowchartDiagram; locale: Loc
       if (!from || !to) return null;
       const fromPosition = nodePosition(from);
       const toPosition = nodePosition(to);
-      const goesRight = toPosition.x >= fromPosition.x;
-      const startX = goesRight ? fromPosition.x + nodeWidth : fromPosition.x;
-      const endX = goesRight ? toPosition.x : toPosition.x + nodeWidth;
-      const startY = fromPosition.y + nodeHeight / 2;
-      const endY = toPosition.y + nodeHeight / 2;
-      const direction = goesRight ? 1 : -1;
-      const controlDistance = Math.max(48, Math.abs(endX - startX) * .42);
+      const goesDown = toPosition.y >= fromPosition.y;
+      const startX = fromPosition.x + nodeWidth / 2;
+      const endX = toPosition.x + nodeWidth / 2;
+      const startY = goesDown ? fromPosition.y + nodeHeight : fromPosition.y;
+      const endY = goesDown ? toPosition.y : toPosition.y + nodeHeight;
+      const direction = goesDown ? 1 : -1;
+      const controlDistance = Math.max(26, Math.abs(endY - startY) * .4);
       const path = edge.loop
-        ? `M ${startX} ${startY} C ${startX + direction * 64} 448, ${endX - direction * 64} 448, ${endX} ${endY}`
-        : `M ${startX} ${startY} C ${startX + direction * controlDistance} ${startY}, ${endX - direction * controlDistance} ${endY}, ${endX} ${endY}`;
-      const labelX = edge.loop ? (startX + endX) / 2 : (startX + endX) / 2;
-      const labelY = edge.loop ? 440 : (startY + endY) / 2 - 8;
+        ? `M ${startX} ${startY} C ${width - 14} ${startY + direction * 42}, ${width - 14} ${endY - direction * 42}, ${endX} ${endY}`
+        : `M ${startX} ${startY} C ${startX} ${startY + direction * controlDistance}, ${endX} ${endY - direction * controlDistance}, ${endX} ${endY}`;
+      const labelX = edge.loop ? width - 28 : (startX + endX) / 2 + 10;
+      const labelY = edge.loop ? (startY + endY) / 2 : (startY + endY) / 2;
       return <g className={edge.loop ? "flowchart-edge loop" : "flowchart-edge"} key={`${edge.from}:${edge.to}:${index}`}>
         <path d={path} markerEnd="url(#flowchart-arrow)" />
         {edge.label && <text x={labelX} y={labelY}>{edge.label[locale]}</text>}
       </g>;
     })}
-  </svg>;
+  </g>;
+}
+
+const symbolColors: Record<FlowSymbol, { fill: string; stroke: string }> = {
+  startEnd: { fill: "#dbeafe", stroke: "#475569" },
+  process: { fill: "#dcfce7", stroke: "#4d7c0f" },
+  decision: { fill: "#fef3c7", stroke: "#a16207" },
+  data: { fill: "#dbeafe", stroke: "#0369a1" },
+  document: { fill: "#fff7ed", stroke: "#a16207" },
+  delay: { fill: "#ffedd5", stroke: "#c2410c" },
+  control: { fill: "#f3e8ff", stroke: "#7e22ce" },
+};
+
+function FlowNodeShape({ symbol, x, y, placeholder }: { symbol: FlowSymbol | null; x: number; y: number; placeholder: boolean }) {
+  if (placeholder) return <rect x={x} y={y} width={nodeWidth} height={nodeHeight} rx="12" className="flowchart-svg-placeholder" />;
+  const colors = symbolColors[symbol!];
+  const common = { fill: colors.fill, stroke: colors.stroke, strokeWidth: 2, className: "flowchart-svg-shape" };
+  switch (symbol) {
+    case "startEnd": return <rect {...common} x={x} y={y} width={nodeWidth} height={nodeHeight} rx={nodeHeight / 2} />;
+    case "process": return <rect {...common} x={x} y={y} width={nodeWidth} height={nodeHeight} rx="6" />;
+    case "decision": return <polygon {...common} points={`${x + nodeWidth / 2},${y} ${x + nodeWidth},${y + nodeHeight / 2} ${x + nodeWidth / 2},${y + nodeHeight} ${x},${y + nodeHeight / 2}`} />;
+    case "data": return <polygon {...common} points={`${x + 18},${y} ${x + nodeWidth},${y} ${x + nodeWidth - 18},${y + nodeHeight} ${x},${y + nodeHeight}`} />;
+    case "document": return <path {...common} d={`M ${x} ${y} H ${x + nodeWidth} V ${y + nodeHeight - 10} Q ${x + nodeWidth * .87} ${y + nodeHeight + 1} ${x + nodeWidth * .75} ${y + nodeHeight - 6} Q ${x + nodeWidth * .62} ${y + nodeHeight - 13} ${x + nodeWidth / 2} ${y + nodeHeight - 6} Q ${x + nodeWidth * .37} ${y + nodeHeight + 1} ${x + nodeWidth * .25} ${y + nodeHeight - 6} Q ${x + nodeWidth * .12} ${y + nodeHeight - 13} ${x} ${y + nodeHeight - 6} Z`} />;
+    case "delay": return <path {...common} d={`M ${x} ${y} H ${x + nodeWidth - 29} A 29 29 0 0 1 ${x + nodeWidth - 29} ${y + nodeHeight} H ${x} Z`} />;
+    case "control": return <g><rect {...common} x={x} y={y} width={nodeWidth} height={nodeHeight} rx="6" /><path d={`M ${x + 10} ${y + 4} V ${y + nodeHeight - 4} M ${x + nodeWidth - 10} ${y + 4} V ${y + nodeHeight - 4}`} stroke="#7e22ce" strokeWidth="3" /></g>;
+  }
 }
 
 export function Week3FlowchartSymbols({
@@ -300,7 +327,7 @@ export function Week3FlowchartSymbols({
     setAnnouncement(selectedSymbol === symbol ? text.paletteHint : `${flowSymbolLabels[symbol][locale]} ${text.selected}`);
   }
 
-  function handleSlotKey(event: KeyboardEvent<HTMLElement>, slotId: string) {
+  function handleSlotKey(event: KeyboardEvent<SVGGElement>, slotId: string) {
     if (event.key !== "Enter" && event.key !== " ") return;
     event.preventDefault();
     activateSlot(slotId);
@@ -319,15 +346,15 @@ export function Week3FlowchartSymbols({
     start.dragging = true;
     event.preventDefault();
     const target = document.elementFromPoint(event.clientX, event.clientY);
-    const slot = target?.closest<HTMLElement>("[data-flow-slot]");
-    setTouchDrag({ symbol: start.symbol, x: event.clientX, y: event.clientY, overSlotId: slot?.dataset.flowSlot ?? null });
+    const slot = target?.closest("[data-flow-slot]");
+    setTouchDrag({ symbol: start.symbol, x: event.clientX, y: event.clientY, overSlotId: slot?.getAttribute("data-flow-slot") ?? null });
   }
 
   function endTouchDrag(event: PointerEvent<HTMLButtonElement>) {
     const start = touchStart.current;
     if (!start) return;
     const target = document.elementFromPoint(event.clientX, event.clientY);
-    const slotId = target?.closest<HTMLElement>("[data-flow-slot]")?.dataset.flowSlot;
+    const slotId = target?.closest("[data-flow-slot]")?.getAttribute("data-flow-slot");
     if (start.dragging) {
       suppressPaletteClick.current = true;
       if (slotId) placeSymbol(slotId, start.symbol);
@@ -342,7 +369,7 @@ export function Week3FlowchartSymbols({
     setSelectedSymbol(symbol);
   }
 
-  function dropOnSlot(event: DragEvent<HTMLElement>, slotId: string) {
+  function dropOnSlot(event: DragEvent<SVGGElement>, slotId: string) {
     event.preventDefault();
     const symbol = event.dataTransfer.getData("text/flowchart-symbol") as FlowSymbol;
     if (flowSymbolOrder.includes(symbol)) placeSymbol(slotId, symbol);
@@ -360,8 +387,7 @@ export function Week3FlowchartSymbols({
     </section>;
   }
 
-  const maxColumn = Math.max(...current.nodes.map((node) => node.column));
-  const canvasWidth = Math.max(980, (maxColumn + 1) * columnGap + 64);
+  const { width: svgWidth, height: svgHeight } = diagramSize(current);
   const resultBySlot = new Map(result?.placements.map((placement) => [placement.slotId, placement]));
 
   return <section className="panel module-shell flowchart-module-shell">
@@ -375,6 +401,40 @@ export function Week3FlowchartSymbols({
 
     <AnimatePresence mode="wait">
       <motion.div key={current.id} className={`flowchart-game ${phase}`} initial={{ opacity: 0, y: 14 }} animate={phase === "error" ? { opacity: 1, x: [0, -7, 7, -5, 4, 0] } : { opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: phase === "error" ? .48 : .3 }}>
+        <div className="flowchart-diagram-card">
+          <header className="flowchart-diagram-heading"><div><span>{text.levels[levelIndex]}</span><h2 data-i18n-skip>{current.title[locale]}</h2></div><p>{blankNodes.length} {locale === "tr" ? "boş sembol" : "empty symbols"}</p></header>
+          <div className="flowchart-vertical-viewport">
+            <svg className="flowchart-vertical-svg" viewBox={`0 0 ${svgWidth} ${svgHeight}`} role="img" aria-label={current.title[locale]} preserveAspectRatio="xMidYMid meet">
+              <FlowEdges diagram={current} locale={locale} />
+              {current.nodes.map((node) => {
+                const placement = node.blank ? placements[node.id] : null;
+                const slotResult = resultBySlot.get(node.id);
+                const showExpected = phase === "error" && slotResult && !slotResult.correct;
+                const displaySymbol = node.blank ? (showExpected ? node.symbol : placement) : node.symbol;
+                const position = nodePosition(node);
+                const placeholder = Boolean(node.blank && !displaySymbol);
+                const interactive = node.blank && phase === "active";
+                return <g
+                  key={node.id}
+                  role={node.blank ? "button" : undefined}
+                  tabIndex={interactive ? 0 : undefined}
+                  data-flow-slot={node.blank ? node.id : undefined}
+                  className={`flowchart-svg-node ${displaySymbol ? `flow-symbol-${displaySymbol}` : "flow-slot-placeholder"} ${interactive ? "interactive" : ""} ${selectedSymbol && node.blank ? "can-drop" : ""} ${selectedSlotId === node.id ? "selected-slot" : ""} ${touchDrag?.overSlotId === node.id ? "drag-over" : ""} ${phase === "success" && slotResult?.correct ? "correct" : ""} ${phase === "error" && slotResult && !slotResult.correct ? "wrong reveal-correct" : ""}`}
+                  aria-label={node.blank ? `${node.text[locale]}: ${displaySymbol ? `${flowSymbolLabels[displaySymbol][locale]}, ${text.placed}` : text.emptySlotHint}` : node.text[locale]}
+                  onClick={() => node.blank && activateSlot(node.id)}
+                  onKeyDown={(event) => node.blank && handleSlotKey(event, node.id)}
+                  onDragOver={(event) => node.blank && event.preventDefault()}
+                  onDrop={(event) => node.blank && dropOnSlot(event, node.id)}
+                >
+                  <FlowNodeShape symbol={displaySymbol} x={position.x} y={position.y} placeholder={placeholder} />
+                  <foreignObject x={position.x + (displaySymbol === "decision" ? 27 : 12)} y={position.y + 7} width={displaySymbol === "decision" ? nodeWidth - 54 : nodeWidth - 24} height={nodeHeight - 14} pointerEvents="none"><div className="flowchart-svg-node-label" data-i18n-skip>{node.text[locale]}</div></foreignObject>
+                  {phase === "success" && slotResult?.correct && <text x={position.x + nodeWidth - 13} y={position.y + 17} className="flowchart-svg-verdict correct">✓</text>}
+                  {phase === "error" && slotResult && !slotResult.correct && <text x={position.x + nodeWidth - 13} y={position.y + 17} className="flowchart-svg-verdict wrong">×</text>}
+                </g>;
+              })}
+            </svg>
+          </div>
+        </div>
         <aside className="flowchart-palette" aria-label={text.paletteTitle}>
           <div className="flowchart-palette-head"><div><h2>{text.paletteTitle}</h2><p>{text.paletteHint}</p></div><MousePointerClick size={18} aria-hidden="true" /></div>
           <div className="flowchart-symbol-list">
@@ -395,41 +455,6 @@ export function Week3FlowchartSymbols({
             ><GripVertical size={13} aria-hidden="true" /><SymbolGlyph symbol={symbol} /><span data-i18n-skip>{flowSymbolLabels[symbol][locale]}</span><MousePointerClick size={12} className="flowchart-pointer" aria-hidden="true" /></button>)}
           </div>
         </aside>
-
-        <div className="flowchart-diagram-card">
-          <header className="flowchart-diagram-heading"><div><span>{text.levels[levelIndex]}</span><h2 data-i18n-skip>{current.title[locale]}</h2></div><p>{blankNodes.length} {locale === "tr" ? "boş sembol" : "empty symbols"}</p></header>
-          <div className="flowchart-scroll">
-            <div className="flowchart-canvas" style={{ "--flowchart-width": `${canvasWidth}px` } as CSSProperties}>
-              <FlowEdges diagram={current} locale={locale} />
-              {current.nodes.map((node) => {
-                const placement = node.blank ? placements[node.id] : null;
-                const slotResult = resultBySlot.get(node.id);
-                const showExpected = phase === "error" && slotResult && !slotResult.correct;
-                const displaySymbol = node.blank ? (showExpected ? node.symbol : placement) : node.symbol;
-                const position = nodePosition(node);
-                const nodeState = node.blank ? (placement ? "filled" : "empty") : "fixed";
-                return <div
-                  key={node.id}
-                  role={node.blank ? "button" : undefined}
-                  tabIndex={node.blank && phase === "active" ? 0 : undefined}
-                  data-flow-slot={node.blank ? node.id : undefined}
-                  className={`flowchart-node ${displaySymbol ? `flow-symbol-${displaySymbol}` : "flow-slot-placeholder"} ${nodeState} ${node.blank ? "interactive" : ""} ${selectedSymbol && node.blank ? "can-drop" : ""} ${selectedSlotId === node.id ? "selected-slot" : ""} ${touchDrag?.overSlotId === node.id ? "drag-over" : ""} ${phase === "success" && slotResult?.correct ? "correct" : ""} ${phase === "error" && slotResult && !slotResult.correct ? "wrong reveal-correct" : ""}`}
-                  style={{ left: position.x, top: position.y } as CSSProperties}
-                  aria-label={node.blank ? `${node.text[locale]}: ${displaySymbol ? `${flowSymbolLabels[displaySymbol][locale]}, ${text.placed}` : text.emptySlotHint}` : node.text[locale]}
-                  onClick={() => node.blank && activateSlot(node.id)}
-                  onKeyDown={(event) => node.blank && handleSlotKey(event, node.id)}
-                  onDragOver={(event) => node.blank && event.preventDefault()}
-                  onDrop={(event) => node.blank && dropOnSlot(event, node.id)}
-                >
-                  {node.blank && !displaySymbol ? <><span className="flowchart-question">?</span><small>{text.emptySlot}</small></> : <><span className="flowchart-node-symbol"><SymbolGlyph symbol={displaySymbol!} /></span><strong data-i18n-skip>{node.text[locale]}</strong>{node.blank && <small className="flowchart-placed-label" data-i18n-skip>{flowSymbolLabels[displaySymbol!][locale]}</small>}</>}
-                  {node.blank && placement && phase === "active" && !selectedSymbol && <Undo2 className="flowchart-undo" size={13} aria-hidden="true" />}
-                  {phase === "success" && slotResult?.correct && <Check className="flowchart-verdict" size={18} aria-hidden="true" />}
-                  {phase === "error" && slotResult && !slotResult.correct && <X className="flowchart-verdict" size={18} aria-hidden="true" />}
-                </div>;
-              })}
-            </div>
-          </div>
-        </div>
       </motion.div>
     </AnimatePresence>
 

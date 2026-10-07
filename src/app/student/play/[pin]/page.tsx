@@ -205,6 +205,10 @@ export default function StudentPlayPage() {
   const ownRank = ranking.findIndex((item) => item.id === student.id) + 1;
   const studentNav = <Navbar studentContext={{ sessionTitle: session.title, week: session.selected_week, studentName: student.nickname, studentNumber: student.student_number, score: student.session_score, onLeave: () => { localStorage.removeItem(`system-lab:${pin}:student`); router.push("/"); } }} />;
 
+  if (feedbackOpen && activeSubmission) return <>{studentNav}<main className="container page student-submission-wait-page">
+    <section className="student-submission-wait panel"><ModuleFeedbackSurvey key={activeModuleKey} moduleId={session.current_module} onSubmit={sendFeedback} onSkip={closeFeedback} /></section>
+  </main></>;
+
   if (!session.is_active) return <>{studentNav}<main className="container page"><div className="student-result-card panel"><Trophy size={58} color="var(--amber)" /><span className="eyebrow">Oturum tamamlandı</span><h1>Harika iş çıkardın!</h1><p className="lead">Genel toplam puanın <strong className="score-pop">{profile?.total_score ?? student.score}</strong></p><Button onClick={() => router.push("/")}>Ana sayfaya dön</Button></div></main></>;
 
   const isSupportedModule = session.selected_week === 1 || (session.selected_week === 3 && (session.current_module === 1 || session.current_module === 2 || session.current_module === 3));
@@ -232,16 +236,16 @@ export default function StudentPlayPage() {
 
   if (activeSubmission) return <>{studentNav}<main className="container page student-submission-wait-page">
     <section className="student-submission-wait panel">
-      {feedbackOpen ? <ModuleFeedbackSurvey key={activeModuleKey} moduleId={session.current_module} onSubmit={sendFeedback} onSkip={closeFeedback} /> : <>
+      <>
         <span className="submission-check" aria-hidden="true">✓</span>
         <span className="eyebrow">Yanıt Alındı</span>
         <h1>Yanıtınız Kaydedildi!</h1>
         <p>Öğretmen modülü bitirip sonuçları açıklayana kadar lütfen bekleyin…</p>
         {message && <div className="notice success">{message}</div>}
         {error && <div className="notice error">{error}</div>}
-        {!feedbackKeys.includes(activeModuleKey) && <button type="button" className="feedback-reopen" onClick={() => setFeedbackOpen(true)}><MessageCircleHeart size={18} /> Geri bildirim ver</button>}
+        {!feedbackKeys.includes(activeModuleKey) && feedbackDismissedKey !== activeModuleKey && <button type="button" className="feedback-reopen" onClick={() => setFeedbackOpen(true)}><MessageCircleHeart size={18} /> Geri bildirim ver</button>}
         <div className="waiting-pulse"><i /> Sonuçlar henüz gizli</div>
-      </>}
+      </>
     </section>
   </main></>;
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Check, LockKeyhole, RotateCcw, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { useI18n } from "@/lib/i18n/I18nContext";
@@ -193,13 +193,13 @@ export function Week3MissingProcess({
     </header>
 
     <div className="missing-process-chain" aria-live="polite">
-      {current.steps.map((step, index) => <Fragment key={`${current.id}:${index}`}>
-        {index > 0 && <ArrowRight className="missing-process-arrow" aria-hidden="true" />}
+      {current.steps.map((step, index) => <div className={`missing-process-link ${index === current.steps.length - 1 ? "last" : ""}`} key={`${current.id}:${index}`}>
         {step ? <article className="missing-process-step"><small>{index + 1}</small><strong data-i18n-skip>{step[locale]}</strong></article> : <article className={`missing-process-slot ${revealed ? "revealed" : ""} ${wrongReveal ? "wrong-reveal" : ""}`}>
           <small data-i18n-skip>{revealed ? missingProcessLabels.missingStep[locale] : text.missingSlot}</small>
           {revealed ? <><Check size={22} aria-hidden="true" /><strong data-i18n-skip>{current.correct[locale]}</strong></> : <><b aria-hidden="true">?</b><strong>{text.missingHint}</strong></>}
         </article>}
-      </Fragment>)}
+        {index < current.steps.length - 1 && <ArrowRight className="missing-process-arrow" aria-hidden="true" />}
+      </div>)}
     </div>
 
     <div className="missing-process-options-title" data-i18n-skip>{missingProcessLabels.options[locale]}</div>
