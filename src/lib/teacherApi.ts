@@ -61,10 +61,3 @@ export async function runTeacherModuleAction(sessionId: string, action: "start" 
     body: JSON.stringify({ action, moduleId }),
   })).session;
 }
-
-export async function resetTeacherData() {
-  return teacherRequest<{ success: true; deleted: Record<string, number>; remaining: Record<string, number> }>("/api/teacher/reset", {
-    method: "POST",
-    body: JSON.stringify({ confirmation: "SIFIRLA" }),
-  });
-}

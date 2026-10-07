@@ -6,8 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "lint": "npm run i18n:check && eslint .",
+    "typecheck": "npm run i18n:check && tsc --noEmit",
+    "i18n:check": "node scripts/i18n-audit.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "latest",

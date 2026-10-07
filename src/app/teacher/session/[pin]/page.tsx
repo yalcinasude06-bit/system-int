@@ -62,7 +62,8 @@ export default function TeacherSessionPage() {
   useEffect(() => {
     if (authStatus === "unauthenticated") { router.replace("/teacher"); return; }
     if (authStatus !== "authenticated") return;
-    void load();
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
   }, [authStatus, load, router]);
 
   useEffect(() => {

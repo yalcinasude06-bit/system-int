@@ -918,11 +918,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 .modal-backdrop { position: fixed; inset: 0; z-index: 70; display: grid; place-items: center; padding: 20px; background: rgba(15,23,42,.38); backdrop-filter: blur(12px); }
 .modal { width: min(500px, 100%); border-radius: 25px; padding: 25px; background: #ffffff; border: 1px solid var(--line); box-shadow: 0 30px 100px rgba(15,23,42,.2); }
-.reset-modal { display: grid; gap: 20px; }
-.reset-modal h2 { margin: 5px 0 8px; letter-spacing: -.03em; }
-.reset-modal p { margin: 0; color: var(--muted); line-height: 1.65; }
-.reset-modal-icon { width: 58px; height: 58px; display: grid; place-items: center; color: #be123c; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 18px; }
-.reset-modal-actions { display: grid; grid-template-columns: 1fr 1.35fr; gap: 10px; }
 .qr-wrap { display: grid; place-items: center; background: white; padding: 18px; border-radius: 18px; width: fit-content; margin: 22px auto; }
 .empty { text-align: center; color: var(--muted); padding: 34px 18px; border: 1px dashed var(--line); border-radius: 18px; }
 .score-pop { color: var(--amber); font-weight: 850; }

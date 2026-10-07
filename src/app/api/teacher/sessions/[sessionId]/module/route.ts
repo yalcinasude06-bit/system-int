@@ -5,7 +5,6 @@ import { isSupabaseAdminConfigured, requireSupabaseAdmin } from "@/lib/supabaseA
 export const runtime = "nodejs";
 
 type RouteContext = { params: Promise<{ sessionId: string }> };
-type ModuleAction = "start" | "cancel" | "finish";
 
 function errorResponse(status: number, error: string) {
   return NextResponse.json({ error }, { status });

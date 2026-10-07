@@ -4,8 +4,6 @@ import { getTeacherUsernameFromToken, readBearerToken } from "@/lib/teacherAuthS
 
 export const runtime = "nodejs";
 
-type Counts = Record<"submissions" | "students" | "student_profiles" | "sessions", number>;
-
 async function getCounts(teacherUsername: string) {
   const client = requireSupabaseAdmin();
   const { data: sessions, error: sessionLookupError } = await client
@@ -37,6 +35,9 @@ async function getCounts(teacherUsername: string) {
 }
 
 export async function POST(request: NextRequest) {
+  if (process.env.ENABLE_DATA_RESET !== "true") {
+    return NextResponse.json({ error: "Veri sıfırlama devre dışı." }, { status: 403 });
+  }
   const token = readBearerToken(request.headers.get("authorization"));
   const teacherUsername = getTeacherUsernameFromToken(token);
   if (!teacherUsername) {

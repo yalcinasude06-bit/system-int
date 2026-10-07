@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, KeyRound, LogIn, Presentation, Radio, ShieldCheck, Trash2 } from "lucide-react";
+import { KeyRound, LogIn, Presentation, Radio, ShieldCheck } from "lucide-react";
 import { Navbar } from "@/components/common/Navbar";
 import { Button } from "@/components/common/Button";
-import { createTeacherSession, listTeacherSessions, patchTeacherSession, resetTeacherData, runTeacherModuleAction, type TeacherSessionSummary } from "@/lib/teacherApi";
+import { createTeacherSession, listTeacherSessions, patchTeacherSession, runTeacherModuleAction, type TeacherSessionSummary } from "@/lib/teacherApi";
 import { useTeacherAuth } from "@/lib/useTeacherAuth";
 import { useI18n } from "@/lib/i18n/I18nContext";
 
@@ -20,11 +20,6 @@ export default function TeacherPage() {
   const [loading, setLoading] = useState(false);
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [error, setError] = useState("");
-  const [resetOpen, setResetOpen] = useState(false);
-  const [resetConfirmation, setResetConfirmation] = useState("");
-  const [resetting, setResetting] = useState(false);
-  const [resetError, setResetError] = useState("");
-  const [resetMessage, setResetMessage] = useState("");
 
   const loadSessions = useCallback(async () => {
     setLoadingSessions(true);
@@ -38,7 +33,9 @@ export default function TeacherPage() {
   }, []);
 
   useEffect(() => {
-    if (status === "authenticated") void loadSessions();
+    if (status !== "authenticated") return;
+    const timer = window.setTimeout(() => void loadSessions(), 0);
+    return () => window.clearTimeout(timer);
   }, [loadSessions, status]);
 
   async function handleLogin(event: React.FormEvent) {
@@ -83,26 +80,6 @@ export default function TeacherPage() {
     }
   }
 
-  async function handleReset(event: React.FormEvent) {
-    event.preventDefault();
-    if (resetConfirmation !== "SIFIRLA") return;
-    setResetting(true);
-    setResetError("");
-    setResetMessage("");
-    try {
-      const data = await resetTeacherData();
-      const deletedTotal = Object.values(data.deleted).reduce((sum, count) => sum + count, 0);
-      setSessions([]);
-      setResetOpen(false);
-      setResetConfirmation("");
-      setResetMessage(`Sıfırlama tamamlandı. ${deletedTotal} kayıt temizlendi; yalnızca sizin ders verileriniz silindi.`);
-    } catch (caught) {
-      setResetError(caught instanceof Error ? caught.message : "Veriler sıfırlanamadı.");
-    } finally {
-      setResetting(false);
-    }
-  }
-
   if (status === "checking") return <><Navbar /><main className="container page"><div className="empty">Öğretmen oturumu doğrulanıyor…</div></main></>;
 
   if (status === "unauthenticated") return <><Navbar /><main className="container page">
@@ -120,11 +97,10 @@ export default function TeacherPage() {
 
   return <><Navbar teacherContext={{ username: signedInUsername, onLogout: logout }} /><main className="container page teacher-home-page">
     <div className="form-card panel">
-      <div className="section-head"><div className="module-header"><span className="module-number"><Presentation /></span><div><div className="eyebrow">Öğretmen konsolu</div><h1 style={{ margin: "5px 0" }}>Canlı oturum oluştur</h1></div></div><div className="teacher-page-actions"><Button type="button" size="small" variant="danger" icon={<Trash2 size={15} />} onClick={() => { setResetOpen(true); setResetError(""); }}>Kendi ders verilerimi sıfırla</Button></div></div>
+      <div className="section-head"><div className="module-header"><span className="module-number"><Presentation /></span><div><div className="eyebrow">Öğretmen konsolu</div><h1 style={{ margin: "5px 0" }}>Canlı oturum oluştur</h1></div></div></div>
       <p className="muted">Öğrenciler altı haneli PIN veya QR kod ile saniyeler içinde katılır.</p>
       <form className="form-grid" onSubmit={handleCreate}>
         <div className="field"><label htmlFor="title">Ders başlığı</label><input id="title" className="input" value={title} maxLength={120} onChange={(event) => setTitle(event.target.value)} /></div>
-        {resetMessage && <div className="notice success">{resetMessage}</div>}
         {error && <div className="notice error">{error}</div>}
         <Button type="submit" loading={loading} icon={<Radio size={18} />}>Oturumu başlat</Button>
       </form>
@@ -138,17 +114,5 @@ export default function TeacherPage() {
         <div className="teacher-session-list-actions"><Button size="small" variant="secondary" onClick={() => router.push(`/teacher/session/${session.pin_code}`)}>Devam et</Button>{session.is_active && <Button size="small" variant="danger" disabled={loading} onClick={() => void finishSession(session)}>Oturumu bitir</Button>}</div>
       </article>)}</div> : <div className="empty">Henüz size ait bir ders oturumu yok.</div>}
     </section>
-
-    {resetOpen && <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !resetting) setResetOpen(false); }}>
-      <div className="modal reset-modal" role="dialog" aria-modal="true" aria-labelledby="reset-title">
-        <div className="reset-modal-icon"><AlertTriangle size={28} /></div>
-        <div><div className="eyebrow">Geri alınamaz işlem</div><h2 id="reset-title">Kendi ders verilerimi sıfırla</h2><p>Yalnızca sizin öğrenci profilleriniz, ders oturumlarınız ve sonuçlarınız silinir. Diğer öğretmenlerin verileri korunur.</p></div>
-        <form className="form-grid" onSubmit={handleReset}>
-          <div className="field"><label htmlFor="reset-confirmation">Onaylamak için <strong>SIFIRLA</strong> yazın</label><input id="reset-confirmation" className="input" autoComplete="off" autoFocus value={resetConfirmation} onChange={(event) => setResetConfirmation(event.target.value)} /></div>
-          {resetError && <div className="notice error">{resetError}</div>}
-          <div className="reset-modal-actions"><Button type="button" variant="secondary" disabled={resetting} onClick={() => { setResetOpen(false); setResetConfirmation(""); setResetError(""); }}>Vazgeç</Button><Button type="submit" variant="danger" loading={resetting} disabled={resetConfirmation !== "SIFIRLA"} icon={<Trash2 size={17} />}>Kendi verilerimi sıfırla</Button></div>
-        </form>
-      </div>
-    </div>}
   </main></>;
 }

@@ -4,9 +4,7 @@ export type Locale = "tr" | "en";
  * Turkish stays as the source language in components so gameplay payloads and
  * scoring keys never change. English is a presentation-only dictionary.
  */
-export const dictionaries: Record<Locale, Record<string, string>> = {
-  tr: {},
-  en: {
+const englishDictionary = {
     "Sistem Laboratuvarı": "Systems Laboratory",
     "Sistem analizi için canlı ve etkileşimli öğrenme platformu.": "A live, interactive learning platform for systems analysis.",
     "Ana sayfa": "Home",
@@ -14,6 +12,7 @@ export const dictionaries: Record<Locale, Record<string, string>> = {
     "Öğrenci": "Student",
     "Öğretmen": "Teacher",
     "Öğrenci bilgileri": "Student information",
+    "Öğretmen bilgileri": "Teacher information",
     "Puan": "Points",
     "puan": "points",
     "Ayrıl": "Leave",
@@ -24,6 +23,7 @@ export const dictionaries: Record<Locale, Record<string, string>> = {
     "Sınıfı canlı bir sistem laboratuvarına dönüştür. Öğrenciler sistemi kurar, geri bildirim zincirlerini çözer, kara kutuyu analiz eder, sistem türlerini eşleştirir ve ilişki türlerini oyunla keşfeder.": "Turn the classroom into a live systems laboratory. Students build a system, solve feedback chains, analyze the black box, match system types, and discover relationship types through play.",
     "Öğretmen paneli": "Teacher dashboard",
     "Öğretmen Paneli": "Teacher Dashboard",
+    "Öğretmen Paneli ·": "Teacher Dashboard ·",
     "Öğrenci girişi": "Student entry",
     "Gerçek zamanlı sınıf": "Real-time classroom",
     "Kurulumsuz katılım": "Join without installation",
@@ -75,6 +75,8 @@ export const dictionaries: Record<Locale, Record<string, string>> = {
     "Öğretmen girişine yönlendiriliyorsunuz…": "Redirecting to teacher sign-in…",
     "Öğretmen oturumu doğrulanıyor…": "Verifying teacher session…",
     "Öğretmen oturumu bulunamadı. Lütfen yeniden giriş yapın.": "Teacher session not found. Please sign in again.",
+    "Öğretmen oturumu bulunamadı.": "Teacher session not found.",
+    "Öğretmen işlemi tamamlanamadı.": "The teacher action could not be completed.",
     "Öğretmen oturumunun süresi doldu.": "The teacher session has expired.",
     "Oturum bulunamadı.": "Session not found.",
     "Oturum bulunamadı veya sona erdi.": "Session not found or has ended.",
@@ -89,6 +91,7 @@ export const dictionaries: Record<Locale, Record<string, string>> = {
     "Devam et veya oturumu bitir": "Continue or end a session",
     "Yenile": "Refresh",
     "Oturumlar yükleniyor…": "Loading sessions…",
+    "Oturumlar yüklenemedi.": "Could not load sessions.",
     "Açık": "Open",
     "Bitirildi": "Finished",
     "Devam et": "Continue",
@@ -104,6 +107,20 @@ export const dictionaries: Record<Locale, Record<string, string>> = {
     "QR kodu büyüt": "Enlarge QR code",
     "QR’ı Büyüt": "Enlarge QR",
     "Ders Akışı": "Lesson Flow",
+    "Süreç Hiyerarşisi": "Process Hierarchy",
+    "5 piramitlik süreç oyunu": "Five-pyramid process game",
+    "Temel süreç, alt süreç ve faaliyet örneklerini doğru piramit katmanlarına yerleştir.": "Place core-process, sub-process, and activity examples in the correct pyramid layers.",
+    "Kara Kutuda Eksik Adım": "Missing Step in the Black Box",
+    "10 süreç zinciri": "10 process chains",
+    "Süreç zincirindeki eksik adımı üç seçenek arasından bularak kara kutuyu aç.": "Open the black box by finding the missing step in the process chain from three options.",
+    "Akış Diyagramı Sembolleri": "Flowchart Symbols",
+    "Kolaydan zora sembol yerleştirme": "Symbol placement from easy to hard",
+    "Akış diyagramındaki eksik şekilleri doğru sembollerle tamamla.": "Complete the missing flowchart shapes with the correct symbols.",
+    "Hafta 3’ün diğer modülleri yakında": "More Week 3 modules are coming soon",
+    "Bu hafta Modül 1: Süreç Hiyerarşisi, Modül 2: Kara Kutuda Eksik Adım ve Modül 3: Akış Diyagramı Sembolleri kullanıma açıktır.": "This week, Module 1: Process Hierarchy, Module 2: Missing Step in the Black Box, and Module 3: Flowchart Symbols are available.",
+    "Temel süreçler": "Core processes",
+    "Alt süreçler": "Sub-processes",
+    "Faaliyetler / görevler": "Activities / tasks",
     "Hafta ve Modül Yönetimi": "Week and Module Management",
     "Ders haftası": "Course week",
     "Hafta 1 modülleri": "Week 1 modules",
@@ -121,6 +138,7 @@ export const dictionaries: Record<Locale, Record<string, string>> = {
     "Başlatma iptal edilemedi.": "Could not cancel the start.",
     "Başlatmayı İptal Et": "Cancel Start",
     "Modül sonuçları": "Module results",
+    "/ 10 Eşleşme Kaydedildi": "/ 10 Matches Saved",
     "Modül sonuç sıralaması": "Module result ranking",
     "Sıra ve öğrenci": "Rank and student",
     "En yüksek puan": "Highest score",
@@ -145,6 +163,7 @@ export const dictionaries: Record<Locale, Record<string, string>> = {
     "yazın": "type",
     "Vazgeç": "Cancel",
     "Veriler sıfırlanamadı.": "Data could not be reset.",
+    "Veri sıfırlama devre dışı.": "Data reset is disabled.",
     "Veriler sıfırlanamadı. Lütfen tekrar deneyin.": "Data could not be reset. Please try again.",
     "Sıfırlama sonrasında bazı kayıtlar kaldı.": "Some records remained after the reset.",
     "Kriz enjeksiyonu": "Crisis injection",
@@ -162,6 +181,11 @@ export const dictionaries: Record<Locale, Record<string, string>> = {
     "Supabase ortam değişkenleri henüz yapılandırılmamış.": "Supabase environment variables have not been configured yet.",
     "Canlı oturum için Supabase ortam değişkenleri henüz eklenmedi. Dağıtım kurulumu tamamlandığında bu ekran otomatik etkinleşir.": "Supabase environment variables for live sessions have not been added yet. This screen will activate automatically when deployment setup is complete.",
     "Güvenli veritabanı bağlantısı yapılandırılmamış.": "The secure database connection is not configured.",
+    "Geçerli bir modül işlemi gerekli.": "A valid module action is required.",
+    "Geçerli bir modül numarası gerekli.": "A valid module number is required.",
+    "Modül işlemi tamamlanamadı.": "The module action could not be completed.",
+    "Geçerli bir oturum güncellemesi gerekli.": "A valid session update is required.",
+    "Geçersiz oturum güncellemesi.": "Invalid session update.",
     "Veritabanı şu anda yoğun. Lütfen birkaç saniye sonra tekrar deneyin.": "The database is busy right now. Please try again in a few seconds.",
     "Yanıtınız güvenle kaydedildi.": "Your answer was saved securely.",
     "Bu modül için yanıt hakkını daha önce kullandın.": "You have already used your answer attempt for this module.",
@@ -211,8 +235,20 @@ export const dictionaries: Record<Locale, Record<string, string>> = {
     "Atla": "Skip",
     "Gönder": "Send",
     "Geri bildirim gönderilemedi.": "Could not send feedback.",
-  },
+} as const satisfies Record<string, string>;
+
+export type TranslationKey = keyof typeof englishDictionary;
+export type TranslationDictionary = Record<TranslationKey, string>;
+
+const turkishDictionary: TranslationDictionary = Object.fromEntries(
+  Object.keys(englishDictionary).map((key) => [key, key]),
+) as TranslationDictionary;
+
+export const dictionaries: Record<Locale, TranslationDictionary> = {
+  tr: turkishDictionary,
+  en: englishDictionary,
 };
+const englishMessages: Record<string, string> = dictionaries.en;
 
 Object.assign(dictionaries.en, {
   "Hafta": "Week",
@@ -596,6 +632,7 @@ Object.assign(dictionaries.en, {
   "Satış ↑": "Sales ↑",
   "Negatif −": "Negative −",
   "Pozitif +": "Positive +",
+  "🌾 Buğday": "🌾 Wheat",
   "Isıtma": "Heating",
   "Öğütme ✓": "Grinding ✓",
   "Soğutma": "Cooling",
@@ -645,14 +682,14 @@ const dynamicTranslations: Array<[RegExp, (match: RegExpMatchArray) => string]> 
   [/^(\d+) \/ (\d+) · Tur (\d+) \/ (\d+)$/, (m) => `${m[1]} / ${m[2]} · Round ${m[3]} / ${m[4]}`],
   [/^Hafta (\d+) hazırlık aşamasında$/, (m) => `Week ${m[1]} is being prepared`],
   [/^(\d+) karttaki yanıtınız ve kazandığınız puan korunuyor\.$/, (m) => `Your answers and points from ${m[1]} cards are preserved.`],
-  [/^Doğru! Süreç: (.+)$/, (m) => `Correct! Process: ${dictionaries.en[m[1]] ?? m[1]}`],
-  [/^Yanlış! Doğru Süreç: (.+)$/, (m) => `Incorrect! Correct process: ${dictionaries.en[m[1]] ?? m[1]}`],
-  [/^Kara kutunun içindeki süreç: (.+)$/, (m) => `Process inside the black box: ${dictionaries.en[m[1]] ?? m[1]}`],
+  [/^Doğru! Süreç: (.+)$/, (m) => `Correct! Process: ${englishMessages[m[1]] ?? m[1]}`],
+  [/^Yanlış! Doğru Süreç: (.+)$/, (m) => `Incorrect! Correct process: ${englishMessages[m[1]] ?? m[1]}`],
+  [/^Kara kutunun içindeki süreç: (.+)$/, (m) => `Process inside the black box: ${englishMessages[m[1]] ?? m[1]}`],
   [/^(\d+) doğru eşleşme yaptın\. Puanın, öğretmen sonuçları açtığında görünecek\.$/, (m) => `You made ${m[1]} correct matches. Your score will appear when the teacher reveals the results.`],
-  [/^Doğru görsel: (.+)$/, (m) => `Correct visual: ${dictionaries.en[m[1]] ?? m[1]}`],
-  [/^Doğru! (.+)$/, (m) => `Correct! ${dictionaries.en[m[1]] ?? m[1]}`],
-  [/^Yanlış! (.+)$/, (m) => `Incorrect! ${dictionaries.en[m[1]] ?? m[1]}`],
-  [/^→ (.+)$/, (m) => `→ ${dictionaries.en[m[1]] ?? m[1]}`],
+  [/^Doğru görsel: (.+)$/, (m) => `Correct visual: ${englishMessages[m[1]] ?? m[1]}`],
+  [/^Doğru! (.+)$/, (m) => `Correct! ${englishMessages[m[1]] ?? m[1]}`],
+  [/^Yanlış! (.+)$/, (m) => `Incorrect! ${englishMessages[m[1]] ?? m[1]}`],
+  [/^→ (.+)$/, (m) => `→ ${englishMessages[m[1]] ?? m[1]}`],
   [/^(.+) avatarı$/, (m) => `${m[1]} avatar`],
   [/^Sıfırlama tamamlandı\. (\d+) kayıt temizlendi; tüm listeler artık boş\.$/, (m) => `Reset complete. ${m[1]} records were cleared; all lists are now empty.`],
   [/^Sıfırlama tamamlandı\. (\d+) kayıt temizlendi; yalnızca sizin ders verileriniz silindi\.$/, (m) => `Reset complete. ${m[1]} records were cleared; only your class data was deleted.`],
@@ -664,7 +701,7 @@ export function translateMessage(value: string, locale: Locale) {
   const trailing = value.match(/\s*$/)?.[0] ?? "";
   const end = trailing.length ? value.length - trailing.length : value.length;
   const core = value.slice(leading.length, end);
-  const exact = dictionaries.en[core];
+  const exact = englishMessages[core];
   if (exact) return `${leading}${exact}${trailing}`;
   for (const [pattern, render] of dynamicTranslations) {
     const match = core.match(pattern);

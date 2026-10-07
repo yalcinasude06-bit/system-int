@@ -1,7 +1,7 @@
 # Sistem Laboratuvarı
 
-Sistem analizi eğitimini beş etkileşimli modül, canlı sınıf oturumları ve
-Supabase Realtime altyapısıyla deneyime dönüştüren Next.js uygulaması.
+Sistem analizi eğitimini etkileşimli modüller ve canlı sınıf oturumlarıyla
+deneyime dönüştüren Next.js uygulaması.
 
 ## Yerel geliştirme
 
@@ -23,12 +23,16 @@ npx supabase db push
 - Öğretmen yetkisi yalnızca açık tarayıcı sekmesinde tutulur; sekme kapatıldığında yeniden
   kullanıcı adı ve şifre doğrulaması gerekir.
 - Öğretmen paneli sunucu tarafında doğrulanan kullanıcı adı/şifre ve sekme kapsamlı imzalı
-  oturum ile korunur. Kimlik bilgileri `TEACHER_USERNAME` ve `TEACHER_PASSWORD` ortam
-  değişkenleriyle tanımlanmalıdır; kaynak kodda varsayılan parola bulunmaz.
+  oturum ile korunur. Çoklu hesaplar `TEACHER_ACCOUNTS`, imzalama anahtarı ise
+  `TEACHER_TOKEN_SECRET` ile tanımlanır. Eski `TEACHER_USERNAME` / `TEACHER_PASSWORD`
+  kurulumu yalnızca geriye uyumluluk için desteklenir; kaynak kodda parola bulunmaz.
+- Her öğretmen yalnızca kendi oturumlarını, öğrencilerini ve genel sıralamasını görür.
+  Öğretmen işlemleri doğrudan istemciden veritabanına değil, sahiplik doğrulayan sunucu
+  API'leri üzerinden yapılır.
 - Öğrenciler PIN, okul numarası ve ad soyad ile katılır. Aynı okul numarasıyla yeniden
   katılım puanı ve ilerlemeyi korur.
-- On dört haftalık menüde Hafta 1 beş canlı modülle aktiftir; diğer haftalar yaklaşan içerik
-  kartını gösterir.
+- On dört haftalık menüde Hafta 1'in beş modülü ve Hafta 3'ün süreç hiyerarşisi, eksik adım
+  ve akış diyagramı modülleri aktiftir; diğer haftalar yaklaşan içerik kartını gösterir.
 - Öğrenciler öğretmen modülü başlatana kadar bekleme ekranında kalır; başlangıçta 3-2-1
   geri sayımı gösterilir. Yanıt gönderildikten sonra puan ve sıralama, öğretmen sonuçları
   açıklayana kadar gizli tutulur.
@@ -51,3 +55,14 @@ npx supabase db push
   bağlantıları değiştirebilir; toplu kontrolde doğru/yanlış çizgiler ve açıklamalar gösterilir.
 - Modül 5, altı ilişki türü ve 36 soruluk havuzdan dengeli seçilen on balonu; zaman, iğne
   fırlatma, geri sekme ve patlama animasyonlarıyla oynatır.
+
+## Yük testi
+
+Tekrarlanabilir 100 → 500 → 5×100 eşzamanlılık testleri [scripts/loadtest/README.md](scripts/loadtest/README.md)
+altında tanımlıdır. Betikler, yanlışlıkla canlı sınıf verilerini etkilememek için yalnızca
+`LOADTEST_ENVIRONMENT=staging` ve `LOADTEST_ALLOW_CLEANUP=true` ile işaretlenmiş izole bir
+hedefte çalışır. Test sonuçları `reports/loadtest/` altında üretilir.
+
+Öğretmen arayüzünde veri silme düğmesi yoktur. Geliştirme/test temizliği için korunan
+`/api/teacher/reset` rotası, varsayılanı `false` olan `ENABLE_DATA_RESET=true` bayrağı olmadan
+403 döner; Production'da bu bayrak asla etkinleştirilmemelidir.
