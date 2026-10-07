@@ -89,9 +89,10 @@ function ModuleFiveDemo() {
 function WeekThreeHierarchyDemo() {
   const { locale } = useI18n();
   const production = processHierarchyPool.find((item) => item.id === "production")!;
-  const duration = 8;
+  const duration = 10;
   return <div className="module-demo hierarchy-brief-demo" aria-hidden="true">
-    <motion.div className="hierarchy-demo-scene success" animate={{ opacity: [1, 1, 0, 0, 1] }} transition={{ duration, repeat: Infinity, times: [0, .46, .5, .96, 1] }}>
+    <motion.div className="hierarchy-demo-scene success" animate={{ opacity: [1, 1, 0, 0, 1] }} transition={{ duration, repeat: Infinity, times: [0, .44, .5, .94, 1] }}>
+      <div className="hierarchy-demo-palette-label">{locale === "tr" ? "Karışık örnekler" : "Mixed examples"}</div>
       <motion.span className="hierarchy-demo-card core" data-i18n-skip animate={{ x: [0, 0, 205, 205], y: [0, 0, 7, 7] }} transition={{ duration: 4, repeat: Infinity, times: [0, .1, .28, 1] }}>{production.core[locale]}</motion.span>
       <motion.span className="hierarchy-demo-card subprocess" data-i18n-skip animate={{ x: [0, 0, 191, 191], y: [0, 0, 8, 8] }} transition={{ duration: 4, repeat: Infinity, times: [0, .3, .5, 1] }}>{production.subprocess[locale]}</motion.span>
       <motion.span className="hierarchy-demo-card activity" data-i18n-skip animate={{ x: [0, 0, 174, 174], y: [0, 0, 8, 8] }} transition={{ duration: 4, repeat: Infinity, times: [0, .52, .72, 1] }}>{production.activity[locale]}</motion.span>
@@ -99,14 +100,17 @@ function WeekThreeHierarchyDemo() {
         <i /><i /><i />
       </motion.div>
       <motion.b className="hierarchy-demo-verdict" data-i18n-skip animate={{ opacity: [0, 0, 1, 1, 0], scale: [.8, .8, 1.08, 1, .8] }} transition={{ duration: 4, repeat: Infinity, times: [0, .69, .76, .9, 1] }}>{locale === "tr" ? "Üçü de doğru ✓" : "All three correct ✓"}</motion.b>
+      <span className="hierarchy-demo-caption">{locale === "tr" ? "Kartı doğru piramit yuvasına bırak" : "Drop a card in the correct pyramid slot"}</span>
     </motion.div>
 
-    <motion.div className="hierarchy-demo-scene error" animate={{ opacity: [0, 0, 1, 1, 0] }} transition={{ duration, repeat: Infinity, times: [0, .46, .5, .96, 1] }}>
+    <motion.div className="hierarchy-demo-scene error" animate={{ opacity: [0, 0, 1, 1, 0] }} transition={{ duration, repeat: Infinity, times: [0, .44, .5, .94, 1] }}>
+      <div className="hierarchy-demo-palette-label">{locale === "tr" ? "Karışık örnekler" : "Mixed examples"}</div>
       <motion.span className="hierarchy-demo-card core" data-i18n-skip animate={{ x: [0, 0, 175, 175], y: [0, 0, 88, 88] }} transition={{ duration: 4, repeat: Infinity, times: [0, .16, .43, 1] }}>{production.core[locale]}</motion.span>
       <motion.div className="hierarchy-demo-pyramid" animate={{ x: [0, 0, -6, 6, -4, 0], opacity: [1, 1, 1, 1, 1, 0] }} transition={{ duration: 4, repeat: Infinity, times: [0, .42, .48, .53, .58, 1] }}>
         <i /><i /><motion.i animate={{ backgroundColor: ["#ecfdf5", "#ecfdf5", "#fee2e2", "#fee2e2"], borderColor: ["#86efac", "#86efac", "#f87171", "#f87171"] }} transition={{ duration: 4, repeat: Infinity, times: [0, .42, .5, 1] }} />
       </motion.div>
       <motion.b className="hierarchy-demo-verdict wrong" data-i18n-skip animate={{ opacity: [0, 0, 1, 1, 0] }} transition={{ duration: 4, repeat: Infinity, times: [0, .48, .56, .9, 1] }}>{locale === "tr" ? "Yanlış katman ✕" : "Wrong layer ✕"}</motion.b>
+      <span className="hierarchy-demo-caption wrong">{locale === "tr" ? "Yanlış kart kırmızı yanar" : "A wrong card flashes red"}</span>
     </motion.div>
   </div>;
 }
@@ -118,7 +122,7 @@ function WeekThreeMissingStepDemo() {
   return <div className="module-demo missing-step-brief-demo" aria-hidden="true">
     <div className="missing-demo-chain">
       <span data-i18n-skip>{order.steps[0]![locale]}</span><b>→</b>
-      <motion.span className="missing-demo-box" animate={{ color: ["#fff", "#fff", "#065f46", "#065f46", "#fff"], backgroundColor: ["#0f172a", "#0f172a", "#d1fae5", "#d1fae5", "#0f172a"], scale: [1, 1, 1.07, 1.07, 1] }} transition={{ ...loop, times: [0, .42, .57, .82, 1] }}>
+      <motion.span className="missing-demo-slot" animate={{ color: ["#6366f1", "#6366f1", "#065f46", "#065f46", "#6366f1"], backgroundColor: ["#f8fafc", "#f8fafc", "#d1fae5", "#d1fae5", "#f8fafc"], borderColor: ["#94a3b8", "#94a3b8", "#34d399", "#34d399", "#94a3b8"], scale: [1, 1, 1.07, 1.07, 1] }} transition={{ ...loop, times: [0, .42, .57, .82, 1] }}>
         <motion.i animate={{ opacity: [1, 1, 0, 0, 1] }} transition={{ ...loop, times: [0, .44, .53, .83, 1] }}>?</motion.i>
         <motion.small data-i18n-skip animate={{ opacity: [0, 0, 1, 1, 0] }} transition={{ ...loop, times: [0, .48, .6, .83, 1] }}>{missingAnswer[locale]}</motion.small>
       </motion.span>

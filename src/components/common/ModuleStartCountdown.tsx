@@ -54,12 +54,12 @@ const weekThreeModuleTwoBrief: Record<"tr" | "en", ModuleBrief> = {
   tr: {
     icon: "⬛",
     title: "Modül 2: Kara Kutuda Eksik Adım",
-    description: "Süreç zincirindeki eksik adımı bul; üç seçenekten doğru olanı seç. Doğruysa kara kutu aydınlanır, yanlışsa doğrusu kısa süre gösterilir.",
+    description: "Süreç zincirindeki eksik adımı bul; üç seçenekten doğru olanı seç. Kesikli boş yuva doğru adımı kısa süre gösterir; yanlış seçim kırmızıyla vurgulanır.",
   },
   en: {
     icon: "⬛",
     title: "Module 2: Missing Step in the Black Box",
-    description: "Find the missing step in the process chain and choose the correct one from three options. The black box lights up when correct; otherwise, the correct step appears briefly.",
+    description: "Find the missing step in the process chain and choose the correct option from three choices. The dashed slot briefly shows the correct step, while an incorrect choice is highlighted in red.",
   },
 };
 

@@ -3,7 +3,6 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Check, LockKeyhole, RotateCcw, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/common/Button";
-import { BlackBoxCube } from "@/components/modules/Module3_Boundary";
 import { useI18n } from "@/lib/i18n/I18nContext";
 import type { LearningModuleProps, ModuleSubmission } from "@/types";
 import { buildMissingProcessRounds, missingProcessLabels } from "./missingProcessContent";
@@ -31,7 +30,8 @@ const copy = {
     saving: "Yanıt kaydediliyor…",
     saveError: "Yanıt kaydedilemedi. İlerlemen korundu.",
     retry: "Kaydı tekrar dene",
-    blackBox: "Kara kutu",
+    missingSlot: "Eksik adım",
+    missingHint: "Doğru adımı seç",
   },
   en: {
     title: "Week 3 · Module 2: Missing Step in the Black Box",
@@ -45,7 +45,8 @@ const copy = {
     saving: "Saving your answer…",
     saveError: "The answer could not be saved. Your progress is preserved.",
     retry: "Try saving again",
-    blackBox: "Black box",
+    missingSlot: "Missing step",
+    missingHint: "Choose the correct step",
   },
 };
 
@@ -194,9 +195,9 @@ export function Week3MissingProcess({
     <div className="missing-process-chain" aria-live="polite">
       {current.steps.map((step, index) => <Fragment key={`${current.id}:${index}`}>
         {index > 0 && <ArrowRight className="missing-process-arrow" aria-hidden="true" />}
-        {step ? <article className="missing-process-step"><small>{index + 1}</small><strong data-i18n-skip>{step[locale]}</strong></article> : <article className={`missing-process-blackbox black-box-3d ${revealed ? "illuminated" : ""} ${wrongReveal ? "wrong-reveal" : ""}`}>
-          <small data-i18n-skip>{revealed ? missingProcessLabels.missingStep[locale] : text.blackBox}</small>
-          <BlackBoxCube revealed={revealed} wrong={wrongReveal} process={current.correct[locale]} />
+        {step ? <article className="missing-process-step"><small>{index + 1}</small><strong data-i18n-skip>{step[locale]}</strong></article> : <article className={`missing-process-slot ${revealed ? "revealed" : ""} ${wrongReveal ? "wrong-reveal" : ""}`}>
+          <small data-i18n-skip>{revealed ? missingProcessLabels.missingStep[locale] : text.missingSlot}</small>
+          {revealed ? <><Check size={22} aria-hidden="true" /><strong data-i18n-skip>{current.correct[locale]}</strong></> : <><b aria-hidden="true">?</b><strong>{text.missingHint}</strong></>}
         </article>}
       </Fragment>)}
     </div>

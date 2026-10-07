@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent, type PointerEvent } from "react";
 import confetti from "canvas-confetti";
 import { AnimatePresence, motion } from "framer-motion";
-import { GripVertical, LockKeyhole, RotateCcw, Sparkles, Undo2 } from "lucide-react";
+import { GripVertical, LockKeyhole, MousePointerClick, RotateCcw, Sparkles, Undo2 } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { useI18n } from "@/lib/i18n/I18nContext";
 import type { LearningModuleProps, ModuleSubmission } from "@/types";
@@ -340,6 +340,7 @@ export function Week3ProcessHierarchy({
   >
     <GripVertical size={16} aria-hidden="true" />
     <span data-i18n-skip>{card.text[locale]}</span>
+    <MousePointerClick className="hierarchy-pointer-hint" size={13} aria-hidden="true" />
     {location === "slot" && <small aria-hidden="true">↕</small>}
   </button>;
 
@@ -388,7 +389,7 @@ export function Week3ProcessHierarchy({
               onDrop={(event) => dropOnLayer(event, layer)}
             >
               <strong data-i18n-skip>{processLayerLabels[layer][locale]}</strong>
-              <div className="hierarchy-slot">{card ? renderCard(card, "slot", layer) : <span>{text.slotEmpty}</span>}</div>
+              <div className="hierarchy-slot">{card ? renderCard(card, "slot", layer) : <><span>{text.slotEmpty}</span><MousePointerClick className="hierarchy-slot-pointer-hint" size={16} aria-hidden="true" /></>}</div>
               {wrong && <i aria-hidden="true">✕</i>}
             </div>;
           })}
