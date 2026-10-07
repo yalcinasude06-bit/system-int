@@ -2,6 +2,8 @@
 
 import { MotionConfig, motion } from "framer-motion";
 import type { ReactNode } from "react";
+import { processHierarchyPool } from "@/components/modules/Week3_ProcessHierarchy/processHierarchyContent";
+import { useI18n } from "@/lib/i18n/I18nContext";
 import type { ModuleId } from "@/types";
 
 const loop = { duration: 3.2, repeat: Infinity, repeatDelay: .35, ease: "easeInOut" as const };
@@ -83,6 +85,31 @@ function ModuleFiveDemo() {
   </div>;
 }
 
+function WeekThreeHierarchyDemo() {
+  const { locale } = useI18n();
+  const production = processHierarchyPool.find((item) => item.id === "production")!;
+  const duration = 8;
+  return <div className="module-demo hierarchy-brief-demo" aria-hidden="true">
+    <motion.div className="hierarchy-demo-scene success" animate={{ opacity: [1, 1, 0, 0, 1] }} transition={{ duration, repeat: Infinity, times: [0, .46, .5, .96, 1] }}>
+      <motion.span className="hierarchy-demo-card core" data-i18n-skip animate={{ x: [0, 0, 205, 205], y: [0, 0, 7, 7] }} transition={{ duration: 4, repeat: Infinity, times: [0, .1, .28, 1] }}>{production.core[locale]}</motion.span>
+      <motion.span className="hierarchy-demo-card subprocess" data-i18n-skip animate={{ x: [0, 0, 191, 191], y: [0, 0, 8, 8] }} transition={{ duration: 4, repeat: Infinity, times: [0, .3, .5, 1] }}>{production.subprocess[locale]}</motion.span>
+      <motion.span className="hierarchy-demo-card activity" data-i18n-skip animate={{ x: [0, 0, 174, 174], y: [0, 0, 8, 8] }} transition={{ duration: 4, repeat: Infinity, times: [0, .52, .72, 1] }}>{production.activity[locale]}</motion.span>
+      <motion.div className="hierarchy-demo-pyramid" animate={{ filter: ["drop-shadow(0 0 0 rgba(16,185,129,0))", "drop-shadow(0 0 0 rgba(16,185,129,0))", "drop-shadow(0 0 13px rgba(16,185,129,.75))"], opacity: [1, 1, 1, 0] }} transition={{ duration: 4, repeat: Infinity, times: [0, .69, .78, 1] }}>
+        <i /><i /><i />
+      </motion.div>
+      <motion.b className="hierarchy-demo-verdict" data-i18n-skip animate={{ opacity: [0, 0, 1, 1, 0], scale: [.8, .8, 1.08, 1, .8] }} transition={{ duration: 4, repeat: Infinity, times: [0, .69, .76, .9, 1] }}>{locale === "tr" ? "Üçü de doğru ✓" : "All three correct ✓"}</motion.b>
+    </motion.div>
+
+    <motion.div className="hierarchy-demo-scene error" animate={{ opacity: [0, 0, 1, 1, 0] }} transition={{ duration, repeat: Infinity, times: [0, .46, .5, .96, 1] }}>
+      <motion.span className="hierarchy-demo-card core" data-i18n-skip animate={{ x: [0, 0, 175, 175], y: [0, 0, 88, 88] }} transition={{ duration: 4, repeat: Infinity, times: [0, .16, .43, 1] }}>{production.core[locale]}</motion.span>
+      <motion.div className="hierarchy-demo-pyramid" animate={{ x: [0, 0, -6, 6, -4, 0], opacity: [1, 1, 1, 1, 1, 0] }} transition={{ duration: 4, repeat: Infinity, times: [0, .42, .48, .53, .58, 1] }}>
+        <i /><i /><motion.i animate={{ backgroundColor: ["#ecfdf5", "#ecfdf5", "#fee2e2", "#fee2e2"], borderColor: ["#86efac", "#86efac", "#f87171", "#f87171"] }} transition={{ duration: 4, repeat: Infinity, times: [0, .42, .5, 1] }} />
+      </motion.div>
+      <motion.b className="hierarchy-demo-verdict wrong" data-i18n-skip animate={{ opacity: [0, 0, 1, 1, 0] }} transition={{ duration: 4, repeat: Infinity, times: [0, .48, .56, .9, 1] }}>{locale === "tr" ? "Yanlış katman ✕" : "Wrong layer ✕"}</motion.b>
+    </motion.div>
+  </div>;
+}
+
 const demos: Record<ModuleId, () => ReactNode> = {
   1: ModuleOneDemo,
   2: ModuleTwoDemo,
@@ -91,7 +118,7 @@ const demos: Record<ModuleId, () => ReactNode> = {
   5: ModuleFiveDemo,
 };
 
-export function ModuleGameplayDemo({ moduleId }: { moduleId: ModuleId }) {
-  const Demo = demos[moduleId];
+export function ModuleGameplayDemo({ moduleId, weekId = 1 }: { moduleId: ModuleId; weekId?: number }) {
+  const Demo = weekId === 3 && moduleId === 1 ? WeekThreeHierarchyDemo : demos[moduleId];
   return <MotionConfig reducedMotion="user"><Demo /></MotionConfig>;
 }

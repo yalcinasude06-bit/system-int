@@ -162,7 +162,7 @@ export default function TeacherSessionPage() {
   }
 
   async function startModule(currentModule: ModuleId) {
-    if (!session || session.selected_week !== 1) return;
+    if (!session || (session.selected_week !== 1 && !(session.selected_week === 3 && currentModule === 1))) return;
     setBusy(true);
     setError("");
     setResultsViewOpen(false);
@@ -350,6 +350,6 @@ export default function TeacherSessionPage() {
       </div>}
     </div>
     <QRModal open={qrOpen} onClose={() => setQrOpen(false)} url={joinUrl} pin={pin} />
-    {briefingModule && session.is_module_started && session.module_started_at && <ModuleStartCountdown key={`${briefingModule}:${session.module_started_at}`} moduleId={briefingModule} startedAt={session.module_started_at} canceling={busy} onCancel={() => void cancelModuleStart()} onComplete={() => setBriefingModule(null)} />}
+    {briefingModule && session.is_module_started && session.module_started_at && <ModuleStartCountdown key={`${session.selected_week}:${briefingModule}:${session.module_started_at}`} weekId={session.selected_week} moduleId={briefingModule} startedAt={session.module_started_at} canceling={busy} onCancel={() => void cancelModuleStart()} onComplete={() => setBriefingModule(null)} />}
   </main>;
 }

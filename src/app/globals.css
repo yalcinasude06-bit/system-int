@@ -1152,3 +1152,95 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
 }
+
+/* Week 3 · Module 1: process hierarchy pyramids */
+.coming-soon-card.compact { min-height: 104px; justify-content: flex-start; padding: 20px 24px; }
+.coming-soon-card.compact > span { font-size: 34px; }
+.coming-soon-card.compact strong { font-size: 16px; }
+.module-start-description { position: relative; z-index: 1; max-width: 470px; margin: -2px 0 0; color: #475569; font-size: 12px; font-weight: 650; line-height: 1.45; }
+
+.hierarchy-module-shell { overflow: hidden; background: radial-gradient(circle at 78% 35%,rgba(16,185,129,.09),transparent 34%),#fff; }
+.hierarchy-topline > strong { color: #047857; background: #ecfdf5; border-color: #a7f3d0; }
+.hierarchy-round-progress { display: grid; grid-template-columns: repeat(5,1fr); gap: 8px; }
+.hierarchy-round-progress span { height: 7px; overflow: hidden; background: #e2e8f0; border-radius: 999px; transition: background .25s ease,transform .25s ease; }
+.hierarchy-round-progress span.done { background: #10b981; }
+.hierarchy-round-progress span.active { background: linear-gradient(90deg,#f59e0b,#fbbf24); transform: scaleY(1.35); }
+.hierarchy-game-layout { min-height: 500px; display: grid; grid-template-columns: minmax(260px,.76fr) minmax(480px,1.24fr); align-items: stretch; gap: clamp(16px,3vw,34px); padding: clamp(14px,2vw,24px); background: linear-gradient(145deg,#f8fafc,#f0fdf4); border: 1px solid #dbeafe; border-radius: 24px; }
+.hierarchy-deck { align-self: center; display: grid; gap: 16px; min-height: 330px; padding: 20px; background: rgba(255,255,255,.94); border: 2px dashed #cbd5e1; border-radius: 22px; box-shadow: 0 14px 35px rgba(15,23,42,.07); transition: border-color .2s ease,background .2s ease,box-shadow .2s ease; }
+.hierarchy-deck.drag-over { border-color: #10b981; background: #ecfdf5; box-shadow: 0 0 0 5px rgba(16,185,129,.12); }
+.hierarchy-deck-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.hierarchy-deck-heading > div { display: grid; gap: 4px; }
+.hierarchy-deck-heading strong { color: #312e81; font-size: 17px; }
+.hierarchy-deck-heading small { color: #64748b; font-size: 11px; line-height: 1.4; }
+.hierarchy-deck-heading > button { min-height: 34px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 5px 8px; color: #4338ca; background: #eef2ff; border: 1px solid #c7d2fe; border-radius: 10px; cursor: pointer; font-size: 9px; font-weight: 850; }
+.hierarchy-card-list { display: grid; align-content: center; gap: 12px; }
+.hierarchy-card-list > p { margin: 0; padding: 28px 15px; color: #64748b; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 16px; text-align: center; font-size: 12px; line-height: 1.45; }
+.hierarchy-card { position: relative; z-index: 3; width: 100%; min-height: 65px; display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: center; gap: 8px; padding: 10px 12px; color: #1e293b; background: #fff; border: 2px solid #cbd5e1; border-radius: 15px; box-shadow: 0 8px 18px rgba(15,23,42,.08); cursor: grab; touch-action: none; font-size: 12px; font-weight: 850; line-height: 1.3; text-align: left; transition: border-color .2s ease,box-shadow .2s ease,transform .2s ease; }
+.hierarchy-card:hover { border-color: #818cf8; transform: translateY(-2px); }
+.hierarchy-card:active { cursor: grabbing; }
+.hierarchy-card.selected { border-color: #6366f1; background: #eef2ff; box-shadow: 0 0 0 4px rgba(99,102,241,.15),0 10px 24px rgba(79,70,229,.14); }
+.hierarchy-card svg { color: #94a3b8; }
+.hierarchy-card small { color: #6366f1; font-size: 16px; }
+.hierarchy-pyramid { align-self: center; min-height: 460px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 7px; padding: 15px 0; transition: filter .25s ease,opacity .25s ease; }
+.hierarchy-layer { position: relative; min-height: 128px; display: grid; align-content: center; gap: 7px; padding: 14px clamp(14px,3vw,28px); background: linear-gradient(145deg,#ecfdf5,#d1fae5); border: 2px solid #86efac; box-shadow: 0 9px 23px rgba(16,185,129,.1),inset 0 1px #fff; cursor: pointer; transition: border-color .2s ease,background .2s ease,box-shadow .2s ease,transform .2s ease; }
+.hierarchy-layer-core { width: 58%; border-radius: 30px 30px 13px 13px; }
+.hierarchy-layer-subprocess { width: 79%; background: linear-gradient(145deg,#f0fdf4,#dcfce7); border-radius: 17px; }
+.hierarchy-layer-activity { width: 100%; background: linear-gradient(145deg,#fffbeb,#fef3c7); border-color: #fcd34d; border-radius: 17px 17px 30px 30px; box-shadow: 0 9px 23px rgba(245,158,11,.12),inset 0 1px #fff; }
+.hierarchy-layer > strong { color: #166534; font-size: 10px; font-weight: 950; letter-spacing: .07em; text-align: center; text-transform: uppercase; }
+.hierarchy-layer-activity > strong { color: #92400e; }
+.hierarchy-layer.can-drop:hover,.hierarchy-layer.drag-over { border-color: #6366f1; box-shadow: 0 0 0 5px rgba(99,102,241,.14),0 12px 26px rgba(79,70,229,.13); transform: translateY(-2px); }
+.hierarchy-slot { min-height: 71px; display: grid; place-items: center; padding: 5px; color: #64748b; background: rgba(255,255,255,.62); border: 2px dashed rgba(71,85,105,.3); border-radius: 14px; text-align: center; }
+.hierarchy-slot > span { font-size: 10px; font-weight: 750; }
+.hierarchy-slot .hierarchy-card { min-height: 57px; padding-block: 7px; border-width: 1.5px; font-size: 10px; text-align: center; }
+.hierarchy-layer.wrong { z-index: 4; background: linear-gradient(145deg,#fff1f2,#fee2e2); border-color: #f87171; box-shadow: 0 0 0 5px rgba(248,113,113,.16),0 14px 32px rgba(225,29,72,.18); }
+.hierarchy-layer.wrong > strong { color: #be123c; }
+.hierarchy-layer.wrong > i { position: absolute; top: 8px; right: 10px; width: 25px; height: 25px; display: grid; place-items: center; color: #fff; background: #ef4444; border-radius: 50%; box-shadow: 0 5px 12px rgba(239,68,68,.3); font-size: 13px; font-style: normal; font-weight: 950; }
+.hierarchy-pyramid.is-success { filter: drop-shadow(0 0 20px rgba(16,185,129,.47)); }
+.hierarchy-announcement { min-height: 45px; display: flex; align-items: center; justify-content: center; padding: 10px 15px; color: #475569; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; font-size: 12px; font-weight: 750; text-align: center; }
+.hierarchy-announcement.success { color: #047857; background: #ecfdf5; border-color: #6ee7b7; }
+.hierarchy-announcement.error { color: #be123c; background: #fff1f2; border-color: #fda4af; }
+.hierarchy-touch-card { position: fixed; z-index: 300; left: -110px; top: -35px; width: 220px; min-height: 70px; display: grid; place-items: center; padding: 10px; color: #312e81; background: rgba(238,242,255,.96); border: 2px solid #6366f1; border-radius: 15px; box-shadow: 0 20px 45px rgba(15,23,42,.28); pointer-events: none; font-size: 12px; font-weight: 900; text-align: center; }
+
+.hierarchy-brief-demo { background: linear-gradient(145deg,#f8fafc,#ecfdf5); }
+.hierarchy-demo-scene { position: absolute; inset: 0; }
+.hierarchy-demo-card { position: absolute; z-index: 5; left: 13px; width: 142px; min-height: 31px; display: grid; place-items: center; padding: 4px 7px; color: #312e81; background: #fff; border: 1.5px solid #818cf8; border-radius: 9px; box-shadow: 0 5px 12px rgba(79,70,229,.13); font-size: 8px; font-weight: 900; line-height: 1.12; }
+.hierarchy-demo-card.core { top: 12px; }
+.hierarchy-demo-card.subprocess { top: 57px; }
+.hierarchy-demo-card.activity { top: 102px; }
+.hierarchy-demo-pyramid { position: absolute; right: 16px; top: 8px; width: 245px; height: 137px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+.hierarchy-demo-pyramid i { width: 52%; height: 37px; background: #ecfdf5; border: 1.5px solid #86efac; border-radius: 10px 10px 5px 5px; }
+.hierarchy-demo-pyramid i:nth-child(2) { width: 73%; border-radius: 6px; }
+.hierarchy-demo-pyramid i:nth-child(3) { width: 94%; background: #fffbeb; border-color: #fcd34d; border-radius: 5px 5px 10px 10px; }
+.hierarchy-demo-verdict { position: absolute; z-index: 8; right: 55px; bottom: 4px; padding: 4px 8px; color: #047857; background: #ecfdf5; border: 1px solid #6ee7b7; border-radius: 999px; font-size: 8px; }
+.hierarchy-demo-verdict.wrong { color: #be123c; background: #fff1f2; border-color: #fda4af; }
+
+@media (max-width: 900px) {
+  .hierarchy-game-layout { min-height: 0; grid-template-columns: 1fr; }
+  .hierarchy-deck { min-height: 0; }
+  .hierarchy-card-list { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .hierarchy-pyramid { min-height: 440px; width: min(680px,100%); justify-self: center; }
+}
+
+@media (max-width: 620px) {
+  .module-start-description { font-size: 10px; line-height: 1.35; }
+  .hierarchy-module-shell { padding: 10px; gap: 10px; }
+  .hierarchy-game-layout { gap: 10px; padding: 9px 6px; border-radius: 18px; }
+  .hierarchy-deck { gap: 8px; padding: 10px; border-radius: 16px; }
+  .hierarchy-deck-heading { align-items: stretch; flex-direction: column; }
+  .hierarchy-deck-heading strong { font-size: 14px; }
+  .hierarchy-deck-heading small { font-size: 9px; }
+  .hierarchy-deck-heading > button { align-self: flex-start; }
+  .hierarchy-card-list { gap: 5px; }
+  .hierarchy-card { min-height: 62px; grid-template-columns: minmax(0,1fr); justify-items: center; gap: 3px; padding: 6px 4px; font-size: clamp(8px,2.5vw,10px); text-align: center; }
+  .hierarchy-card svg,.hierarchy-card small { display: none; }
+  .hierarchy-pyramid { min-height: 370px; gap: 5px; padding: 4px 0; }
+  .hierarchy-layer { min-height: 112px; padding: 8px 10px; }
+  .hierarchy-layer-core { width: 70%; }
+  .hierarchy-layer-subprocess { width: 86%; }
+  .hierarchy-layer > strong { font-size: 8px; }
+  .hierarchy-slot { min-height: 67px; padding: 3px; }
+  .hierarchy-slot .hierarchy-card { min-height: 56px; font-size: 8px; }
+  .hierarchy-announcement { font-size: 10px; }
+  .hierarchy-demo-card { width: 112px; font-size: 7px; }
+  .hierarchy-demo-pyramid { right: 5px; width: 205px; }
+}

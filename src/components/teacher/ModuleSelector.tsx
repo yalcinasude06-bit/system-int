@@ -1,4 +1,4 @@
-import { Boxes, CheckCircle2, Network, Play, ScanSearch, Shapes, Square, Target, UsersRound } from "lucide-react";
+import { Boxes, CheckCircle2, Layers3, Network, Play, ScanSearch, Shapes, Square, Target, UsersRound } from "lucide-react";
 import type { ComponentType } from "react";
 import type { ModuleId } from "@/types";
 
@@ -16,6 +16,10 @@ export const weekOneModules: Array<{
   { id: 3, title: "Kara Kutuyu Aç", subtitle: "Süreç analizi", description: "Girdi ve çıktıyı bağlayan dönüşüm sürecini on farklı sistemde keşfet.", Icon: ScanSearch },
   { id: 4, title: "Sistem Türlerini Eşleştir", subtitle: "Görsel sınıflandırma", description: "On sistem türünü onları temsil eden görsellerle eşleştir.", Icon: Shapes },
   { id: 5, title: "İlişki Balonlarını Patlat", subtitle: "İlişki türleri", description: "Süzülen ifadeleri altı ilişki türünden doğru iğneyle eşleştir.", Icon: Target },
+];
+
+const weekThreeModules: typeof weekOneModules = [
+  { id: 1, title: "Süreç Hiyerarşisi", subtitle: "5 piramitlik süreç oyunu", description: "Temel süreç, alt süreç ve faaliyet örneklerini doğru piramit katmanlarına yerleştir.", Icon: Layers3 },
 ];
 
 export function WeekSelector({ activeWeek, onChange, disabled }: { activeWeek: number; onChange: (week: number) => void; disabled?: boolean }) {
@@ -51,7 +55,7 @@ type ModuleSelectorProps = {
 };
 
 export function ModuleSelector({ activeWeek, activeModule, moduleStage, isModuleStarted, submittedCount, totalStudents, disabled, onStart, onFinish }: ModuleSelectorProps) {
-  if (activeWeek !== 1) {
+  if (activeWeek !== 1 && activeWeek !== 3) {
     return (
       <div className="coming-soon-card" role="status">
         <span aria-hidden="true">🚧</span>
@@ -60,9 +64,11 @@ export function ModuleSelector({ activeWeek, activeModule, moduleStage, isModule
     );
   }
 
+  const modules = activeWeek === 3 ? weekThreeModules : weekOneModules;
+
   return (
-    <div className="dashboard-module-list" role="list" aria-label="Hafta 1 modülleri">
-      {weekOneModules.map(({ id, title, Icon }) => {
+    <div className="dashboard-module-list" role="list" aria-label={`Hafta ${activeWeek} modülleri`}>
+      {modules.map(({ id, title, Icon }) => {
         const isActive = activeModule === id;
         const isLive = isActive && isModuleStarted;
         const isFinished = isActive && !isModuleStarted && moduleStage >= 3;
@@ -82,6 +88,10 @@ export function ModuleSelector({ activeWeek, activeModule, moduleStage, isModule
           </article>
         );
       })}
+      {activeWeek === 3 && <div className="coming-soon-card compact" role="status">
+        <span aria-hidden="true">🚧</span>
+        <div><strong>Hafta 3’ün diğer modülleri yakında</strong><p>Bu hafta yalnızca Modül 1: Süreç Hiyerarşisi kullanıma açıktır.</p></div>
+      </div>}
     </div>
   );
 }

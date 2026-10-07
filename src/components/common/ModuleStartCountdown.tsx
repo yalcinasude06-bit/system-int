@@ -4,12 +4,14 @@ import { useEffect, useState, type CSSProperties } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CircleStop, LoaderCircle } from "lucide-react";
 import { ModuleGameplayDemo } from "@/components/common/ModuleGameplayDemo";
+import { useI18n } from "@/lib/i18n/I18nContext";
 import { getRemainingCountdown, MODULE_COUNTDOWN_SECONDS } from "@/lib/moduleCountdown";
 import type { ModuleId } from "@/types";
 
 type ModuleBrief = {
   icon: string;
   title: string;
+  description?: string;
 };
 
 const moduleBriefs: Record<ModuleId, ModuleBrief> = {
@@ -35,7 +37,21 @@ const moduleBriefs: Record<ModuleId, ModuleBrief> = {
   },
 };
 
+const weekThreeModuleOneBrief: Record<"tr" | "en", ModuleBrief> = {
+  tr: {
+    icon: "🔺",
+    title: "Modül 1: Süreç Hiyerarşisi",
+    description: "Yandaki üç örneği piramidin doğru katmanına bırak; üçü de doğruysa piramit tamamlanır, yanlışsa kırmızı yanar ve sıradaki piramide geçilir. 5 piramit tamamlanacak.",
+  },
+  en: {
+    icon: "🔺",
+    title: "Module 1: Process Hierarchy",
+    description: "Place the three examples on the correct pyramid layers. If all three are correct, the pyramid is complete; otherwise, the incorrect slots turn red and the next pyramid begins. Complete 5 pyramids.",
+  },
+};
+
 type ModuleStartCountdownProps = {
+  weekId?: number;
   moduleId: ModuleId;
   startedAt: string;
   onComplete: () => void;
@@ -43,10 +59,11 @@ type ModuleStartCountdownProps = {
   canceling?: boolean;
 };
 
-export function ModuleStartCountdown({ moduleId, startedAt, onComplete, onCancel, canceling = false }: ModuleStartCountdownProps) {
+export function ModuleStartCountdown({ weekId = 1, moduleId, startedAt, onComplete, onCancel, canceling = false }: ModuleStartCountdownProps) {
+  const { locale } = useI18n();
   const [timeLeft, setTimeLeft] = useState(() => getRemainingCountdown(startedAt));
   const [visible, setVisible] = useState(() => getRemainingCountdown(startedAt) > 0);
-  const current = moduleBriefs[moduleId];
+  const current = weekId === 3 && moduleId === 1 ? weekThreeModuleOneBrief[locale] : moduleBriefs[moduleId];
 
   useEffect(() => {
     function syncWithSessionStart() {
@@ -83,7 +100,8 @@ export function ModuleStartCountdown({ moduleId, startedAt, onComplete, onCancel
           <motion.span className="module-start-icon" aria-hidden="true" animate={{ rotate: [0, -5, 5, 0], scale: [1, 1.06, 1] }} transition={{ duration: 2.2, repeat: Infinity }}>{current.icon}</motion.span>
           <h1 id="module-start-title">{current.title}</h1>
         </div>
-        <ModuleGameplayDemo moduleId={moduleId} />
+        {current.description && <p className="module-start-description">{current.description}</p>}
+        <ModuleGameplayDemo weekId={weekId} moduleId={moduleId} />
         <div
           className="module-start-counter"
           style={{ "--countdown-progress": `${timeLeft * (360 / MODULE_COUNTDOWN_SECONDS)}deg` } as CSSProperties}
