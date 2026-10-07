@@ -14,6 +14,7 @@ import { Module3Boundary } from "@/components/modules/Module3_Boundary";
 import { Module4CompleteSystem } from "@/components/modules/Module4_CompleteSystem";
 import { Module5RelationBalloons } from "@/components/modules/Module5_RelationBalloons";
 import { Week3ProcessHierarchy } from "@/components/modules/Week3_ProcessHierarchy";
+import { Week3MissingProcess } from "@/components/modules/Week3_MissingProcess";
 import { getRemainingCountdown } from "@/lib/moduleCountdown";
 import { getStudentGameState, saveSubmission, submitModuleFeedback } from "@/lib/session";
 import { supabase } from "@/lib/supabase";
@@ -205,7 +206,7 @@ export default function StudentPlayPage() {
 
   if (!session.is_active) return <>{studentNav}<main className="container page"><div className="student-result-card panel"><Trophy size={58} color="var(--amber)" /><span className="eyebrow">Oturum tamamlandı</span><h1>Harika iş çıkardın!</h1><p className="lead">Genel toplam puanın <strong className="score-pop">{profile?.total_score ?? student.score}</strong></p><Button onClick={() => router.push("/")}>Ana sayfaya dön</Button></div></main></>;
 
-  const isSupportedModule = session.selected_week === 1 || (session.selected_week === 3 && session.current_module === 1);
+  const isSupportedModule = session.selected_week === 1 || (session.selected_week === 3 && (session.current_module === 1 || session.current_module === 2));
   if (!isSupportedModule) return <>{studentNav}<main className="container page"><div className="student-waiting-card panel"><span className="waiting-illustration">🚧</span><span className="eyebrow">Hafta {session.selected_week}</span><h1>Yeni içerikler hazırlanıyor</h1><p>Bu haftanın modülleri ve interaktif içerikleri yakında eklenecektir.</p><div className="waiting-pulse"><i /> Öğretmenin yönlendirmesini bekleyin</div></div></main></>;
 
   if (resultsRevealed && !activeSubmission) return <>{studentNav}<main className="container page"><section className="student-waiting-card panel"><span className="waiting-illustration">⏳</span><span className="eyebrow">Sonuç hazırlanıyor</span><h1>Puanın hesaplanıyor…</h1><div className="waiting-pulse"><i /> Sonuç kaydı alınıyor</div></section></main></>;
@@ -255,8 +256,10 @@ export default function StudentPlayPage() {
     4: <Module4CompleteSystem existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onSubmit={(submission) => submit(4, submission)} />,
     5: <Module5RelationBalloons existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onSubmit={(submission) => submit(5, submission)} />,
   };
-  const activeModule = session.selected_week === 3
+  const activeModule = session.selected_week === 3 && session.current_module === 1
     ? <Week3ProcessHierarchy sessionId={session.id} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onSubmit={(submission) => submit(1, submission)} />
+    : session.selected_week === 3 && session.current_module === 2
+      ? <Week3MissingProcess sessionId={session.id} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onSubmit={(submission) => submit(2, submission)} />
     : modules[session.current_module];
 
   return <>{studentNav}<main className="container student-module-page stack">

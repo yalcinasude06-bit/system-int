@@ -1,4 +1,4 @@
-import { Boxes, CheckCircle2, Layers3, Network, Play, ScanSearch, Shapes, Square, Target, UsersRound } from "lucide-react";
+import { Boxes, CheckCircle2, Layers3, Network, Play, ScanSearch, Shapes, Square, Target, UsersRound, Workflow } from "lucide-react";
 import type { ComponentType } from "react";
 import type { ModuleId } from "@/types";
 
@@ -20,6 +20,7 @@ export const weekOneModules: Array<{
 
 const weekThreeModules: typeof weekOneModules = [
   { id: 1, title: "Süreç Hiyerarşisi", subtitle: "5 piramitlik süreç oyunu", description: "Temel süreç, alt süreç ve faaliyet örneklerini doğru piramit katmanlarına yerleştir.", Icon: Layers3 },
+  { id: 2, title: "Kara Kutuda Eksik Adım", subtitle: "10 süreç zinciri", description: "Süreç zincirindeki eksik adımı üç seçenek arasından bularak kara kutuyu aç.", Icon: Workflow },
 ];
 
 export function WeekSelector({ activeWeek, onChange, disabled }: { activeWeek: number; onChange: (week: number) => void; disabled?: boolean }) {
@@ -90,7 +91,7 @@ export function ModuleSelector({ activeWeek, activeModule, moduleStage, isModule
       })}
       {activeWeek === 3 && <div className="coming-soon-card compact" role="status">
         <span aria-hidden="true">🚧</span>
-        <div><strong>Hafta 3’ün diğer modülleri yakında</strong><p>Bu hafta yalnızca Modül 1: Süreç Hiyerarşisi kullanıma açıktır.</p></div>
+        <div><strong>Hafta 3’ün diğer modülleri yakında</strong><p>Bu hafta Modül 1: Süreç Hiyerarşisi ve Modül 2: Kara Kutuda Eksik Adım kullanıma açıktır.</p></div>
       </div>}
     </div>
   );

@@ -40,7 +40,7 @@ function delay(milliseconds: number) {
   return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 }
 
-function BlackBoxCube({ revealed, wrong, process }: { revealed: boolean; wrong: boolean; process: string }) {
+export function BlackBoxCube({ revealed, wrong, process }: { revealed: boolean; wrong: boolean; process: string }) {
   return <div className={`black-box-cube ${revealed ? "revealed" : ""} ${wrong ? "wrong" : ""}`}>
     <svg viewBox="0 0 180 150" role="img" aria-label={revealed ? `Kara kutunun içindeki süreç: ${process}` : "Üç boyutlu kara kutu"}>
       <defs>

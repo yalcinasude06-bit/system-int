@@ -3,6 +3,7 @@
 import { MotionConfig, motion } from "framer-motion";
 import type { ReactNode } from "react";
 import { processHierarchyPool } from "@/components/modules/Week3_ProcessHierarchy/processHierarchyContent";
+import { missingProcessPool } from "@/components/modules/Week3_MissingProcess/missingProcessContent";
 import { useI18n } from "@/lib/i18n/I18nContext";
 import type { ModuleId } from "@/types";
 
@@ -110,6 +111,28 @@ function WeekThreeHierarchyDemo() {
   </div>;
 }
 
+function WeekThreeMissingStepDemo() {
+  const { locale } = useI18n();
+  const order = missingProcessPool.find((item) => item.id === "online-order")!;
+  const missingAnswer = order.steps[1]!;
+  return <div className="module-demo missing-step-brief-demo" aria-hidden="true">
+    <div className="missing-demo-chain">
+      <span data-i18n-skip>{order.steps[0]![locale]}</span><b>→</b>
+      <motion.span className="missing-demo-box" animate={{ color: ["#fff", "#fff", "#065f46", "#065f46", "#fff"], backgroundColor: ["#0f172a", "#0f172a", "#d1fae5", "#d1fae5", "#0f172a"], scale: [1, 1, 1.07, 1.07, 1] }} transition={{ ...loop, times: [0, .42, .57, .82, 1] }}>
+        <motion.i animate={{ opacity: [1, 1, 0, 0, 1] }} transition={{ ...loop, times: [0, .44, .53, .83, 1] }}>?</motion.i>
+        <motion.small data-i18n-skip animate={{ opacity: [0, 0, 1, 1, 0] }} transition={{ ...loop, times: [0, .48, .6, .83, 1] }}>{missingAnswer[locale]}</motion.small>
+      </motion.span>
+      <b>→</b><span data-i18n-skip>{order.steps[3]![locale]}</span>
+    </div>
+    <div className="missing-demo-options">
+      <motion.span data-i18n-skip animate={{ color: ["#475569", "#475569", "#065f46", "#065f46", "#475569"], backgroundColor: ["#fff", "#fff", "#d1fae5", "#d1fae5", "#fff"], borderColor: ["#cbd5e1", "#cbd5e1", "#34d399", "#34d399", "#cbd5e1"], scale: [1, 1, 1.06, 1.06, 1] }} transition={{ ...loop, times: [0, .36, .52, .82, 1] }}>{missingAnswer[locale]} ✓</motion.span>
+      <span data-i18n-skip>{order.distractors[0][locale]}</span>
+      <span data-i18n-skip>{order.distractors[1][locale]}</span>
+    </div>
+    <motion.span className="demo-hand missing-demo-hand" animate={{ y: [7, 7, -2, -2, 7], scale: [1, 1, .82, 1, 1] }} transition={{ ...loop, times: [0, .32, .44, .6, 1] }}>👆</motion.span>
+  </div>;
+}
+
 const demos: Record<ModuleId, () => ReactNode> = {
   1: ModuleOneDemo,
   2: ModuleTwoDemo,
@@ -119,6 +142,10 @@ const demos: Record<ModuleId, () => ReactNode> = {
 };
 
 export function ModuleGameplayDemo({ moduleId, weekId = 1 }: { moduleId: ModuleId; weekId?: number }) {
-  const Demo = weekId === 3 && moduleId === 1 ? WeekThreeHierarchyDemo : demos[moduleId];
+  const Demo = weekId === 3 && moduleId === 1
+    ? WeekThreeHierarchyDemo
+    : weekId === 3 && moduleId === 2
+      ? WeekThreeMissingStepDemo
+      : demos[moduleId];
   return <MotionConfig reducedMotion="user"><Demo /></MotionConfig>;
 }

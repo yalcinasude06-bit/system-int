@@ -50,6 +50,19 @@ const weekThreeModuleOneBrief: Record<"tr" | "en", ModuleBrief> = {
   },
 };
 
+const weekThreeModuleTwoBrief: Record<"tr" | "en", ModuleBrief> = {
+  tr: {
+    icon: "⬛",
+    title: "Modül 2: Kara Kutuda Eksik Adım",
+    description: "Süreç zincirindeki eksik adımı bul; üç seçenekten doğru olanı seç. Doğruysa kara kutu aydınlanır, yanlışsa doğrusu kısa süre gösterilir.",
+  },
+  en: {
+    icon: "⬛",
+    title: "Module 2: Missing Step in the Black Box",
+    description: "Find the missing step in the process chain and choose the correct one from three options. The black box lights up when correct; otherwise, the correct step appears briefly.",
+  },
+};
+
 type ModuleStartCountdownProps = {
   weekId?: number;
   moduleId: ModuleId;
@@ -63,7 +76,11 @@ export function ModuleStartCountdown({ weekId = 1, moduleId, startedAt, onComple
   const { locale } = useI18n();
   const [timeLeft, setTimeLeft] = useState(() => getRemainingCountdown(startedAt));
   const [visible, setVisible] = useState(() => getRemainingCountdown(startedAt) > 0);
-  const current = weekId === 3 && moduleId === 1 ? weekThreeModuleOneBrief[locale] : moduleBriefs[moduleId];
+  const current = weekId === 3 && moduleId === 1
+    ? weekThreeModuleOneBrief[locale]
+    : weekId === 3 && moduleId === 2
+      ? weekThreeModuleTwoBrief[locale]
+      : moduleBriefs[moduleId];
 
   useEffect(() => {
     function syncWithSessionStart() {

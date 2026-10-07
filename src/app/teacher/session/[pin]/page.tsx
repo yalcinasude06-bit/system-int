@@ -162,7 +162,7 @@ export default function TeacherSessionPage() {
   }
 
   async function startModule(currentModule: ModuleId) {
-    if (!session || (session.selected_week !== 1 && !(session.selected_week === 3 && currentModule === 1))) return;
+    if (!session || (session.selected_week !== 1 && !(session.selected_week === 3 && (currentModule === 1 || currentModule === 2)))) return;
     setBusy(true);
     setError("");
     setResultsViewOpen(false);
