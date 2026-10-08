@@ -1,7 +1,7 @@
 "use client";
 
 import { MotionConfig, motion } from "framer-motion";
-import { type ReactNode } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { FlowSymbolShape } from "@/components/modules/Week3_FlowchartSymbols/FlowSymbolShape";
 import type { FlowSymbol } from "@/components/modules/Week3_FlowchartSymbols/flowchartContent";
 import { useI18n } from "@/lib/i18n/I18nContext";
@@ -10,6 +10,59 @@ import type { ModuleId } from "@/types";
 const loop = { duration: 3.2, repeat: Infinity, repeatDelay: .35, ease: "easeInOut" as const };
 
 const weekThreeLoop = { duration: 8.4, repeat: Infinity, ease: "easeInOut" as const };
+
+const weekThreeFlowLoop = { duration: 5.6, repeat: Infinity, ease: "easeInOut" as const };
+
+type RelativeRect = { left: number; top: number; width: number; height: number };
+
+type FlowDemoLayout = {
+  decision: RelativeRect;
+  process: RelativeRect;
+  target: RelativeRect;
+};
+
+function getRelativeRect(container: DOMRect, element: Element): RelativeRect {
+  const rect = element.getBoundingClientRect();
+  return { left: rect.left - container.left, top: rect.top - container.top, width: rect.width, height: rect.height };
+}
+
+function useFlowDemoLayout() {
+  const demoRef = useRef<HTMLDivElement>(null);
+  const decisionPaletteRef = useRef<HTMLSpanElement>(null);
+  const processPaletteRef = useRef<HTMLSpanElement>(null);
+  const decisionSlotRef = useRef<SVGPolygonElement>(null);
+  const [layout, setLayout] = useState<FlowDemoLayout | null>(null);
+
+  useEffect(() => {
+    const measure = () => {
+      const demo = demoRef.current;
+      const decision = decisionPaletteRef.current;
+      const process = processPaletteRef.current;
+      const target = decisionSlotRef.current;
+      if (!demo || !decision || !process || !target) return;
+
+      const demoRect = demo.getBoundingClientRect();
+      if (!demoRect.width || !demoRect.height) return;
+      setLayout({
+        decision: getRelativeRect(demoRect, decision),
+        process: getRelativeRect(demoRect, process),
+        target: getRelativeRect(demoRect, target),
+      });
+    };
+
+    measure();
+    const elements = [demoRef.current, decisionPaletteRef.current, processPaletteRef.current, decisionSlotRef.current].filter(Boolean) as Element[];
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
+    elements.forEach((element) => observer?.observe(element));
+    window.addEventListener("resize", measure);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, []);
+
+  return { demoRef, decisionPaletteRef, processPaletteRef, decisionSlotRef, layout };
+}
 
 const weekThreeDemoCopy = {
   tr: {
@@ -132,6 +185,7 @@ function WeekThreeMissingStepDemo() {
       <b>→</b><span className="week-three-missing-endpoint">{text.last}</span>
     </div>
     <div className="week-three-missing-options"><span>{text.alternative}</span><motion.span animate={{ color: ["#334155", "#334155", "#047857", "#047857", "#334155"], backgroundColor: ["#fff", "#fff", "#d1fae5", "#d1fae5", "#fff"], borderColor: ["#cbd5e1", "#cbd5e1", "#34d399", "#34d399", "#cbd5e1"], scale: [1, 1, 1.06, 1.06, 1] }} transition={{ ...weekThreeLoop, times: [0, .36, .49, .72, 1] }}>{text.correct} ✓</motion.span><span>{text.wrong}</span></div>
+    <motion.span className="demo-hand week-three-demo-hand week-three-missing-hand" animate={{ y: [10, 10, 1, 1, 10], scale: [1, 1, .82, 1, 1] }} transition={{ ...weekThreeLoop, times: [0, .33, .49, .72, 1] }}>👆</motion.span>
   </div>;
 }
 
@@ -142,7 +196,17 @@ function MiniFlowchartSymbol({ symbol }: { symbol: FlowSymbol }) {
 function WeekThreeFlowchartDemo() {
   const { locale } = useI18n();
   const text = weekThreeDemoCopy[locale].flow;
-  return <div className="module-demo week-three-demo week-three-flow-demo" aria-hidden="true">
+  const { demoRef, decisionPaletteRef, processPaletteRef, decisionSlotRef, layout } = useFlowDemoLayout();
+  const targetDelta = (source: RelativeRect) => layout ? {
+    x: layout.target.left + layout.target.width / 2 - (source.left + source.width / 2),
+    y: layout.target.top + layout.target.height / 2 - (source.top + source.height / 2),
+  } : { x: 0, y: 0 };
+  const movingStyle = (source: RelativeRect) => ({ left: source.left, top: source.top, width: source.width, height: source.height });
+  const handStyle = (source: RelativeRect) => ({ left: source.left + source.width / 2 - 8, top: source.top + source.height / 2 + 4 });
+  const decisionDelta = layout ? targetDelta(layout.decision) : null;
+  const processDelta = layout ? targetDelta(layout.process) : null;
+
+  return <div ref={demoRef} className="module-demo week-three-demo week-three-flow-demo" aria-hidden="true">
     <svg className="week-three-flow-map" viewBox="0 0 360 150" preserveAspectRatio="xMidYMid meet">
       <defs><marker id="week-three-flow-arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5" orient="auto"><path d="M 0 0 L 8 4 L 0 8 z" /></marker></defs>
       <path className="week-three-flow-line" d="M 180 27 V 37" markerEnd="url(#week-three-flow-arrow)" />
@@ -150,17 +214,16 @@ function WeekThreeFlowchartDemo() {
       <path className="week-three-flow-line" d="M 170 76 V 98 H 118" markerEnd="url(#week-three-flow-arrow)" />
       <path className="week-three-flow-line return" d="M 18 111 H 7 V 57 H 144" markerEnd="url(#week-three-flow-arrow)" />
       <FlowSymbolShape symbol="startEnd" x={135} y={5} width={90} height={22} /><text x="180" y="19" className="week-three-flow-text">{text.start}</text>
-      <polygon className="week-three-flow-slot" points="180,37 216,56 180,76 144,56" /><text x="180" y="60" className="week-three-flow-text">{text.check}</text>
+      <motion.polygon ref={decisionSlotRef} className="week-three-flow-slot" points="180,37 216,56 180,76 144,56" animate={{ fill: ["#f8fafc", "#f8fafc", "#d1fae5", "#d1fae5", "#f8fafc", "#f8fafc", "#fff1f2", "#fff1f2", "#f8fafc"], stroke: ["#94a3b8", "#94a3b8", "#34d399", "#34d399", "#94a3b8", "#94a3b8", "#f87171", "#f87171", "#94a3b8"] }} transition={{ ...weekThreeFlowLoop, times: [0, .18, .22, .36, .45, .66, .75, .84, 1] }} /><text x="180" y="60" className="week-three-flow-text">{text.check}</text>
       <FlowSymbolShape symbol="startEnd" x={249} y={45} width={88} height={22} /><text x="293" y="59" className="week-three-flow-text">{text.end}</text>
       <FlowSymbolShape symbol="process" x={18} y={99} width={100} height={24} /><text x="68" y="114" className="week-three-flow-text">{text.update}</text>
       <text x="228" y="48" className="week-three-flow-label">{text.yes}</text><text x="122" y="91" className="week-three-flow-label">{text.no}</text><text x="11" y="83" className="week-three-flow-label">{text.return}</text>
-      <motion.g animate={{ opacity: [0, 0, 1, 1, 0, 0] }} transition={{ ...weekThreeLoop, times: [0, .17, .27, .43, .55, 1] }}><FlowSymbolShape symbol="decision" x={144} y={37} width={72} height={39} /></motion.g>
-      <motion.g className="week-three-flow-wrong-symbol" animate={{ opacity: [0, 0, 0, 0, 0, 1, 1, 0] }} transition={{ ...weekThreeLoop, times: [0, .55, .64, .7, .75, .79, .88, 1] }}><FlowSymbolShape symbol="process" x={148} y={43} width={64} height={27} /></motion.g>
+      <motion.g animate={{ opacity: [0, 0, 0, 1, 1, 0, 0] }} transition={{ ...weekThreeFlowLoop, times: [0, .14, .20, .22, .36, .44, 1] }}><FlowSymbolShape symbol="decision" x={144} y={37} width={72} height={39} /></motion.g>
+      <motion.g className="week-three-flow-wrong-symbol" animate={{ opacity: [0, 0, 0, 0, 1, 1, 0] }} transition={{ ...weekThreeFlowLoop, times: [0, .58, .68, .73, .75, .84, 1] }}><FlowSymbolShape symbol="process" x={148} y={43} width={64} height={27} /></motion.g>
     </svg>
-    <div className="week-three-flow-palette"><span><MiniFlowchartSymbol symbol="decision" /><small>{text.decision}</small></span><span><MiniFlowchartSymbol symbol="process" /><small>{text.process}</small></span></div>
-    <motion.span className="week-three-flow-moving-symbol correct" animate={{ left: ["3.5%", "3.5%", "56%", "56%", "3.5%"], top: ["70%", "70%", "27%", "27%", "70%"], opacity: [1, 1, 1, .1, 1] }} transition={{ ...weekThreeLoop, times: [0, .12, .27, .43, .55] }}><MiniFlowchartSymbol symbol="decision" /></motion.span>
-    <motion.span className="week-three-flow-moving-symbol wrong" animate={{ left: ["14%", "14%", "56%", "56%", "14%"], top: ["70%", "70%", "27%", "27%", "70%"], opacity: [0, 0, 0, 1, .1] }} transition={{ ...weekThreeLoop, times: [0, .58, .68, .81, .94] }}><MiniFlowchartSymbol symbol="process" /></motion.span>
-    <motion.span className="demo-hand week-three-demo-hand flow" animate={{ left: ["6%", "6%", "59%", "59%", "6%", "17%", "59%", "59%", "17%"], top: ["75%", "69%", "29%", "29%", "75%", "69%", "29%", "29%", "75%"] }} transition={{ ...weekThreeLoop, times: [0, .12, .27, .43, .55, .62, .74, .84, 1] }}>👉</motion.span>
+    <div className="week-three-flow-palette"><span><span ref={decisionPaletteRef} className="week-three-flow-palette-symbol"><MiniFlowchartSymbol symbol="decision" /></span><small>{text.decision}</small></span><span><span ref={processPaletteRef} className="week-three-flow-palette-symbol"><MiniFlowchartSymbol symbol="process" /></span><small>{text.process}</small></span></div>
+    {layout && decisionDelta && <><motion.span className="week-three-flow-moving-symbol correct" style={movingStyle(layout.decision)} animate={{ x: [0, 0, decisionDelta.x, decisionDelta.x, 0, 0], y: [0, 0, decisionDelta.y, decisionDelta.y, 0, 0], opacity: [1, 1, 1, 1, 0, 0] }} transition={{ ...weekThreeFlowLoop, times: [0, .06, .21, .36, .44, 1] }}><MiniFlowchartSymbol symbol="decision" /></motion.span><motion.span className="demo-hand week-three-demo-hand week-three-flow-hand correct" style={handStyle(layout.decision)} animate={{ x: [0, 0, decisionDelta.x, decisionDelta.x, 0, 0], y: [0, 0, decisionDelta.y, decisionDelta.y, 0, 0], opacity: [1, 1, 1, 1, 0, 0], scale: [1, 1, .86, 1, 1, 1] }} transition={{ ...weekThreeFlowLoop, times: [0, .06, .21, .36, .44, 1] }}>👉</motion.span></>}
+    {layout && processDelta && <><motion.span className="week-three-flow-moving-symbol wrong" style={movingStyle(layout.process)} animate={{ x: [0, 0, 0, processDelta.x, processDelta.x, 0, 0], y: [0, 0, 0, processDelta.y, processDelta.y, 0, 0], opacity: [0, 0, 1, 1, 1, 0, 0] }} transition={{ ...weekThreeFlowLoop, times: [0, .58, .64, .75, .84, .9, 1] }}><MiniFlowchartSymbol symbol="process" /></motion.span><motion.span className="demo-hand week-three-demo-hand week-three-flow-hand wrong" style={handStyle(layout.process)} animate={{ x: [0, 0, 0, processDelta.x, processDelta.x, 0, 0], y: [0, 0, 0, processDelta.y, processDelta.y, 0, 0], opacity: [0, 0, 1, 1, 1, 0, 0], scale: [1, 1, 1, .86, 1, 1, 1] }} transition={{ ...weekThreeFlowLoop, times: [0, .58, .64, .75, .84, .9, 1] }}>👉</motion.span></>}
   </div>;
 }
 

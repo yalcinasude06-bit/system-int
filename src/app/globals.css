@@ -1285,8 +1285,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .missing-demo-slot small { position: absolute; padding: 4px; font-size: 7px; font-weight: 950; line-height: 1.1; }
 .missing-demo-options { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 5px; }
 .missing-demo-options > span { min-height: 34px; display: grid; place-items: center; padding: 4px; color: #475569; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 7px; font-weight: 800; line-height: 1.12; }
-.missing-demo-hand { left: 61px; bottom: 2px; font-size: 20px; }
-
 @media (max-width: 900px) {
   .missing-process-chain { min-height: 210px; }
 }
@@ -1602,8 +1600,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .week-three-missing-box b { position: absolute; font-size: 27px; }
 .week-three-missing-box small { position: absolute; padding: 4px; font-size: clamp(7px,1.45vw,9px); font-weight: 900; line-height: 1.05; text-align: center; }
 .week-three-missing-options { position: absolute; left: 5%; right: 5%; bottom: 9%; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; }
+.week-three-missing-hand { left: 50%; bottom: 12%; translate: -50% 0; }
 
-.week-three-flow-map { position: absolute; left: 25%; top: 5%; bottom: 2%; width: 72%; height: 93%; overflow: visible; }
+.week-three-flow-map { position: absolute; left: 28%; top: 5%; bottom: 2%; width: 69%; height: 93%; overflow: visible; }
 .week-three-flow-line { fill: none; stroke: #64748b; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 .week-three-flow-line.return { stroke: #7c3aed; stroke-dasharray: 5 4; }
 .week-three-flow-map marker path { fill: #64748b; }
@@ -1611,13 +1610,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .week-three-flow-text { fill: #1e293b; font-size: 10px; font-weight: 900; text-anchor: middle; dominant-baseline: middle; }
 .week-three-flow-label { fill: #6d28d9; font-size: 8px; font-weight: 900; text-anchor: middle; paint-order: stroke; stroke: #fff; stroke-width: 3px; }
 .week-three-flow-wrong-symbol .flowchart-svg-shape { fill: #fff1f2; stroke: #ef4444; }
-.week-three-flow-palette { position: absolute; z-index: 4; left: 3%; top: 18%; width: 19%; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); align-items: start; gap: 4px; }
-.week-three-flow-palette > span { min-height: 43px; display: grid; grid-template-columns: 1fr; place-items: center; gap: 2px; padding: 3px 2px; color: #334155; background: rgba(255,255,255,.94); border: 1px solid #cbd5e1; border-radius: 7px; box-shadow: 0 4px 9px rgba(15,23,42,.07); }
-.week-three-flow-palette .flowchart-demo-symbol { width: min(100%,32px); height: 16px; }
+.week-three-flow-palette { position: absolute; z-index: 4; left: 3%; top: 12%; width: 21%; display: grid; grid-template-columns: minmax(0,1fr); gap: 5px; }
+.week-three-flow-palette > span { min-height: 43px; display: grid; grid-template-rows: minmax(16px,1fr) auto; place-items: center; gap: 2px; padding: 3px 2px; color: #334155; background: rgba(255,255,255,.94); border: 1px solid #cbd5e1; border-radius: 7px; box-shadow: 0 4px 9px rgba(15,23,42,.07); }
+.week-three-flow-palette-symbol { width: min(100%,34px); height: 16px; display: grid; place-items: center; }
+.week-three-flow-palette .flowchart-demo-symbol { width: 100%; height: 16px; }
 .week-three-flow-palette small { overflow-wrap: anywhere; max-width: 100%; font-size: clamp(5.5px,1.15vw,7px); font-weight: 900; line-height: 1; text-align: center; }
-.week-three-flow-moving-symbol { position: absolute; z-index: 8; width: 9%; display: grid; place-items: center; padding: 3px; background: rgba(255,255,255,.97); border: 1px solid #86efac; border-radius: 8px; box-shadow: 0 8px 17px rgba(16,185,129,.18); }
+.week-three-flow-moving-symbol { position: absolute; z-index: 8; display: grid; place-items: center; box-sizing: border-box; padding: 0; background: rgba(255,255,255,.97); border: 1px solid #86efac; border-radius: 5px; box-shadow: 0 5px 11px rgba(16,185,129,.18); }
 .week-three-flow-moving-symbol.wrong { border-color: #fda4af; box-shadow: 0 8px 17px rgba(239,68,68,.16); }
-.week-three-flow-moving-symbol .flowchart-demo-symbol { width: 100%; height: auto; }
+.week-three-flow-moving-symbol .flowchart-demo-symbol { width: 100%; height: 100%; }
+.week-three-flow-hand { pointer-events: none; }
 
 @media (max-width: 620px) {
   .week-three-demo-kicker { font-size: 6px; }
@@ -1627,8 +1628,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .week-three-missing-chain { gap: 3px; }
   .week-three-missing-endpoint,.week-three-missing-options > span { min-height: 29px; padding: 3px; }
   .week-three-missing-box { min-height: 53px; }
-  .week-three-flow-map { left: 25%; width: 72%; }
-  .week-three-flow-palette { left: 2%; width: 20%; }
-  .week-three-flow-palette > span { min-height: 41px; }
-  .week-three-flow-palette .flowchart-demo-symbol { width: min(100%,28px); }
+  .week-three-flow-map { left: 28%; width: 69%; }
+  .week-three-flow-palette { left: 2%; width: 22%; gap: 4px; }
+  .week-three-flow-palette > span { min-height: 39px; }
+  .week-three-flow-palette-symbol { width: min(100%,28px); height: 14px; }
+  .week-three-flow-palette .flowchart-demo-symbol { height: 14px; }
 }
