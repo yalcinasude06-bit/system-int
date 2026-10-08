@@ -124,18 +124,14 @@ function WeekThreeMissingStepDemo() {
   const text = weekThreeDemoCopy[locale].missing;
   return <div className="module-demo week-three-demo week-three-missing-demo" aria-hidden="true">
     <div className="week-three-missing-chain">
-      <span>{text.first}</span><b>→</b>
-      <motion.span className="week-three-missing-slot" animate={{ backgroundColor: ["#f8fafc", "#f8fafc", "#d1fae5", "#d1fae5", "#f8fafc", "#fff1f2", "#fff1f2", "#f8fafc"], borderColor: ["#94a3b8", "#94a3b8", "#34d399", "#34d399", "#94a3b8", "#f87171", "#f87171", "#94a3b8"], x: [0, 0, 0, 0, 0, -3, 3, 0] }} transition={{ ...weekThreeLoop, times: [0, .16, .27, .43, .56, .73, .8, 1] }}>
-        <motion.i animate={{ opacity: [1, 1, 0, 0, 1, 0, 0, 1] }} transition={{ ...weekThreeLoop, times: [0, .19, .25, .45, .56, .72, .84, 1] }}>?</motion.i>
-        <motion.small animate={{ opacity: [0, 0, 1, 1, 0, 0] }} transition={{ ...weekThreeLoop, times: [0, .2, .27, .43, .56, 1] }}>{text.correct}</motion.small>
-        <motion.em animate={{ opacity: [0, 0, 0, 0, 0, 1, 1, 0] }} transition={{ ...weekThreeLoop, times: [0, .58, .66, .72, .8, .83, .9, 1] }}>×</motion.em>
-      </motion.span>
-      <b>→</b><span>{text.last}</span>
+      <span className="week-three-missing-endpoint">{text.first}</span><b>→</b>
+      <motion.div className="week-three-missing-box" animate={{ backgroundColor: ["#0f172a", "#0f172a", "#eef2ff", "#eef2ff", "#0f172a"], borderColor: ["#475569", "#475569", "#a5b4fc", "#a5b4fc", "#475569"], color: ["#f8fafc", "#f8fafc", "#312e81", "#312e81", "#f8fafc"] }} transition={{ ...weekThreeLoop, times: [0, .34, .48, .72, 1] }}>
+        <motion.b animate={{ opacity: [1, 1, 0, 0, 1] }} transition={{ ...weekThreeLoop, times: [0, .36, .46, .74, 1] }}>?</motion.b>
+        <motion.small animate={{ opacity: [0, 0, 1, 1, 0], scale: [.8, .8, 1, 1, .8] }} transition={{ ...weekThreeLoop, times: [0, .39, .49, .72, 1] }}>{text.correct}</motion.small>
+      </motion.div>
+      <b>→</b><span className="week-three-missing-endpoint">{text.last}</span>
     </div>
-    <div className="week-three-missing-options"><span>{text.correct}</span><span>{text.alternative}</span><span>{text.wrong}</span></div>
-    <motion.span className="week-three-missing-flying-option correct" animate={{ left: ["7%", "7%", "39%", "39%", "7%"], top: ["73%", "73%", "29%", "29%", "73%"], opacity: [1, 1, 1, .15, 1] }} transition={{ ...weekThreeLoop, times: [0, .12, .26, .43, .56] }}>{text.correct}</motion.span>
-    <motion.span className="week-three-missing-flying-option wrong" animate={{ left: ["68%", "68%", "39%", "39%", "68%"], top: ["73%", "73%", "29%", "29%", "73%"], opacity: [0, 0, 0, 1, .14] }} transition={{ ...weekThreeLoop, times: [0, .58, .68, .81, .94] }}>{text.wrong}</motion.span>
-    <motion.span className="demo-hand week-three-demo-hand missing" animate={{ left: ["15%", "15%", "45%", "45%", "15%", "74%", "45%", "45%", "74%"], top: ["78%", "72%", "31%", "31%", "78%", "72%", "31%", "31%", "78%"] }} transition={{ ...weekThreeLoop, times: [0, .12, .26, .43, .56, .62, .72, .82, 1] }}>👆</motion.span>
+    <div className="week-three-missing-options"><span>{text.alternative}</span><motion.span animate={{ color: ["#334155", "#334155", "#047857", "#047857", "#334155"], backgroundColor: ["#fff", "#fff", "#d1fae5", "#d1fae5", "#fff"], borderColor: ["#cbd5e1", "#cbd5e1", "#34d399", "#34d399", "#cbd5e1"], scale: [1, 1, 1.06, 1.06, 1] }} transition={{ ...weekThreeLoop, times: [0, .36, .49, .72, 1] }}>{text.correct} ✓</motion.span><span>{text.wrong}</span></div>
   </div>;
 }
 
@@ -162,9 +158,9 @@ function WeekThreeFlowchartDemo() {
       <motion.g className="week-three-flow-wrong-symbol" animate={{ opacity: [0, 0, 0, 0, 0, 1, 1, 0] }} transition={{ ...weekThreeLoop, times: [0, .55, .64, .7, .75, .79, .88, 1] }}><FlowSymbolShape symbol="process" x={148} y={43} width={64} height={27} /></motion.g>
     </svg>
     <div className="week-three-flow-palette"><span><MiniFlowchartSymbol symbol="decision" /><small>{text.decision}</small></span><span><MiniFlowchartSymbol symbol="process" /><small>{text.process}</small></span></div>
-    <motion.span className="week-three-flow-moving-symbol correct" animate={{ left: ["6%", "6%", "51%", "51%", "6%"], top: ["54%", "54%", "27%", "27%", "54%"], opacity: [1, 1, 1, .1, 1] }} transition={{ ...weekThreeLoop, times: [0, .12, .27, .43, .55] }}><MiniFlowchartSymbol symbol="decision" /></motion.span>
-    <motion.span className="week-three-flow-moving-symbol wrong" animate={{ left: ["6%", "6%", "51%", "51%", "6%"], top: ["78%", "78%", "27%", "27%", "78%"], opacity: [0, 0, 0, 1, .1] }} transition={{ ...weekThreeLoop, times: [0, .58, .68, .81, .94] }}><MiniFlowchartSymbol symbol="process" /></motion.span>
-    <motion.span className="demo-hand week-three-demo-hand flow" animate={{ left: ["13%", "13%", "55%", "55%", "13%", "13%", "55%", "55%", "13%"], top: ["58%", "53%", "29%", "29%", "58%", "78%", "29%", "29%", "78%"] }} transition={{ ...weekThreeLoop, times: [0, .12, .27, .43, .55, .62, .74, .84, 1] }}>👉</motion.span>
+    <motion.span className="week-three-flow-moving-symbol correct" animate={{ left: ["3.5%", "3.5%", "56%", "56%", "3.5%"], top: ["70%", "70%", "27%", "27%", "70%"], opacity: [1, 1, 1, .1, 1] }} transition={{ ...weekThreeLoop, times: [0, .12, .27, .43, .55] }}><MiniFlowchartSymbol symbol="decision" /></motion.span>
+    <motion.span className="week-three-flow-moving-symbol wrong" animate={{ left: ["14%", "14%", "56%", "56%", "14%"], top: ["70%", "70%", "27%", "27%", "70%"], opacity: [0, 0, 0, 1, .1] }} transition={{ ...weekThreeLoop, times: [0, .58, .68, .81, .94] }}><MiniFlowchartSymbol symbol="process" /></motion.span>
+    <motion.span className="demo-hand week-three-demo-hand flow" animate={{ left: ["6%", "6%", "59%", "59%", "6%", "17%", "59%", "59%", "17%"], top: ["75%", "69%", "29%", "29%", "75%", "69%", "29%", "29%", "75%"] }} transition={{ ...weekThreeLoop, times: [0, .12, .27, .43, .55, .62, .74, .84, 1] }}>👉</motion.span>
   </div>;
 }
 
