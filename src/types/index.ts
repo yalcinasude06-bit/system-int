@@ -74,6 +74,7 @@ export interface ModuleSubmission {
 
 export interface LearningModuleProps {
   onSubmit: (submission: ModuleSubmission) => Promise<boolean | void> | boolean | void;
+  onDraft?: (submission: ModuleSubmission) => Promise<void> | void;
   faultInjected?: boolean;
   existingSubmission?: Submission | null;
   forceSubmit?: boolean;

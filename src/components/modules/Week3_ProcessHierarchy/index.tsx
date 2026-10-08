@@ -92,6 +92,7 @@ function cardForId(cards: ProcessCard[], cardId: string | null) {
 
 export function Week3ProcessHierarchy({
   onSubmit,
+  onDraft,
   existingSubmission,
   forceSubmit,
   sessionId,
@@ -124,29 +125,34 @@ export function Week3ProcessHierarchy({
     if (accepted === false) setSubmitFailed(true);
   }, [onSubmit]);
 
-  const finalize = useCallback(async (finalResults: RoundResult[], completionReason: "completed" | "teacher-ended") => {
-    if (submissionStarted.current || existingSubmission) return;
-    submissionStarted.current = true;
-    if (transitionTimer.current !== null) window.clearTimeout(transitionTimer.current);
-    const correctCount = finalResults.reduce((total, result) => total + result.correctCount, 0);
-    const submission: ModuleSubmission = {
+  const submissionForProgress = useCallback((progressResults: RoundResult[], completionReason: "completed" | "teacher-ended" | "draft", activeSlots?: SlotMap): ModuleSubmission => {
+    const correctCount = progressResults.reduce((total, result) => total + result.correctCount, 0);
+    return {
       stage: 1,
       score: Math.round(correctCount * pointsPerPlacement),
       payload: {
         mode: "process-hierarchy-pyramids",
         selectedHierarchyIds: rounds.map((round) => round.id),
-        rounds: finalResults,
+        rounds: progressResults,
         correctCount,
-        evaluatedPlacements: finalResults.length * 3,
+        evaluatedPlacements: progressResults.length * 3,
         totalPlacements: 15,
         pointsPerPlacement,
+        activeRound: activeSlots ? { round: roundIndex + 1, hierarchyId: currentRound.id, slots: activeSlots } : undefined,
         completionReason,
       },
     };
+  }, [currentRound.id, roundIndex, rounds]);
+
+  const finalize = useCallback(async (finalResults: RoundResult[], completionReason: "completed" | "teacher-ended") => {
+    if (submissionStarted.current || existingSubmission) return;
+    submissionStarted.current = true;
+    if (transitionTimer.current !== null) window.clearTimeout(transitionTimer.current);
+    const submission = submissionForProgress(finalResults, completionReason);
     setFinalSubmission(submission);
     setPhase("complete");
     await submitResult(submission);
-  }, [existingSubmission, rounds, submitResult]);
+  }, [existingSubmission, submissionForProgress, submitResult]);
 
   const advanceRound = useCallback((nextResults: RoundResult[]) => {
     if (roundIndex === rounds.length - 1) {
@@ -180,6 +186,7 @@ export function Week3ProcessHierarchy({
     };
     const nextResults = [...resultsRef.current, result];
     resultsRef.current = nextResults;
+    void onDraft?.(submissionForProgress(nextResults, "draft", nextSlots));
     setWrongLayers(incorrect);
     setSelectedCardId(null);
 
@@ -193,7 +200,7 @@ export function Week3ProcessHierarchy({
     }
 
     transitionTimer.current = window.setTimeout(() => advanceRound(nextResults), incorrect.length === 0 ? 1250 : 1750);
-  }, [advanceRound, currentRound, roundIndex, text.error, text.success]);
+  }, [advanceRound, currentRound, onDraft, roundIndex, submissionForProgress, text.error, text.success]);
 
   const placeCard = useCallback((cardId: string, targetLayer: ProcessLayer) => {
     if (phase !== "active" || forceSubmit || existingSubmission) return;
@@ -204,21 +211,24 @@ export function Week3ProcessHierarchy({
       const next = { ...current };
       if (sourceLayer) next[sourceLayer] = displacedCard;
       next[targetLayer] = cardId;
+      void onDraft?.(submissionForProgress(resultsRef.current, "draft", next));
       setSelectedCardId(null);
       if (processLayerOrder.every((layer) => next[layer])) window.setTimeout(() => evaluate(next), 0);
       return next;
     });
-  }, [evaluate, existingSubmission, forceSubmit, phase]);
+  }, [evaluate, existingSubmission, forceSubmit, onDraft, phase, submissionForProgress]);
 
   const returnToDeck = useCallback((cardId: string) => {
     if (phase !== "active" || forceSubmit || existingSubmission) return;
     setSlots((current) => {
       const sourceLayer = processLayerOrder.find((layer) => current[layer] === cardId);
       if (!sourceLayer) return current;
-      return { ...current, [sourceLayer]: null };
+      const next = { ...current, [sourceLayer]: null };
+      void onDraft?.(submissionForProgress(resultsRef.current, "draft", next));
+      return next;
     });
     setSelectedCardId(null);
-  }, [existingSubmission, forceSubmit, phase]);
+  }, [existingSubmission, forceSubmit, onDraft, phase, submissionForProgress]);
 
   useEffect(() => {
     if (!forceSubmit || phase === "complete" || existingSubmission) return;

@@ -89,7 +89,24 @@ function delay(milliseconds: number) {
   return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 }
 
-export function Module5RelationBalloons({ onSubmit, existingSubmission, forceSubmit }: LearningModuleProps) {
+function submissionForAnswers(finalAnswers: BalloonAnswer[], reason: "completed" | "teacher-ended" | "draft", activeAttempt?: { questionId: string; expected: RelationType; attempts: RelationType[] }): ModuleSubmission {
+  const correctCount = finalAnswers.filter((answer) => answer.isCorrect).length;
+  return {
+    score: Math.round(correctCount * pointsPerQuestion),
+    payload: {
+      mode: "relation-balloon-pop",
+      answers: finalAnswers,
+      activeAttempt: activeAttempt ?? null,
+      correctCount,
+      answeredCount: finalAnswers.length,
+      questionCount: rounds.length,
+      pointsPerQuestion,
+      completionReason: reason,
+    },
+  };
+}
+
+export function Module5RelationBalloons({ onSubmit, onDraft, existingSubmission, forceSubmit }: LearningModuleProps) {
   const [roundIndex, setRoundIndex] = useState(0);
   const [remaining, setRemaining] = useState(secondsPerBalloon);
   const [phase, setPhase] = useState<"active" | "feedback" | "complete">("active");
@@ -122,19 +139,7 @@ export function Module5RelationBalloons({ onSubmit, existingSubmission, forceSub
     submissionStarted.current = true;
     cooldownRun.current += 1;
     setCooldown(0);
-    const correctCount = finalAnswers.filter((answer) => answer.isCorrect).length;
-    const submission: ModuleSubmission = {
-      score: Math.round(correctCount * pointsPerQuestion),
-      payload: {
-        mode: "relation-balloon-pop",
-        answers: finalAnswers,
-        correctCount,
-        answeredCount: finalAnswers.length,
-        questionCount: rounds.length,
-        pointsPerQuestion,
-        completionReason: reason,
-      },
-    };
+    const submission = submissionForAnswers(finalAnswers, reason);
     setFinalSubmission(submission);
     setPhase("complete");
     await submitResult(submission);
@@ -165,11 +170,12 @@ export function Module5RelationBalloons({ onSubmit, existingSubmission, forceSub
     const answer: BalloonAnswer = { questionId: current.id, expected: current.type, attempts: attemptsRef.current, isCorrect: false, timedOut: true };
     const nextAnswers = [...answersRef.current, answer];
     answersRef.current = nextAnswers;
+    void onDraft?.(submissionForAnswers(nextAnswers, "draft"));
     setRemaining(0);
     setFeedback({ correct: false, text: "Süre doldu! Balon kaçtı; yeni soru birazdan geliyor." });
     setPhase("feedback");
     void moveNext(nextAnswers);
-  }, [current, existingSubmission, moveNext, phase]);
+  }, [current, existingSubmission, moveNext, onDraft, phase]);
 
   useEffect(() => { timeoutHandler.current = expireBalloon; }, [expireBalloon]);
 
@@ -198,6 +204,7 @@ export function Module5RelationBalloons({ onSubmit, existingSubmission, forceSub
     const isCorrect = type === current.type;
     const nextAttempts = [...attemptsRef.current, type];
     attemptsRef.current = nextAttempts;
+    void onDraft?.(submissionForAnswers(answersRef.current, "draft", { questionId: current.id, expected: current.type, attempts: nextAttempts }));
     setShot({ side: category.side, correct: isCorrect, nonce: Date.now() });
     setInputLocked(true);
 
@@ -224,11 +231,12 @@ export function Module5RelationBalloons({ onSubmit, existingSubmission, forceSub
     const answer: BalloonAnswer = { questionId: current.id, expected: current.type, attempts: nextAttempts, isCorrect: true, timedOut: false };
     const nextAnswers = [...answersRef.current, answer];
     answersRef.current = nextAnswers;
+    void onDraft?.(submissionForAnswers(nextAnswers, "draft"));
     setPhase("feedback");
     setFeedback({ correct: true, text: category.explanation });
     window.setTimeout(() => confetti({ particleCount: 34, spread: 62, startVelocity: 22, origin: { x: .5, y: .48 }, colors: [category.color, "#ffffff", "#fbbf24"] }), 320);
     await moveNext(nextAnswers);
-  }, [current, existingSubmission, forceSubmit, inputLocked, moveNext, phase]);
+  }, [current, existingSubmission, forceSubmit, inputLocked, moveNext, onDraft, phase]);
 
   if (existingSubmission && phase !== "complete") {
     return <section className="panel module-shell balloon-module-shell"><div className="module-title-chip">Modül 5: İlişki Türleri</div><div className="module-complete-card"><LockKeyhole size={42} /><h2>Bu modül tamamlandı</h2><p>Yanıtın kilitlendi. Öğretmen sonuçları açıklayana kadar bekleyin.</p></div></section>;

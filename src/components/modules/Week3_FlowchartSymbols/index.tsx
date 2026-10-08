@@ -167,6 +167,7 @@ function FlowNodeShape({ symbol, x, y, placeholder, metrics }: { symbol: FlowSym
 
 export function Week3FlowchartSymbols({
   onSubmit,
+  onDraft,
   existingSubmission,
   forceSubmit,
   sessionId,
@@ -211,12 +212,9 @@ export function Week3FlowchartSymbols({
     if (accepted === false) setSubmitFailed(true);
   }, [onSubmit]);
 
-  const finalize = useCallback(async (checkedLevels: LevelResult[], completionReason: "completed" | "teacher-ended", activePlacements?: Placement) => {
-    if (submissionStarted.current || existingSubmission) return;
-    submissionStarted.current = true;
-    if (transitionTimer.current !== null) window.clearTimeout(transitionTimer.current);
+  const submissionForProgress = useCallback((checkedLevels: LevelResult[], completionReason: "completed" | "teacher-ended" | "draft", activePlacements?: Placement): ModuleSubmission => {
     const correctCount = checkedLevels.reduce((total, level) => total + level.correctCount, 0);
-    const submission: ModuleSubmission = {
+    return {
       stage: 1,
       score: correctCount * POINTS_PER_BLANK,
       payload: {
@@ -227,19 +225,21 @@ export function Week3FlowchartSymbols({
         evaluatedBlankCount: checkedLevels.reduce((total, level) => total + level.placements.length, 0),
         totalBlankCount: 10,
         pointsPerBlank: POINTS_PER_BLANK,
-        activeLevel: completionReason === "teacher-ended" ? {
-          level: levelIndex + 1,
-          diagramId: current.id,
-          placements: activePlacements ?? placements,
-          evaluated: false,
-        } : undefined,
+        activeLevel: activePlacements ? { level: levelIndex + 1, diagramId: current.id, placements: activePlacements, evaluated: false } : undefined,
         completionReason,
       },
     };
+  }, [current.id, levelIndex, rounds]);
+
+  const finalize = useCallback(async (checkedLevels: LevelResult[], completionReason: "completed" | "teacher-ended", activePlacements?: Placement) => {
+    if (submissionStarted.current || existingSubmission) return;
+    submissionStarted.current = true;
+    if (transitionTimer.current !== null) window.clearTimeout(transitionTimer.current);
+    const submission = submissionForProgress(checkedLevels, completionReason, completionReason === "teacher-ended" ? activePlacements ?? placements : undefined);
     setFinalSubmission(submission);
     setPhase("complete");
     await submitResult(submission);
-  }, [current.id, existingSubmission, levelIndex, placements, rounds, submitResult]);
+  }, [existingSubmission, placements, submissionForProgress, submitResult]);
 
   const advance = useCallback((nextResults: LevelResult[]) => {
     if (levelIndex === rounds.length - 1) {
@@ -274,21 +274,26 @@ export function Week3FlowchartSymbols({
     const allCorrect = nextResult.correctCount === blankNodes.length;
     const nextResults = [...resultsRef.current, nextResult];
     resultsRef.current = nextResults;
+    void onDraft?.(submissionForProgress(nextResults, "draft", placements));
     setResult(nextResult);
     setSelectedSymbol(null);
     setPhase(allCorrect ? "success" : "error");
     setAnnouncement(allCorrect ? text.success : text.wrong);
     if (allCorrect) confetti({ particleCount: 42, spread: 64, startVelocity: 21, origin: { x: .62, y: .58 }, colors: ["#10b981", "#fbbf24", "#ffffff"] });
     transitionTimer.current = window.setTimeout(() => advance(nextResults), allCorrect ? 1250 : 2500);
-  }, [advance, allFilled, blankNodes, current.difficulty, current.id, existingSubmission, forceSubmit, levelIndex, phase, placements, text.success, text.wrong]);
+  }, [advance, allFilled, blankNodes, current.difficulty, current.id, existingSubmission, forceSubmit, levelIndex, onDraft, phase, placements, submissionForProgress, text.success, text.wrong]);
 
   const placeSymbol = useCallback((slotId: string, symbol: FlowSymbol) => {
     if (phase !== "active" || forceSubmit || existingSubmission) return;
-    setPlacements((currentPlacements) => ({ ...currentPlacements, [slotId]: symbol }));
+    setPlacements((currentPlacements) => {
+      const next = { ...currentPlacements, [slotId]: symbol };
+      void onDraft?.(submissionForProgress(resultsRef.current, "draft", next));
+      return next;
+    });
     setSelectedSymbol(null);
     setSelectedSlotId(null);
     setAnnouncement("");
-  }, [existingSubmission, forceSubmit, phase]);
+  }, [existingSubmission, forceSubmit, onDraft, phase, submissionForProgress]);
 
   const activateSlot = useCallback((slotId: string) => {
     if (phase !== "active" || forceSubmit || existingSubmission) return;
@@ -297,14 +302,18 @@ export function Week3FlowchartSymbols({
       return;
     }
     if (placements[slotId]) {
-      setPlacements((currentPlacements) => ({ ...currentPlacements, [slotId]: null }));
+      setPlacements((currentPlacements) => {
+        const next = { ...currentPlacements, [slotId]: null };
+        void onDraft?.(submissionForProgress(resultsRef.current, "draft", next));
+        return next;
+      });
       setSelectedSlotId(null);
       setAnnouncement(text.remove);
       return;
     }
     setSelectedSlotId((currentSlot) => currentSlot === slotId ? null : slotId);
     setAnnouncement(selectedSlotId === slotId ? text.paletteHint : text.slotSelected);
-  }, [existingSubmission, forceSubmit, phase, placements, placeSymbol, selectedSlotId, selectedSymbol, text.paletteHint, text.remove, text.slotSelected]);
+  }, [existingSubmission, forceSubmit, onDraft, phase, placements, placeSymbol, selectedSlotId, selectedSymbol, submissionForProgress, text.paletteHint, text.remove, text.slotSelected]);
 
   useEffect(() => {
     if (!forceSubmit || phase === "complete" || existingSubmission) return;

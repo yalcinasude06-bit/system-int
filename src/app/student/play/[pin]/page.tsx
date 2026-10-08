@@ -17,7 +17,7 @@ import { Week3ProcessHierarchy } from "@/components/modules/Week3_ProcessHierarc
 import { Week3MissingProcess } from "@/components/modules/Week3_MissingProcess";
 import { Week3FlowchartSymbols } from "@/components/modules/Week3_FlowchartSymbols";
 import { getRemainingCountdown } from "@/lib/moduleCountdown";
-import { getStudentGameState, saveSubmission, submitModuleFeedback } from "@/lib/session";
+import { getStudentGameState, saveModuleDraft, saveSubmission, submitModuleFeedback } from "@/lib/session";
 import type { ModuleId, ModuleSubmission, Session, Student, StudentProfile, Submission } from "@/types";
 
 export default function StudentPlayPage() {
@@ -37,6 +37,13 @@ export default function StudentPlayPage() {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackDismissedKey, setFeedbackDismissedKey] = useState("");
   const celebratedModuleKey = useRef("");
+  const draftRevision = useRef(0);
+  const draftWrites = useRef(new Set<Promise<void>>());
+
+  useEffect(() => {
+    // Yenilenen sekmenin revision aralığını önceki tarayıcı örneğinin ilerisine taşı.
+    draftRevision.current = Date.now() * 1000;
+  }, []);
 
   const load = useCallback(async () => {
     try {
@@ -118,6 +125,7 @@ export default function StudentPlayPage() {
     setSaving(true);
     setError("");
     try {
+      await Promise.allSettled([...draftWrites.current]);
       const saved = await saveSubmission({ sessionId: session.id, studentId: student.id, studentNumber: student.student_number, weekId: session.selected_week, moduleId, stage: submission.stage || 1, payload: submission.payload, score: submission.score });
       setSubmissions((current) => [...current.filter((item) => item.id !== saved.submission.id), saved.submission]);
       setFeedbackOpen(true);
@@ -131,6 +139,40 @@ export default function StudentPlayPage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  function saveDraft(moduleId: ModuleId, submission: ModuleSubmission) {
+    if (!session || !student || !session.is_module_started || existingSubmissionFor(moduleId)) return Promise.resolve();
+    const answeredCount = typeof submission.payload.answeredCount === "number"
+      ? submission.payload.answeredCount
+      : typeof submission.payload.evaluatedPlacements === "number"
+        ? submission.payload.evaluatedPlacements
+        : typeof submission.payload.evaluatedBlankCount === "number"
+          ? submission.payload.evaluatedBlankCount
+          : 0;
+    const revision = ++draftRevision.current;
+    const task = saveModuleDraft({
+        sessionId: session.id,
+        studentId: student.id,
+        weekId: session.selected_week,
+        moduleId,
+        stage: submission.stage || 1,
+        payload: submission.payload,
+        score: submission.score,
+        answeredCount,
+        revision,
+      })
+      .then(() => undefined)
+      .catch((caught) => {
+        console.warn("Module draft save failed", caught);
+      });
+    draftWrites.current.add(task);
+    void task.finally(() => draftWrites.current.delete(task));
+    return task;
+  }
+
+  function existingSubmissionFor(moduleId: ModuleId) {
+    return submissions.some((item) => item.is_submitted && item.week_id === session?.selected_week && item.module_id === moduleId);
   }
 
   async function sendFeedback(input: { funRating: number; difficultyRating: number; comment: string }) {
@@ -212,18 +254,18 @@ export default function StudentPlayPage() {
   if (!activeSubmission && session.module_started_at && countdownTimeLeft > 0 && readyModuleKey !== activeModuleKey) return <>{studentNav}<ModuleStartCountdown key={`${activeModuleKey}:${session.module_started_at}`} weekId={session.selected_week} moduleId={session.current_module} startedAt={session.module_started_at} onComplete={() => setReadyModuleKey(activeModuleKey)} /></>;
 
   const modules = {
-    1: <Module1SystemBuild existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onSubmit={(submission) => submit(1, submission)} />,
-    2: <Module2Relations existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onSubmit={(submission) => submit(2, submission)} />,
-    3: <Module3Boundary existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onSubmit={(submission) => submit(3, submission)} />,
-    4: <Module4CompleteSystem existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onSubmit={(submission) => submit(4, submission)} />,
-    5: <Module5RelationBalloons existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onSubmit={(submission) => submit(5, submission)} />,
+    1: <Module1SystemBuild existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(1, draft)} onSubmit={(submission) => submit(1, submission)} />,
+    2: <Module2Relations existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(2, draft)} onSubmit={(submission) => submit(2, submission)} />,
+    3: <Module3Boundary existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(3, draft)} onSubmit={(submission) => submit(3, submission)} />,
+    4: <Module4CompleteSystem existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(4, draft)} onSubmit={(submission) => submit(4, submission)} />,
+    5: <Module5RelationBalloons existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(5, draft)} onSubmit={(submission) => submit(5, submission)} />,
   };
   const activeModule = session.selected_week === 3 && session.current_module === 1
-    ? <Week3ProcessHierarchy sessionId={session.id} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onSubmit={(submission) => submit(1, submission)} />
+    ? <Week3ProcessHierarchy sessionId={session.id} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(1, draft)} onSubmit={(submission) => submit(1, submission)} />
     : session.selected_week === 3 && session.current_module === 2
-      ? <Week3MissingProcess sessionId={session.id} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onSubmit={(submission) => submit(2, submission)} />
+      ? <Week3MissingProcess sessionId={session.id} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(2, draft)} onSubmit={(submission) => submit(2, submission)} />
       : session.selected_week === 3 && session.current_module === 3
-        ? <Week3FlowchartSymbols sessionId={session.id} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onSubmit={(submission) => submit(3, submission)} />
+        ? <Week3FlowchartSymbols sessionId={session.id} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(3, draft)} onSubmit={(submission) => submit(3, submission)} />
       : modules[session.current_module];
 
   return <>{studentNav}<main className="container student-module-page stack">

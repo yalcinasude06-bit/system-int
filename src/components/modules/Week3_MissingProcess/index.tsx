@@ -56,6 +56,7 @@ function delay(milliseconds: number) {
 
 export function Week3MissingProcess({
   onSubmit,
+  onDraft,
   existingSubmission,
   forceSubmit,
   sessionId,
@@ -87,11 +88,9 @@ export function Week3MissingProcess({
     if (accepted === false) setSubmitFailed(true);
   }, [onSubmit]);
 
-  const finalize = useCallback(async (finalAnswers: MissingStepAnswer[], reason: "completed" | "teacher-ended") => {
-    if (submissionStarted.current || existingSubmission) return;
-    submissionStarted.current = true;
+  const submissionForAnswers = useCallback((finalAnswers: MissingStepAnswer[], reason: "completed" | "teacher-ended" | "draft"): ModuleSubmission => {
     const correctCount = finalAnswers.filter((answer) => answer.isCorrect).length;
-    const submission: ModuleSubmission = {
+    return {
       score: Math.round(correctCount * pointsPerQuestion),
       payload: {
         mode: "missing-process-step-chain",
@@ -104,12 +103,18 @@ export function Week3MissingProcess({
         completionReason: reason,
       },
     };
+  }, [questions]);
+
+  const finalize = useCallback(async (finalAnswers: MissingStepAnswer[], reason: "completed" | "teacher-ended") => {
+    if (submissionStarted.current || existingSubmission) return;
+    submissionStarted.current = true;
+    const submission = submissionForAnswers(finalAnswers, reason);
     setAnswers(finalAnswers);
     setFinalSubmission(submission);
     setCompleted(true);
     setBusy(false);
     await submitResult(submission);
-  }, [existingSubmission, questions, submitResult]);
+  }, [existingSubmission, submissionForAnswers, submitResult]);
 
   useEffect(() => {
     if (forceSubmit && !completed && !existingSubmission) void finalize(answersRef.current, "teacher-ended");
@@ -131,6 +136,7 @@ export function Week3MissingProcess({
     };
     const nextAnswers = [...answersRef.current, answer];
     answersRef.current = nextAnswers;
+    void onDraft?.(submissionForAnswers(nextAnswers, "draft"));
     setAnswers(nextAnswers);
     setSelectedOptionId(option.id);
     setBusy(true);
@@ -155,7 +161,7 @@ export function Week3MissingProcess({
     setFeedback(null);
     setBusy(false);
     interactionLocked.current = false;
-  }, [busy, completed, current, existingSubmission, finalize, forceSubmit, locale, questions.length, systemIndex, text.correct, text.wrong]);
+  }, [busy, completed, current, existingSubmission, finalize, forceSubmit, locale, onDraft, questions.length, submissionForAnswers, systemIndex, text.correct, text.wrong]);
 
   if (existingSubmission && !completed) {
     return <section className="panel module-shell process-module-shell missing-process-shell">

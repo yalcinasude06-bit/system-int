@@ -160,7 +160,30 @@ function delay(milliseconds: number) {
   return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 }
 
-export function Module2Relations({ onSubmit, existingSubmission, forceSubmit }: LearningModuleProps) {
+function submissionForAnswers(finalAnswers: Answer[], completionReason: "completed" | "teacher-ended" | "draft"): ModuleSubmission {
+  const correctCount = finalAnswers.filter((item) => item.isCorrect).length;
+  return {
+    score: Math.round(correctCount * pointsPerCard),
+    payload: {
+      mode: "swipe-chain",
+      answers: finalAnswers,
+      correctCount,
+      answeredCount: finalAnswers.length,
+      cardCount: chain.length,
+      pointsPerCard,
+      finalState: finalAnswers.length === chain.length ? chain[chain.length - 1].nextState : null,
+      completionReason,
+      loopClosure: completionReason === "completed" ? {
+        from: "Sistemik Hata Oranı",
+        to: "Müşteri Memnuniyeti",
+        effect: "negative",
+        explanation: "Sistemik hata oranı arttığında müşteri deneyimi kötüleşir ve müşteri memnuniyeti azalır (− Negatif Feedback Etkisi).",
+      } : null,
+    },
+  };
+}
+
+export function Module2Relations({ onSubmit, onDraft, existingSubmission, forceSubmit }: LearningModuleProps) {
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [busy, setBusy] = useState(false);
@@ -193,26 +216,7 @@ export function Module2Relations({ onSubmit, existingSubmission, forceSubmit }: 
   const finalize = useCallback(async (finalAnswers: Answer[], completionReason: "completed" | "teacher-ended") => {
     if (submissionStarted.current || existingSubmission) return;
     submissionStarted.current = true;
-    const correctCount = finalAnswers.filter((item) => item.isCorrect).length;
-    const submission: ModuleSubmission = {
-      score: Math.round(correctCount * pointsPerCard),
-      payload: {
-        mode: "swipe-chain",
-        answers: finalAnswers,
-        correctCount,
-        answeredCount: finalAnswers.length,
-        cardCount: chain.length,
-        pointsPerCard,
-        finalState: finalAnswers.length === chain.length ? chain[chain.length - 1].nextState : null,
-        completionReason,
-        loopClosure: completionReason === "completed" ? {
-          from: "Sistemik Hata Oranı",
-          to: "Müşteri Memnuniyeti",
-          effect: "negative",
-          explanation: "Sistemik hata oranı arttığında müşteri deneyimi kötüleşir ve müşteri memnuniyeti azalır (− Negatif Feedback Etkisi).",
-        } : null,
-      },
-    };
+    const submission = submissionForAnswers(finalAnswers, completionReason);
     setAnswers(finalAnswers);
     setFinalSubmission(submission);
     setCompleted(true);
@@ -237,6 +241,7 @@ export function Module2Relations({ onSubmit, existingSubmission, forceSubmit }: 
     };
     const nextAnswers = [...answersRef.current, answer];
     answersRef.current = nextAnswers;
+    void onDraft?.(submissionForAnswers(nextAnswers, "draft"));
 
     setBusy(true);
     setDirection(selected);
@@ -267,7 +272,7 @@ export function Module2Relations({ onSubmit, existingSubmission, forceSubmit }: 
     setBusy(false);
     interactionLocked.current = false;
     window.setTimeout(() => setFeedback(null), 900);
-  }, [busy, completed, current, existingSubmission, finalize, forceSubmit, stepIndex, x]);
+  }, [busy, completed, current, existingSubmission, finalize, forceSubmit, onDraft, stepIndex, x]);
 
   useEffect(() => {
     if (forceSubmit && !completed && !existingSubmission) void finalize(answersRef.current, "teacher-ended");

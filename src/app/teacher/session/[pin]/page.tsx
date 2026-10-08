@@ -117,8 +117,6 @@ export default function TeacherSessionPage() {
     if (!session || session.current_module !== currentModule || !session.is_module_started) return;
     setBusy(true); setError("");
     try {
-      setSession(await patchTeacherSession(session.id, { module_stage: 4 }));
-      await new Promise((resolve) => window.setTimeout(resolve, 6500));
       setSession(await runTeacherModuleAction(session.id, "finish"));
       await load();
       setResultsViewOpen(true);
@@ -136,8 +134,6 @@ export default function TeacherSessionPage() {
     setBusy(true); setError("");
     try {
       if (session.is_module_started) {
-        setSession(await patchTeacherSession(session.id, { module_stage: 4 }));
-        await new Promise((resolve) => window.setTimeout(resolve, 3000));
         await runTeacherModuleAction(session.id, "finish");
       }
       await patchTeacherSession(session.id, { is_active: false, is_module_started: false, module_started_at: null, module_stage: 3 });

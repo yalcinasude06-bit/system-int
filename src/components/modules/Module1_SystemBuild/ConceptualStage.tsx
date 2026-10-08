@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { CheckCircle2, LockKeyhole, RotateCcw, XCircle } from "lucide-react";
 import { Button } from "@/components/common/Button";
-import type { Submission } from "@/types";
+import type { ModuleSubmission, Submission } from "@/types";
 
 const anatomy = {
   purpose: { hint: "Sistemin varlık nedeni", answer: "Amaç" },
@@ -142,8 +142,9 @@ function SystemSceneArt() {
   </svg>;
 }
 
-export function ConceptualStage({ onComplete, initialSubmission, forceSubmit }: {
+export function ConceptualStage({ onComplete, onProgress, initialSubmission, forceSubmit }: {
   onComplete: (result: { score: number; placements: Record<string, string>; mistakes: string[]; answeredCount: number; itemCount: number; completionReason: "completed" | "teacher-ended" }) => Promise<boolean>;
+  onProgress?: (submission: ModuleSubmission) => Promise<void> | void;
   initialSubmission?: Submission | null;
   forceSubmit?: boolean;
 }) {
@@ -160,6 +161,22 @@ export function ConceptualStage({ onComplete, initialSubmission, forceSubmit }: 
   const submissionStarted = useRef(Boolean(initialSubmission?.is_submitted));
   const available = useMemo(() => cards.filter((card) => !Object.values(placements).includes(card)), [placements]);
 
+  function progressSubmission(nextPlacements: Record<string, string>): ModuleSubmission {
+    const entries = Object.entries(anatomy) as Array<[ZoneId, (typeof anatomy)[ZoneId]]>;
+    const mistakes = entries.filter(([id, item]) => nextPlacements[id] !== item.answer).map(([, item]) => item.answer);
+    return {
+      stage: 1,
+      score: Math.round(((entries.length - mistakes.length) / entries.length) * 100),
+      payload: {
+        placements: nextPlacements,
+        mistakes,
+        answeredCount: Object.keys(nextPlacements).length,
+        itemCount: entries.length,
+        completionReason: "draft",
+      },
+    };
+  }
+
   function place(zoneId: ZoneId, card: string, suppliedSource?: ZoneId) {
     if (locked || !cards.some((candidate) => candidate === card)) return;
     setPlacements((current) => {
@@ -172,6 +189,7 @@ export function ConceptualStage({ onComplete, initialSubmission, forceSubmit }: 
         if (displaced) next[source] = displaced;
       }
       next[zoneId] = card;
+      void onProgress?.(progressSubmission(next));
       return next;
     });
     setSelected(null);
@@ -179,7 +197,11 @@ export function ConceptualStage({ onComplete, initialSubmission, forceSubmit }: 
 
   function returnToPool(card: string) {
     if (locked) return;
-    setPlacements((current) => Object.fromEntries(Object.entries(current).filter(([, value]) => value !== card)));
+    setPlacements((current) => {
+      const next = Object.fromEntries(Object.entries(current).filter(([, value]) => value !== card));
+      void onProgress?.(progressSubmission(next));
+      return next;
+    });
     setSelected(null);
   }
 

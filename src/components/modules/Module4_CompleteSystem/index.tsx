@@ -45,7 +45,23 @@ const systemRounds = [systemTypes.slice(0, 5), systemTypes.slice(5)];
 const systemRoundIds = systemRounds.map((round) => round.map((system) => system.id));
 const pointsPerMatch = 100 / systemTypes.length;
 
-export function Module4CompleteSystem({ onSubmit, existingSubmission, forceSubmit }: LearningModuleProps) {
+function submissionForMatches(finalMatches: Record<string, string>, completionReason: "completed" | "teacher-ended" | "draft"): ModuleSubmission {
+  const totalCorrect = systemTypes.filter((system) => finalMatches[system.id] === system.id).length;
+  return {
+    score: Math.round(totalCorrect * pointsPerMatch),
+    payload: {
+      mode: "system-type-visual-batch-matching",
+      matches: finalMatches,
+      correctCount: totalCorrect,
+      answeredCount: Object.keys(finalMatches).length,
+      matchCount: systemTypes.length,
+      pointsPerMatch,
+      completionReason,
+    },
+  };
+}
+
+export function Module4CompleteSystem({ onSubmit, onDraft, existingSubmission, forceSubmit }: LearningModuleProps) {
   const [roundIndex, setRoundIndex] = useState(0);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [matches, setMatches] = useState<Record<string, string>>({});
@@ -120,19 +136,8 @@ export function Module4CompleteSystem({ onSubmit, existingSubmission, forceSubmi
     if (submissionStarted.current || existingSubmission) return;
     if (completionReason === "completed" && Object.keys(finalMatches).length !== systemTypes.length) return;
     submissionStarted.current = true;
-    const totalCorrect = systemTypes.filter((system) => finalMatches[system.id] === system.id).length;
-    const submission: ModuleSubmission = {
-      score: Math.round(totalCorrect * pointsPerMatch),
-      payload: {
-        mode: "system-type-visual-batch-matching",
-        matches: finalMatches,
-        correctCount: totalCorrect,
-        answeredCount: Object.keys(finalMatches).length,
-        matchCount: systemTypes.length,
-        pointsPerMatch,
-        completionReason,
-      },
-    };
+    const submission = submissionForMatches(finalMatches, completionReason);
+    const totalCorrect = Number(submission.payload.correctCount);
     setMatches(finalMatches);
     setCorrectCount(totalCorrect);
     setFinalSubmission(submission);
@@ -158,6 +163,7 @@ export function Module4CompleteSystem({ onSubmit, existingSubmission, forceSubmi
     next[typeId] = visualId;
     matchesRef.current = next;
     setMatches(next);
+    void onDraft?.(submissionForMatches(next, "draft"));
     setSelectedType(null);
     if (roundIndex === 0 && currentSystemIds.every((id) => Boolean(next[id]))) {
       setLines([]);

@@ -123,6 +123,43 @@ export async function saveSubmission(input: {
   return { submission: result.submission, wasNew: result.was_new };
 }
 
+export async function saveModuleDraft(input: {
+  sessionId: string;
+  studentId: string;
+  weekId: number;
+  moduleId: ModuleId;
+  stage: number;
+  payload: Record<string, unknown>;
+  score: number;
+  answeredCount: number;
+  revision: number;
+}): Promise<boolean> {
+  const client = requireSupabase();
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const { data, error } = await client.rpc("save_module_draft", {
+        target_session_id: input.sessionId,
+        target_student_id: input.studentId,
+        target_week_id: input.weekId,
+        target_module_id: input.moduleId,
+        target_stage: input.stage,
+        new_payload: input.payload,
+        new_score: input.score,
+        new_answered_count: input.answeredCount,
+        new_revision: input.revision,
+      });
+      if (error) throw error;
+      return Boolean((data as { saved?: boolean } | null)?.saved);
+    } catch (caught) {
+      lastError = caught;
+      if (!isTransientDatabaseFailure(caught) || attempt === 2) break;
+      await retryDelay(attempt);
+    }
+  }
+  throw readableDatabaseError(lastError, "Taslak ilerleme kaydedilemedi.");
+}
+
 export async function submitModuleFeedback(input: {
   sessionId: string;
   studentId: string;

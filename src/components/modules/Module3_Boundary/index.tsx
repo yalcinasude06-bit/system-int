@@ -59,7 +59,23 @@ export function BlackBoxCube({ revealed, wrong, process }: { revealed: boolean; 
   </div>;
 }
 
-export function Module3Boundary({ onSubmit, existingSubmission, forceSubmit }: LearningModuleProps) {
+function submissionForAnswers(finalAnswers: ProcessAnswer[], reason: "completed" | "teacher-ended" | "draft"): ModuleSubmission {
+  const correctCount = finalAnswers.filter((item) => item.isCorrect).length;
+  return {
+    score: Math.round(correctCount * pointsPerSystem),
+    payload: {
+      mode: "black-box-process-analysis",
+      answers: finalAnswers,
+      correctCount,
+      answeredCount: finalAnswers.length,
+      systemCount: systems.length,
+      pointsPerSystem,
+      completionReason: reason,
+    },
+  };
+}
+
+export function Module3Boundary({ onSubmit, onDraft, existingSubmission, forceSubmit }: LearningModuleProps) {
   const [systemIndex, setSystemIndex] = useState(0);
   const [answers, setAnswers] = useState<ProcessAnswer[]>([]);
   const [feedback, setFeedback] = useState<{ correct: boolean; text: string } | null>(null);
@@ -86,19 +102,7 @@ export function Module3Boundary({ onSubmit, existingSubmission, forceSubmit }: L
   const finalize = useCallback(async (finalAnswers: ProcessAnswer[], reason: "completed" | "teacher-ended") => {
     if (submissionStarted.current || existingSubmission) return;
     submissionStarted.current = true;
-    const correctCount = finalAnswers.filter((item) => item.isCorrect).length;
-    const submission: ModuleSubmission = {
-      score: Math.round(correctCount * pointsPerSystem),
-      payload: {
-        mode: "black-box-process-analysis",
-        answers: finalAnswers,
-        correctCount,
-        answeredCount: finalAnswers.length,
-        systemCount: systems.length,
-        pointsPerSystem,
-        completionReason: reason,
-      },
-    };
+    const submission = submissionForAnswers(finalAnswers, reason);
     setAnswers(finalAnswers);
     setFinalSubmission(submission);
     setCompleted(true);
@@ -117,6 +121,7 @@ export function Module3Boundary({ onSubmit, existingSubmission, forceSubmit }: L
     const answer: ProcessAnswer = { systemId: current.id, selected, correct: current.correct, isCorrect };
     const nextAnswers = [...answersRef.current, answer];
     answersRef.current = nextAnswers;
+    void onDraft?.(submissionForAnswers(nextAnswers, "draft"));
     setAnswers(nextAnswers);
     setBusy(true);
     setRevealed(true);
@@ -139,7 +144,7 @@ export function Module3Boundary({ onSubmit, existingSubmission, forceSubmit }: L
     setFeedback(null);
     setBusy(false);
     interactionLocked.current = false;
-  }, [busy, completed, current, existingSubmission, finalize, forceSubmit, systemIndex]);
+  }, [busy, completed, current, existingSubmission, finalize, forceSubmit, onDraft, systemIndex]);
 
   if (existingSubmission && !completed) {
     return <section className="panel module-shell process-module-shell">
