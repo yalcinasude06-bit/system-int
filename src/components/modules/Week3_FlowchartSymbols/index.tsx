@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent, type PointerEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent, type PointerEvent } from "react";
 import confetti from "canvas-confetti";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, GripVertical, LockKeyhole, MousePointerClick, RotateCcw, Sparkles } from "lucide-react";
@@ -9,13 +9,12 @@ import type { Locale } from "@/lib/i18n/dictionaries";
 import { useI18n } from "@/lib/i18n/I18nContext";
 import type { LearningModuleProps, ModuleSubmission } from "@/types";
 import { FlowSymbolShape } from "./FlowSymbolShape";
+import { createResponsiveDiagramLayout, fitDiagramScale, type ResponsiveDiagramLayout } from "./responsiveLayout";
 import {
   buildFlowchartSymbolRounds,
   flowSymbolLabels,
   flowSymbolOrder,
   type FlowchartDiagram,
-  type FlowNode,
-  type FlowRow,
   type FlowSymbol,
 } from "./flowchartContent";
 
@@ -36,11 +35,6 @@ type LevelResult = {
 type TouchDrag = { symbol: FlowSymbol; x: number; y: number; overSlotId: string | null };
 
 const POINTS_PER_BLANK = 10;
-const nodeWidth = 152;
-const nodeHeight = 58;
-const columnGap = 76;
-const rows: Record<FlowRow, number> = { top: 14, main: 194, bottom: 374 };
-type DiagramMetrics = { width: number; height: number; nodeWidth: number; nodeHeight: number; columnGap: number; rows: Record<FlowRow, number> };
 
 const copy = {
   tr: {
@@ -105,46 +99,26 @@ function blankPlacements(diagram: FlowchartDiagram): Placement {
   return Object.fromEntries(diagram.nodes.filter((node) => node.blank).map((node) => [node.id, null]));
 }
 
-function nodePosition(node: FlowNode, metrics: DiagramMetrics) {
-  return { x: metrics.rows[node.row ?? "main"], y: 18 + node.column * metrics.columnGap };
-}
-
-function diagramSize(diagram: FlowchartDiagram, compact = false): DiagramMetrics {
-  const maxColumn = Math.max(...diagram.nodes.map((node) => node.column));
-  if (!compact) return { width: 540, height: maxColumn * columnGap + nodeHeight + 38, nodeWidth, nodeHeight, columnGap, rows };
-  const compactNodeHeight = maxColumn >= 8 ? 32 : 38;
-  const compactGap = Math.max(29, Math.min(54, Math.floor((380 - compactNodeHeight - 38) / Math.max(maxColumn, 1))));
-  const compactNodeWidth = 96;
-  return {
-    width: 340,
-    height: maxColumn * compactGap + compactNodeHeight + 38,
-    nodeWidth: compactNodeWidth,
-    nodeHeight: compactNodeHeight,
-    columnGap: compactGap,
-    rows: { top: 10, main: 122, bottom: 234 },
-  };
-}
-
 function SymbolGlyph({ symbol }: { symbol: FlowSymbol }) {
   return <svg className={`flow-symbol-glyph flow-symbol-${symbol}`} viewBox="0 0 152 58" aria-hidden="true" preserveAspectRatio="xMidYMid meet"><FlowSymbolShape symbol={symbol} /></svg>;
 }
 
-function FlowEdges({ diagram, locale, metrics }: { diagram: FlowchartDiagram; locale: Locale; metrics: DiagramMetrics }) {
+function FlowEdges({ diagram, locale, layout }: { diagram: FlowchartDiagram; locale: Locale; layout: ResponsiveDiagramLayout }) {
   const nodeById = new Map(diagram.nodes.map((node) => [node.id, node]));
-  const { width, nodeWidth: metricNodeWidth, nodeHeight: metricNodeHeight } = metrics;
+  const { width } = layout;
   return <g aria-hidden="true">
     <defs><marker id="flowchart-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" /></marker></defs>
     {diagram.edges.map((edge, index) => {
       const from = nodeById.get(edge.from);
       const to = nodeById.get(edge.to);
       if (!from || !to) return null;
-      const fromPosition = nodePosition(from, metrics);
-      const toPosition = nodePosition(to, metrics);
-      const goesDown = toPosition.y >= fromPosition.y;
-      const startX = fromPosition.x + metricNodeWidth / 2;
-      const endX = toPosition.x + metricNodeWidth / 2;
-      const startY = goesDown ? fromPosition.y + metricNodeHeight : fromPosition.y;
-      const endY = goesDown ? toPosition.y : toPosition.y + metricNodeHeight;
+      const fromBox = layout.nodes[from.id];
+      const toBox = layout.nodes[to.id];
+      const goesDown = toBox.y >= fromBox.y;
+      const startX = fromBox.x + fromBox.width / 2;
+      const endX = toBox.x + toBox.width / 2;
+      const startY = goesDown ? fromBox.y + fromBox.height : fromBox.y;
+      const endY = goesDown ? toBox.y : toBox.y + toBox.height;
       const direction = goesDown ? 1 : -1;
       const controlDistance = Math.max(26, Math.abs(endY - startY) * .4);
       const path = edge.loop
@@ -160,9 +134,9 @@ function FlowEdges({ diagram, locale, metrics }: { diagram: FlowchartDiagram; lo
   </g>;
 }
 
-function FlowNodeShape({ symbol, x, y, placeholder, metrics }: { symbol: FlowSymbol | null; x: number; y: number; placeholder: boolean; metrics: DiagramMetrics }) {
-  if (placeholder) return <rect x={x} y={y} width={metrics.nodeWidth} height={metrics.nodeHeight} rx="12" className="flowchart-svg-placeholder" />;
-  return <FlowSymbolShape symbol={symbol!} x={x} y={y} width={metrics.nodeWidth} height={metrics.nodeHeight} />;
+function FlowNodeShape({ symbol, x, y, width, height, placeholder }: { symbol: FlowSymbol | null; x: number; y: number; width: number; height: number; placeholder: boolean }) {
+  if (placeholder) return <rect x={x} y={y} width={width} height={height} rx="12" className="flowchart-svg-placeholder" />;
+  return <FlowSymbolShape symbol={symbol!} x={x} y={y} width={width} height={height} />;
 }
 
 export function Week3FlowchartSymbols({
@@ -187,6 +161,8 @@ export function Week3FlowchartSymbols({
   const [submitFailed, setSubmitFailed] = useState(false);
   const [finalSubmission, setFinalSubmission] = useState<ModuleSubmission | null>(null);
   const [compactDiagram, setCompactDiagram] = useState(false);
+  const [diagramScale, setDiagramScale] = useState(1);
+  const diagramViewportRef = useRef<HTMLDivElement>(null);
   const resultsRef = useRef<LevelResult[]>([]);
   const transitionTimer = useRef<number | null>(null);
   const submissionStarted = useRef(false);
@@ -201,8 +177,37 @@ export function Week3FlowchartSymbols({
     return () => media.removeEventListener("change", update);
   }, []);
   const current = rounds[Math.min(levelIndex, rounds.length - 1)];
+  const denseDiagram = compactDiagram || Math.max(...current.nodes.map((node) => node.column)) >= 8;
+  const layout = useMemo(() => createResponsiveDiagramLayout(current, locale, denseDiagram), [current, denseDiagram, locale]);
   const blankNodes = current.nodes.filter((node) => node.blank);
   const allFilled = blankNodes.every((node) => placements[node.id]);
+
+  useEffect(() => {
+    const viewport = diagramViewportRef.current;
+    if (!viewport) return;
+    let animationFrame = 0;
+    const updateScale = () => {
+      window.cancelAnimationFrame(animationFrame);
+      animationFrame = window.requestAnimationFrame(() => {
+        const nextScale = fitDiagramScale(
+          Math.max(1, viewport.clientWidth - 4),
+          Math.max(1, viewport.clientHeight - 4),
+          layout.width,
+          layout.height,
+        );
+        setDiagramScale((currentScale) => Math.abs(currentScale - nextScale) < .002 ? currentScale : nextScale);
+      });
+    };
+    const observer = new ResizeObserver(updateScale);
+    observer.observe(viewport);
+    window.addEventListener("orientationchange", updateScale);
+    updateScale();
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("orientationchange", updateScale);
+      window.cancelAnimationFrame(animationFrame);
+    };
+  }, [layout.height, layout.width, locale]);
 
   const submitResult = useCallback(async (submission: ModuleSubmission) => {
     setSubmitting(true);
@@ -398,9 +403,14 @@ export function Week3FlowchartSymbols({
     </section>;
   }
 
-  const metrics = diagramSize(current, compactDiagram);
-  const { width: svgWidth, height: svgHeight } = metrics;
   const resultBySlot = new Map(result?.placements.map((placement) => [placement.slotId, placement]));
+  const stageStyle = { width: layout.width * diagramScale, height: layout.height * diagramScale };
+  const svgStyle = {
+    width: layout.width,
+    height: layout.height,
+    transform: `scale(${diagramScale})`,
+    "--flowchart-node-font": `${layout.fontSize}px`,
+  } as CSSProperties;
 
   return <section className="panel module-shell flowchart-module-shell">
     <div className="module-topline flowchart-topline">
@@ -415,17 +425,20 @@ export function Week3FlowchartSymbols({
       <motion.div key={current.id} className={`flowchart-game ${phase}`} initial={{ opacity: 0, y: 14 }} animate={phase === "error" ? { opacity: 1, x: [0, -7, 7, -5, 4, 0] } : { opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: phase === "error" ? .48 : .3 }}>
         <div className="flowchart-diagram-card">
           <header className="flowchart-diagram-heading"><div><span>{text.levels[levelIndex]}</span><h2 data-i18n-skip>{current.title[locale]}</h2></div><p>{blankNodes.length} {locale === "tr" ? "boş sembol" : "empty symbols"}</p></header>
-          <div className="flowchart-vertical-viewport">
-            <svg className="flowchart-vertical-svg" viewBox={`0 0 ${svgWidth} ${svgHeight}`} role="img" aria-label={current.title[locale]} preserveAspectRatio="xMidYMid meet">
-              <FlowEdges diagram={current} locale={locale} metrics={metrics} />
+          <div ref={diagramViewportRef} className="flowchart-vertical-viewport" data-diagram-id={current.id} data-diagram-scale={diagramScale.toFixed(4)}>
+            <div className="flowchart-fit-stage" style={stageStyle}>
+            <svg className="flowchart-vertical-svg" width={layout.width} height={layout.height} viewBox={`0 0 ${layout.width} ${layout.height}`} style={svgStyle} role="img" aria-label={current.title[locale]} preserveAspectRatio="xMinYMin meet">
+              <FlowEdges diagram={current} locale={locale} layout={layout} />
               {current.nodes.map((node) => {
                 const placement = node.blank ? placements[node.id] : null;
                 const slotResult = resultBySlot.get(node.id);
                 const showExpected = phase === "error" && slotResult && !slotResult.correct;
                 const displaySymbol = node.blank ? (showExpected ? node.symbol : placement) : node.symbol;
-                const position = nodePosition(node, metrics);
+                const box = layout.nodes[node.id];
                 const placeholder = Boolean(node.blank && !displaySymbol);
                 const interactive = node.blank && phase === "active";
+                const labelInset = displaySymbol === "decision" ? .2 : displaySymbol === "data" ? .14 : .08;
+                const labelBottomInset = displaySymbol === "document" ? .18 : .08;
                 return <g
                   key={node.id}
                   role={node.blank ? "button" : undefined}
@@ -438,13 +451,14 @@ export function Week3FlowchartSymbols({
                   onDragOver={(event) => node.blank && event.preventDefault()}
                   onDrop={(event) => node.blank && dropOnSlot(event, node.id)}
                 >
-                  <FlowNodeShape symbol={displaySymbol} x={position.x} y={position.y} placeholder={placeholder} metrics={metrics} />
-                  <foreignObject x={position.x + (displaySymbol === "decision" ? metrics.nodeWidth * .18 : metrics.nodeWidth * .08)} y={position.y + 4} width={displaySymbol === "decision" ? metrics.nodeWidth * .64 : metrics.nodeWidth * .84} height={metrics.nodeHeight - 8} pointerEvents="none"><div className="flowchart-svg-node-label" data-i18n-skip>{node.text[locale]}</div></foreignObject>
-                  {phase === "success" && slotResult?.correct && <text x={position.x + metrics.nodeWidth - 11} y={position.y + 15} className="flowchart-svg-verdict correct">✓</text>}
-                  {phase === "error" && slotResult && !slotResult.correct && <text x={position.x + metrics.nodeWidth - 11} y={position.y + 15} className="flowchart-svg-verdict wrong">×</text>}
+                  <FlowNodeShape symbol={displaySymbol} x={box.x} y={box.y} width={box.width} height={box.height} placeholder={placeholder} />
+                  <foreignObject x={box.x + box.width * labelInset} y={box.y + box.height * .08} width={box.width * (1 - labelInset * 2)} height={box.height * (1 - .08 - labelBottomInset)} pointerEvents="none"><div className="flowchart-svg-node-label" data-flow-node-label={node.id} data-i18n-skip>{node.text[locale]}</div></foreignObject>
+                  {phase === "success" && slotResult?.correct && <text x={box.x + box.width - 11} y={box.y + 15} className="flowchart-svg-verdict correct">✓</text>}
+                  {phase === "error" && slotResult && !slotResult.correct && <text x={box.x + box.width - 11} y={box.y + 15} className="flowchart-svg-verdict wrong">×</text>}
                 </g>;
               })}
             </svg>
+            </div>
           </div>
         </div>
         <aside className="flowchart-palette" aria-label={text.paletteTitle}>

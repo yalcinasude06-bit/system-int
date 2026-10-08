@@ -1307,7 +1307,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 
 /* Week 3 · Module 3: flowchart symbol placement */
-.flowchart-module-shell { overflow: hidden; background: radial-gradient(circle at 82% 12%,rgba(96,165,250,.12),transparent 31%),radial-gradient(circle at 12% 82%,rgba(251,191,36,.1),transparent 28%),#fff; }
+.flowchart-module-shell { overflow: visible; background: radial-gradient(circle at 82% 12%,rgba(96,165,250,.12),transparent 31%),radial-gradient(circle at 12% 82%,rgba(251,191,36,.1),transparent 28%),#fff; }
 .flowchart-topline > strong { color: #075985; background: #f0f9ff; border-color: #7dd3fc; }
 .flowchart-level-progress { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
 .flowchart-level-progress span { min-height: 30px; display: grid; place-items: center; color: #64748b; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 10px; font-weight: 900; transition: color .2s ease,background .2s ease,border-color .2s ease; }
@@ -1342,41 +1342,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .flowchart-diagram-heading span { flex: 0 0 auto; padding: 4px 7px; color: #1d4ed8; background: #dbeafe; border-radius: 7px; font-size: 8px; font-weight: 950; letter-spacing: .06em; text-transform: uppercase; }
 .flowchart-diagram-heading h2 { margin: 0; color: #1e293b; font-size: clamp(16px,2vw,23px); letter-spacing: -.035em; }
 .flowchart-diagram-heading p { flex: 0 0 auto; margin: 0; padding: 5px 8px; color: #047857; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 999px; font-size: 9px; font-weight: 850; }
-.flowchart-scroll { min-width: 0; min-height: 460px; overflow-x: auto; overflow-y: hidden; background: linear-gradient(180deg,#f8fafc,#fff); border: 1px solid #e2e8f0; border-radius: 15px; scrollbar-color: #93c5fd #eff6ff; scrollbar-width: thin; }
-.flowchart-canvas { position: relative; width: var(--flowchart-width); min-height: 460px; }
-.flowchart-edges { position: absolute; inset: 0; width: 100%; height: 460px; overflow: visible; pointer-events: none; }
 .flowchart-edge path { fill: none; stroke: #94a3b8; stroke-width: 2; stroke-linecap: round; }
 .flowchart-edge.loop path { stroke: #7c3aed; stroke-dasharray: 5 4; }
 .flowchart-edge text { fill: #475569; font-size: 10px; font-weight: 850; text-anchor: middle; paint-order: stroke; stroke: #fff; stroke-width: 4px; stroke-linejoin: round; }
 .flowchart-edge.loop text { fill: #6d28d9; }
-.flowchart-edges marker path { fill: #94a3b8; }
-.flowchart-node { position: absolute; z-index: 2; width: 138px; height: 92px; display: grid; align-content: center; justify-items: center; gap: 4px; padding: 10px 11px; color: #334155; background: #fff; border: 1.5px solid #cbd5e1; box-shadow: 0 7px 15px rgba(15,23,42,.08); overflow: hidden; text-align: center; transition: background .2s ease,border-color .2s ease,box-shadow .2s ease,transform .2s ease; }
-.flowchart-node > strong { position: relative; z-index: 1; display: -webkit-box; overflow: hidden; color: inherit; font-size: 10px; font-weight: 850; line-height: 1.2; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
-.flowchart-node.interactive { cursor: pointer; }
-.flowchart-node.interactive:hover,.flowchart-node.can-drop,.flowchart-node.drag-over { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59,130,246,.14),0 9px 18px rgba(30,64,175,.12); transform: translateY(-2px); }
-.flowchart-node.selected-slot { border-color: #2563eb; box-shadow: 0 0 0 5px rgba(37,99,235,.18),0 0 20px rgba(59,130,246,.2); }
-.flowchart-node.flow-slot-placeholder { color: #64748b; background: repeating-linear-gradient(-45deg,#f8fafc 0 7px,#f1f5f9 7px 14px); border: 2px dashed #94a3b8; border-radius: 16px; box-shadow: none; animation: flowSlotPulse 1.8s ease-in-out infinite; }
-.flowchart-node.flow-slot-placeholder::before { content: "👆"; position: absolute; z-index: 3; right: 6px; bottom: 4px; opacity: 0; font-size: 13px; transform: translateY(3px) scale(.8); transition: opacity .16s ease,transform .16s ease; }
-.flowchart-node.flow-slot-placeholder:hover::before,.flowchart-node.flow-slot-placeholder.selected-slot::before { opacity: 1; transform: translateY(0) scale(1); }
-.flowchart-question { width: 28px; height: 28px; display: grid; place-items: center; color: #64748b; background: #fff; border: 1px dashed #94a3b8; border-radius: 50%; font-size: 18px; font-weight: 950; }
-.flowchart-node.flow-slot-placeholder small { color: #64748b; font-size: 8px; font-weight: 850; }
-.flowchart-node.flow-symbol-startEnd { background: #dbeafe; border-color: #64748b; border-radius: 999px; }
-.flowchart-node.flow-symbol-process { background: #dcfce7; border-color: #4d7c0f; border-radius: 7px; }
-.flowchart-node.flow-symbol-decision { padding-inline: 22px; background: #fef3c7; border-color: #a16207; clip-path: polygon(50% 0,100% 50%,50% 100%,0 50%); box-shadow: none; }
-.flowchart-node.flow-symbol-data { padding-inline: 21px; background: #dbeafe; border-color: #0369a1; clip-path: polygon(15% 0,100% 0,85% 100%,0 100%); }
-.flowchart-node.flow-symbol-document { background: #fff7ed; border-color: #a16207; border-radius: 6px 6px 16px 16px; }
-.flowchart-node.flow-symbol-document::after { content: "〰〰"; position: absolute; z-index: 1; bottom: -5px; color: #a16207; font-size: 20px; letter-spacing: -7px; line-height: 1; }
-.flowchart-node.flow-symbol-delay { background: #ffedd5; border-color: #c2410c; border-radius: 5px 999px 999px 5px; }
-.flowchart-node.flow-symbol-control { background: #f3e8ff; border-color: #7e22ce; border-radius: 6px; box-shadow: inset 5px 0 #d8b4fe,inset -5px 0 #d8b4fe,0 7px 15px rgba(15,23,42,.08); }
-.flowchart-node-symbol { position: relative; z-index: 1; height: 18px; display: grid; place-items: center; }
-.flowchart-node-symbol .flow-symbol-glyph { transform: scale(.82); }
-.flowchart-node-symbol .flow-symbol-glyph.flow-symbol-decision { transform: scale(.7) rotate(45deg); }
-.flowchart-placed-label { position: relative; z-index: 1; max-width: 100%; overflow: hidden; color: rgba(30,41,59,.7); font-size: 7px; font-weight: 850; line-height: 1; text-overflow: ellipsis; white-space: nowrap; }
-.flowchart-undo { position: absolute; z-index: 4; right: 5px; top: 5px; color: rgba(30,64,175,.7); }
-.flowchart-verdict { position: absolute; z-index: 5; top: 5px; right: 5px; width: 20px; height: 20px; padding: 3px; color: #fff; background: #10b981; border-radius: 50%; box-shadow: 0 3px 8px rgba(5,150,105,.25); }
-.flowchart-node.correct { border-color: #10b981; box-shadow: 0 0 0 5px rgba(16,185,129,.18),0 0 23px rgba(16,185,129,.32); animation: flowCorrectGlow .9s ease-in-out infinite alternate; }
-.flowchart-node.wrong { color: #9f1239; background: #fff1f2; border-color: #ef4444; box-shadow: 0 0 0 5px rgba(239,68,68,.15),0 0 22px rgba(239,68,68,.35); animation: flowWrongFlash .55s ease-in-out infinite; }
-.flowchart-node.wrong .flowchart-verdict { background: #ef4444; }
 .flowchart-status { min-height: 44px; display: flex; align-items: center; justify-content: center; margin-top: 2px; padding: 9px 13px; color: #475569; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 13px; font-size: 11px; font-weight: 750; text-align: center; }
 .flowchart-status.success { color: #047857; background: #ecfdf5; border-color: #6ee7b7; }
 .flowchart-status.error { color: #be123c; background: #fff1f2; border-color: #fda4af; }
@@ -1395,8 +1364,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .flowchart-touch-symbol { position: fixed; z-index: 300; left: -82px; top: -28px; min-width: 164px; min-height: 45px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 7px 10px; color: #1e3a8a; background: rgba(239,246,255,.97); border: 2px solid #3b82f6; border-radius: 12px; box-shadow: 0 17px 36px rgba(15,23,42,.25); pointer-events: none; font-size: 10px; font-weight: 900; }
 .flowchart-touch-symbol .flow-symbol-glyph { transform: scale(.9); }
 @keyframes flowSlotPulse { 50% { border-color: #3b82f6; box-shadow: 0 0 0 5px rgba(59,130,246,.08); } }
-@keyframes flowCorrectGlow { to { box-shadow: 0 0 0 8px rgba(16,185,129,.08),0 0 31px rgba(16,185,129,.48); } }
-@keyframes flowWrongFlash { 50% { background: #fee2e2; transform: translateX(-2px); } }
 
 .flowchart-brief-demo { background: linear-gradient(145deg,#f8fafc,#eff6ff); }
 .flowchart-demo-scene { position: absolute; inset: 0; }
@@ -1435,9 +1402,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .flowchart-diagram-heading { align-items: flex-start; flex-direction: column; gap: 5px; }
   .flowchart-diagram-heading h2 { font-size: 16px; }
   .flowchart-diagram-heading p { font-size: 8px; }
-  .flowchart-scroll { min-height: 436px; border-radius: 11px; }
-  .flowchart-canvas { min-height: 436px; }
-  .flowchart-edges { height: 436px; }
   .flowchart-status { min-height: 42px; font-size: 10px; }
   .flowchart-brief-demo .flowchart-demo-nodes { left: 74px; right: 8px; gap: 3px; }
   .flowchart-demo-mini-palette { left: 3px; transform: scale(.84); transform-origin: top center; }
@@ -1456,8 +1420,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 .flowchart-game { min-height: 0; grid-template-columns: minmax(0,1fr) 184px; align-items: stretch; padding: 11px; }
 .flowchart-diagram-card { min-height: 0; }
-.flowchart-vertical-viewport { position: relative; min-width: 0; min-height: 370px; height: min(520px,calc(100svh - 250px)); display: grid; place-items: center; overflow: hidden; background: linear-gradient(180deg,#f8fafc,#fff); border: 1px solid #e2e8f0; border-radius: 15px; }
-.flowchart-vertical-svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.flowchart-vertical-viewport { position: relative; min-width: 0; height: clamp(370px,calc(100svh - 300px),540px); display: flex; align-items: center; justify-content: center; overflow: visible; background: linear-gradient(180deg,#f8fafc,#fff); border: 1px solid #e2e8f0; border-radius: 15px; }
+.flowchart-fit-stage { position: relative; flex: 0 0 auto; }
+.flowchart-vertical-svg { position: absolute; inset: 0 auto auto 0; display: block; overflow: visible; transform-origin: 0 0; }
 .flowchart-edge path { fill: none; stroke: #94a3b8; stroke-width: 2; stroke-linecap: round; }
 .flowchart-edge.loop path { stroke: #7c3aed; stroke-dasharray: 5 4; }
 .flowchart-edge text { fill: #475569; font-size: 10px; font-weight: 850; text-anchor: middle; paint-order: stroke; stroke: #fff; stroke-width: 4px; stroke-linejoin: round; }
@@ -1469,7 +1434,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .flowchart-svg-node.interactive:hover .flowchart-svg-shape,.flowchart-svg-node.can-drop .flowchart-svg-shape,.flowchart-svg-node.drag-over .flowchart-svg-shape { filter: drop-shadow(0 0 5px rgba(59,130,246,.72)); }
 .flowchart-svg-node.selected-slot .flowchart-svg-placeholder { stroke: #2563eb; stroke-width: 3; filter: drop-shadow(0 0 7px rgba(37,99,235,.42)); }
 .flowchart-svg-placeholder { fill: url(#flowchart-slot-hatch); fill: #f8fafc; stroke: #94a3b8; stroke-width: 2.5; stroke-dasharray: 6 5; animation: flowSlotPulse 1.8s ease-in-out infinite; }
-.flowchart-svg-node-label { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; color: #1e293b; font-family: inherit; font-size: 10px; font-weight: 850; line-height: 1.13; text-align: center; word-break: break-word; }
+.flowchart-svg-node-label { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #1e293b; font-family: inherit; font-size: var(--flowchart-node-font,11px); font-weight: 850; line-height: 1.12; text-align: center; overflow-wrap: anywhere; hyphens: auto; }
 .flowchart-svg-question { fill: #64748b; font-size: 20px; font-weight: 950; }
 .flowchart-svg-slot-hint { fill: #64748b; font-size: 7px; font-weight: 850; text-anchor: middle; }
 .flowchart-svg-verdict { font-size: 20px; font-weight: 950; text-anchor: middle; }
@@ -1493,11 +1458,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .missing-process-step strong,.missing-process-slot > strong { font-size: 7px; line-height: 1.13; }
   .missing-process-slot > b { width: 20px; height: 20px; font-size: 13px; }
   .missing-process-options { grid-template-columns: 1fr; }
-  .flowchart-game { grid-template-columns: minmax(0,1fr) 53px; gap: 6px; padding: 6px; }
+  .flowchart-game { grid-template-columns: minmax(0,1fr); gap: 6px; padding: 6px; }
   .flowchart-palette { gap: 4px; padding: 4px; border-radius: 10px; }
   .flowchart-palette-head { display: none; }
-  .flowchart-symbol-list { gap: 4px; }
-  .flowchart-symbol-chip { min-height: 35px; display: grid; grid-template-columns: 1fr; justify-items: center; gap: 0; padding: 3px 1px; border-radius: 7px; }
+  .flowchart-palette { order: -1; }
+  .flowchart-symbol-list { grid-template-columns: repeat(7,minmax(0,1fr)); gap: 3px; }
+  .flowchart-symbol-chip { min-height: 36px; display: grid; grid-template-columns: 1fr; justify-items: center; gap: 0; padding: 3px 1px; border-radius: 7px; }
   .flowchart-symbol-chip > svg:first-child,.flowchart-symbol-chip > span:not(.flow-symbol-glyph),.flowchart-symbol-chip .flowchart-pointer { display: none; }
   .flowchart-symbol-glyph { transform: scale(.72); }
   .flowchart-symbol-glyph.flow-symbol-decision { transform: scale(.72) rotate(45deg); }
@@ -1505,9 +1471,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .flowchart-diagram-heading { align-items: center; flex-direction: row; gap: 5px; }
   .flowchart-diagram-heading h2 { font-size: 12px; }
   .flowchart-diagram-heading p { padding: 3px 5px; font-size: 7px; }
-  .flowchart-vertical-viewport { min-height: 315px; height: calc(100svh - 308px); max-height: 410px; border-radius: 10px; }
-  .flowchart-svg-node-label { font-size: 12px; line-height: 1.04; }
-  .flowchart-edge text { font-size: 11px; }
+  .flowchart-vertical-viewport { height: clamp(300px,calc(100svh - 375px),420px); border-radius: 10px; }
+  .flowchart-edge text { font-size: 10px; }
   .flowchart-status { min-height: 34px; padding: 7px 9px; font-size: 9px; }
   .flowchart-actions .button { min-width: 132px; min-height: 36px; }
   .teacher-session-list { padding: 14px; }

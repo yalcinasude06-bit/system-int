@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "npm run i18n:check && eslint .",
     "typecheck": "npm run i18n:check && tsc --noEmit",
-    "i18n:check": "node scripts/i18n-audit.mjs"
+    "i18n:check": "node scripts/i18n-audit.mjs",
+    "test:flowchart-responsive": "node --no-warnings --experimental-strip-types scripts/validate-flowchart-responsive.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "latest",
