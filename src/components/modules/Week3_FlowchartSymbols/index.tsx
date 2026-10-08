@@ -17,6 +17,7 @@ import {
   type FlowchartDiagram,
   type FlowSymbol,
 } from "./flowchartContent";
+import { arrowPolygon, buildFlowEdgeRoutes } from "./flowchartRouting";
 
 type Placement = Record<string, FlowSymbol | null>;
 type PlacementResult = {
@@ -103,34 +104,15 @@ function SymbolGlyph({ symbol }: { symbol: FlowSymbol }) {
   return <svg className={`flow-symbol-glyph flow-symbol-${symbol}`} viewBox="0 0 152 58" aria-hidden="true" preserveAspectRatio="xMidYMid meet"><FlowSymbolShape symbol={symbol} /></svg>;
 }
 
-function FlowEdges({ diagram, locale, layout }: { diagram: FlowchartDiagram; locale: Locale; layout: ResponsiveDiagramLayout }) {
-  const nodeById = new Map(diagram.nodes.map((node) => [node.id, node]));
-  const { width } = layout;
-  return <g aria-hidden="true">
-    <defs><marker id="flowchart-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" /></marker></defs>
-    {diagram.edges.map((edge, index) => {
-      const from = nodeById.get(edge.from);
-      const to = nodeById.get(edge.to);
-      if (!from || !to) return null;
-      const fromBox = layout.nodes[from.id];
-      const toBox = layout.nodes[to.id];
-      const goesDown = toBox.y >= fromBox.y;
-      const startX = fromBox.x + fromBox.width / 2;
-      const endX = toBox.x + toBox.width / 2;
-      const startY = goesDown ? fromBox.y + fromBox.height : fromBox.y;
-      const endY = goesDown ? toBox.y : toBox.y + toBox.height;
-      const direction = goesDown ? 1 : -1;
-      const controlDistance = Math.max(26, Math.abs(endY - startY) * .4);
-      const path = edge.loop
-        ? `M ${startX} ${startY} C ${width - 14} ${startY + direction * 42}, ${width - 14} ${endY - direction * 42}, ${endX} ${endY}`
-        : `M ${startX} ${startY} C ${startX} ${startY + direction * controlDistance}, ${endX} ${endY - direction * controlDistance}, ${endX} ${endY}`;
-      const labelX = edge.loop ? width - 28 : (startX + endX) / 2 + 10;
-      const labelY = edge.loop ? (startY + endY) / 2 : (startY + endY) / 2;
-      return <g className={edge.loop ? "flowchart-edge loop" : "flowchart-edge"} key={`${edge.from}:${edge.to}:${index}`}>
-        <path d={path} markerEnd="url(#flowchart-arrow)" />
-        {edge.label && <text x={labelX} y={labelY}>{edge.label[locale]}</text>}
-      </g>;
-    })}
+function FlowEdges({ diagram, locale, layout, layer }: { diagram: FlowchartDiagram; locale: Locale; layout: ResponsiveDiagramLayout; layer: "paths" | "overlays" }) {
+  const routes = buildFlowEdgeRoutes(diagram, layout);
+  return <g aria-hidden="true" className={`flowchart-edges flowchart-edges-${layer}`}>
+    {routes.map((route) => <g className={route.edge.loop ? "flowchart-edge loop" : "flowchart-edge"} key={route.key}>
+      {layer === "paths" ? <path d={route.path} /> : <>
+        <polygon className="flowchart-arrowhead" points={arrowPolygon(route.end, route.endDirection)} />
+        {route.edge.label && route.label && <text className="flowchart-edge-label" x={route.label.x} y={route.label.y} textAnchor={route.label.anchor ?? "middle"}>{route.edge.label[locale]}</text>}
+      </>}
+    </g>)}
   </g>;
 }
 
@@ -177,8 +159,7 @@ export function Week3FlowchartSymbols({
     return () => media.removeEventListener("change", update);
   }, []);
   const current = rounds[Math.min(levelIndex, rounds.length - 1)];
-  const denseDiagram = compactDiagram || Math.max(...current.nodes.map((node) => node.column)) >= 8;
-  const layout = useMemo(() => createResponsiveDiagramLayout(current, locale, denseDiagram), [current, denseDiagram, locale]);
+  const layout = useMemo(() => createResponsiveDiagramLayout(current, locale, compactDiagram), [compactDiagram, current, locale]);
   const blankNodes = current.nodes.filter((node) => node.blank);
   const allFilled = blankNodes.every((node) => placements[node.id]);
 
@@ -194,6 +175,7 @@ export function Week3FlowchartSymbols({
           Math.max(1, viewport.clientHeight - 4),
           layout.width,
           layout.height,
+          layout.compact ? .92 : .84,
         );
         setDiagramScale((currentScale) => Math.abs(currentScale - nextScale) < .002 ? currentScale : nextScale);
       });
@@ -207,7 +189,7 @@ export function Week3FlowchartSymbols({
       window.removeEventListener("orientationchange", updateScale);
       window.cancelAnimationFrame(animationFrame);
     };
-  }, [layout.height, layout.width, locale]);
+  }, [layout.compact, layout.height, layout.width, locale]);
 
   const submitResult = useCallback(async (submission: ModuleSubmission) => {
     setSubmitting(true);
@@ -425,10 +407,10 @@ export function Week3FlowchartSymbols({
       <motion.div key={current.id} className={`flowchart-game ${phase}`} initial={{ opacity: 0, y: 14 }} animate={phase === "error" ? { opacity: 1, x: [0, -7, 7, -5, 4, 0] } : { opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: phase === "error" ? .48 : .3 }}>
         <div className="flowchart-diagram-card">
           <header className="flowchart-diagram-heading"><div><span>{text.levels[levelIndex]}</span><h2 data-i18n-skip>{current.title[locale]}</h2></div><p>{blankNodes.length} {locale === "tr" ? "boş sembol" : "empty symbols"}</p></header>
-          <div ref={diagramViewportRef} className="flowchart-vertical-viewport" data-diagram-id={current.id} data-diagram-scale={diagramScale.toFixed(4)}>
+          <div ref={diagramViewportRef} className="flowchart-vertical-viewport" data-diagram-id={current.id} data-diagram-scale={diagramScale.toFixed(4)} data-compact={layout.compact}>
             <div className="flowchart-fit-stage" style={stageStyle}>
             <svg className="flowchart-vertical-svg" width={layout.width} height={layout.height} viewBox={`0 0 ${layout.width} ${layout.height}`} style={svgStyle} role="img" aria-label={current.title[locale]} preserveAspectRatio="xMinYMin meet">
-              <FlowEdges diagram={current} locale={locale} layout={layout} />
+              <FlowEdges diagram={current} locale={locale} layout={layout} layer="paths" />
               {current.nodes.map((node) => {
                 const placement = node.blank ? placements[node.id] : null;
                 const slotResult = resultBySlot.get(node.id);
@@ -457,6 +439,7 @@ export function Week3FlowchartSymbols({
                   {phase === "error" && slotResult && !slotResult.correct && <text x={box.x + box.width - 11} y={box.y + 15} className="flowchart-svg-verdict wrong">×</text>}
                 </g>;
               })}
+              <FlowEdges diagram={current} locale={locale} layout={layout} layer="overlays" />
             </svg>
             </div>
           </div>

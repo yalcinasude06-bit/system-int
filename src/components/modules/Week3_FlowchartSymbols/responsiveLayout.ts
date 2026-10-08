@@ -14,12 +14,16 @@ export type ResponsiveDiagramLayout = {
   height: number;
   compact: boolean;
   fontSize: number;
+  /** Reserved, obstacle-free lanes used by return arrows. */
+  loopLanes: number[];
   nodes: Record<string, FlowNodeBox>;
 };
 
 const rowCenters: Record<"regular" | "compact", Record<FlowRow, number>> = {
-  regular: { top: 130, main: 350, bottom: 570 },
-  compact: { top: 88, main: 180, bottom: 272 },
+  // The diagram reads from top to bottom. Branches occupy horizontal rows,
+  // while the area at the far right is deliberately left clear for loops.
+  regular: { top: 160, main: 420, bottom: 680 },
+  compact: { top: 100, main: 215, bottom: 330 },
 };
 
 const horizontalPadding: Record<FlowSymbol, number> = {
@@ -54,20 +58,20 @@ function wrappedLineCount(text: string, contentWidth: number, fontSize: number) 
 
 export function measureFlowNode(node: FlowNode, locale: Locale, compact: boolean) {
   const text = node.text[locale];
-  const fontSize = compact ? 10 : 12;
+  const fontSize = compact ? 11 : 12;
   const onMainTrack = (node.row ?? "main") === "main";
-  const minWidth = compact ? (onMainTrack ? 140 : 126) : 154;
-  const maxWidth = compact ? (onMainTrack ? 240 : 166) : 212;
+  const minWidth = compact ? (onMainTrack ? 172 : 136) : (onMainTrack ? 184 : 164);
+  const maxWidth = compact ? (onMainTrack ? 214 : 166) : (onMainTrack ? 260 : 214);
   // Any palette symbol can be placed into a blank node. Measure those slots
   // against the narrowest usable shape (decision) so even an incorrect
   // placement cannot squeeze the label outside its temporary shape.
   const padding = horizontalPadding[node.blank ? "decision" : node.symbol] * (compact ? .72 : 1);
-  const desiredLines = compact && onMainTrack ? 2 : text.length > (compact ? 27 : 34) ? 3 : 2;
+  const desiredLines = text.length > (compact ? 25 : 34) ? 3 : 2;
   const textPixels = text.length * fontSize * .54;
   const width = Math.round(Math.max(minWidth, Math.min(maxWidth, textPixels / desiredLines + padding)));
   const contentWidth = Math.max(42, width - padding);
   const lines = wrappedLineCount(text, contentWidth, fontSize);
-  const minimumHeight = compact ? 29 : 52;
+  const minimumHeight = compact ? 44 : 54;
   const lineHeight = fontSize * 1.12;
   const bottomInset = node.blank || node.symbol === "document" ? .18 : .08;
   const usableHeightRatio = 1 - .08 - bottomInset;
@@ -77,9 +81,12 @@ export function measureFlowNode(node: FlowNode, locale: Locale, compact: boolean
 
 export function createResponsiveDiagramLayout(diagram: FlowchartDiagram, locale: Locale, compact: boolean): ResponsiveDiagramLayout {
   const mode = compact ? "compact" : "regular";
-  const width = compact ? 360 : 700;
-  const columnGap = compact ? 3 : 18;
-  const outerPadding = compact ? 7 : 18;
+  // Do not switch a wide screen to a narrow canvas just because a diagram has
+  // many columns. Height is scrollable in the viewport; horizontal geometry
+  // stays readable and reserves a proper return lane.
+  const width = compact ? 470 : 900;
+  const columnGap = compact ? 16 : 28;
+  const outerPadding = compact ? 18 : 28;
   const measurements = new Map(diagram.nodes.map((node) => [node.id, measureFlowNode(node, locale, compact)]));
   const columns = [...new Set(diagram.nodes.map((node) => node.column))].sort((a, b) => a - b);
   const columnTops = new Map<number, number>();
@@ -105,12 +112,15 @@ export function createResponsiveDiagramLayout(diagram: FlowchartDiagram, locale:
     width,
     height: Math.max(1, cursor - columnGap + outerPadding),
     compact,
-    fontSize: compact ? 10 : 12,
+    fontSize: compact ? 11 : 12,
+    loopLanes: compact ? [452, 430] : [866, 830],
     nodes,
   };
 }
 
-export function fitDiagramScale(availableWidth: number, availableHeight: number, naturalWidth: number, naturalHeight: number) {
-  if (!availableWidth || !availableHeight || !naturalWidth || !naturalHeight) return 1;
-  return Math.max(.1, Math.min(1, availableWidth / naturalWidth, availableHeight / naturalHeight));
+export function fitDiagramScale(availableWidth: number, _availableHeight: number, naturalWidth: number, _naturalHeight: number, minimumScale = .84) {
+  if (!availableWidth || !naturalWidth) return 1;
+  // Height must not shrink type: long diagrams scroll in their own viewport.
+  // On a narrow screen a small horizontal rail is preferable to 7px labels.
+  return Math.max(minimumScale, Math.min(1, availableWidth / naturalWidth));
 }

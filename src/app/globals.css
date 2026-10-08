@@ -1420,14 +1420,16 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 .flowchart-game { min-height: 0; grid-template-columns: minmax(0,1fr) 184px; align-items: stretch; padding: 11px; }
 .flowchart-diagram-card { min-height: 0; }
-.flowchart-vertical-viewport { position: relative; min-width: 0; height: clamp(370px,calc(100svh - 300px),540px); display: flex; align-items: center; justify-content: center; overflow: visible; background: linear-gradient(180deg,#f8fafc,#fff); border: 1px solid #e2e8f0; border-radius: 15px; }
+.flowchart-vertical-viewport { position: relative; min-width: 0; height: clamp(430px,calc(100svh - 270px),640px); display: flex; align-items: flex-start; justify-content: center; overflow: auto; overscroll-behavior: contain; scrollbar-color: #94a3b8 #f1f5f9; scrollbar-width: thin; background: linear-gradient(180deg,#f8fafc,#fff); border: 1px solid #e2e8f0; border-radius: 15px; }
 .flowchart-fit-stage { position: relative; flex: 0 0 auto; }
 .flowchart-vertical-svg { position: absolute; inset: 0 auto auto 0; display: block; overflow: visible; transform-origin: 0 0; }
-.flowchart-edge path { fill: none; stroke: #94a3b8; stroke-width: 2; stroke-linecap: round; }
-.flowchart-edge.loop path { stroke: #7c3aed; stroke-dasharray: 5 4; }
-.flowchart-edge text { fill: #475569; font-size: 10px; font-weight: 850; text-anchor: middle; paint-order: stroke; stroke: #fff; stroke-width: 4px; stroke-linejoin: round; }
-.flowchart-edge.loop text { fill: #6d28d9; }
-.flowchart-vertical-svg marker path { fill: #94a3b8; }
+.flowchart-edges { pointer-events: none; }
+.flowchart-edge path { fill: none; stroke: #64748b; stroke-width: 2.25; stroke-linecap: round; stroke-linejoin: round; }
+.flowchart-edge.loop path { stroke: #7c3aed; stroke-dasharray: 6 4; }
+.flowchart-arrowhead { fill: #64748b; stroke: #fff; stroke-width: .75; stroke-linejoin: round; }
+.flowchart-edge.loop .flowchart-arrowhead { fill: #7c3aed; }
+.flowchart-edge-label { fill: #334155; font-size: 10px; font-weight: 900; dominant-baseline: central; paint-order: stroke; stroke: #fff; stroke-width: 5px; stroke-linejoin: round; }
+.flowchart-edge.loop .flowchart-edge-label { fill: #6d28d9; }
 .flowchart-svg-node { outline: none; }
 .flowchart-svg-node.interactive { cursor: pointer; }
 .flowchart-svg-shape { vector-effect: non-scaling-stroke; transition: filter .16s ease,opacity .16s ease; }
@@ -1444,11 +1446,13 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .flowchart-svg-node.wrong .flowchart-svg-shape { fill: #fff1f2; stroke: #ef4444; filter: drop-shadow(0 0 7px rgba(239,68,68,.6)); }
 
 @media (max-width: 960px) {
-  .flowchart-game { grid-template-columns: minmax(0,1fr) 164px; }
+  .flowchart-game { grid-template-columns: minmax(0,1fr); }
   .flowchart-palette { padding: 9px; }
-  .flowchart-symbol-list { display: grid; grid-template-columns: 1fr; gap: 4px; }
-  .flowchart-symbol-chip { min-height: 36px; display: grid; grid-template-columns: 12px 30px minmax(0,1fr) 12px; justify-items: stretch; padding: 3px 5px; text-align: left; }
-  .flowchart-symbol-chip > svg:first-child,.flowchart-symbol-chip > span:not(.flow-symbol-glyph),.flowchart-symbol-chip .flowchart-pointer { display: inline; }
+  .flowchart-palette { order: -1; }
+  .flowchart-symbol-list { display: grid; grid-template-columns: repeat(7,minmax(0,1fr)); gap: 5px; }
+  .flowchart-symbol-chip { min-height: 42px; display: grid; grid-template-columns: 1fr; justify-items: center; gap: 0; padding: 4px 2px; text-align: center; }
+  .flowchart-symbol-chip > svg:first-child,.flowchart-symbol-chip > span:not(.flow-symbol-glyph),.flowchart-symbol-chip .flowchart-pointer { display: none; }
+  .flowchart-symbol-glyph,.flowchart-symbol-glyph.flow-symbol-decision { transform: scale(.88); }
 }
 
 @media (max-width: 620px) {
@@ -1471,8 +1475,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .flowchart-diagram-heading { align-items: center; flex-direction: row; gap: 5px; }
   .flowchart-diagram-heading h2 { font-size: 12px; }
   .flowchart-diagram-heading p { padding: 3px 5px; font-size: 7px; }
-  .flowchart-vertical-viewport { height: clamp(300px,calc(100svh - 375px),420px); border-radius: 10px; }
-  .flowchart-edge text { font-size: 10px; }
+  .flowchart-vertical-viewport { height: clamp(360px,calc(100svh - 340px),480px); justify-content: flex-start; border-radius: 10px; }
+  .flowchart-edge-label { font-size: 10px; }
   .flowchart-status { min-height: 34px; padding: 7px 9px; font-size: 9px; }
   .flowchart-actions .button { min-width: 132px; min-height: 36px; }
   .teacher-session-list { padding: 14px; }

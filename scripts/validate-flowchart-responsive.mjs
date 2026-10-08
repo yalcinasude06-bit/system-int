@@ -1,5 +1,6 @@
 import { flowchartPool } from "../src/components/modules/Week3_FlowchartSymbols/flowchartContent.ts";
 import { createResponsiveDiagramLayout, fitDiagramScale, measureFlowNode } from "../src/components/modules/Week3_FlowchartSymbols/responsiveLayout.ts";
+import { buildFlowEdgeRoutes } from "../src/components/modules/Week3_FlowchartSymbols/flowchartRouting.ts";
 
 const viewports = [
   { width: 360, height: 740, diagramWidth: 298, diagramHeight: 365 },
@@ -15,15 +16,20 @@ for (const viewport of viewports) {
   for (const locale of locales) {
     for (const diagram of flowchartPool) {
       combinations += 1;
-      const maxColumn = Math.max(...diagram.nodes.map((node) => node.column));
-      const compact = viewport.width <= 620 || maxColumn >= 8;
+      const compact = viewport.width <= 620;
       const layout = createResponsiveDiagramLayout(diagram, locale, compact);
-      const scale = fitDiagramScale(viewport.diagramWidth, viewport.diagramHeight, layout.width, layout.height);
+      const minimumScale = compact ? .92 : .84;
+      const scale = fitDiagramScale(viewport.diagramWidth, viewport.diagramHeight, layout.width, layout.height, minimumScale);
       const scaledWidth = layout.width * scale;
-      const scaledHeight = layout.height * scale;
 
-      if (scaledWidth > viewport.diagramWidth + .01 || scaledHeight > viewport.diagramHeight + .01) {
-        failures.push(`${viewport.width}x${viewport.height}/${locale}/${diagram.id}: stage exceeds its viewport`);
+      if (scale + .001 < minimumScale) {
+        failures.push(`${viewport.width}x${viewport.height}/${locale}/${diagram.id}: labels were scaled below the readable minimum`);
+      }
+      if (!compact && scaledWidth > viewport.diagramWidth + .01) {
+        failures.push(`${viewport.width}x${viewport.height}/${locale}/${diagram.id}: desktop stage exceeds its viewport`);
+      }
+      if (compact && scaledWidth <= viewport.diagramWidth) {
+        failures.push(`${viewport.width}x${viewport.height}/${locale}/${diagram.id}: compact stage unexpectedly lost its readable minimum width`);
       }
 
       for (const node of diagram.nodes) {
@@ -45,7 +51,6 @@ for (const viewport of viewports) {
         for (let right = left + 1; right < diagram.nodes.length; right += 1) {
           const firstNode = diagram.nodes[left];
           const secondNode = diagram.nodes[right];
-          if (firstNode.column !== secondNode.column) continue;
           const first = layout.nodes[firstNode.id];
           const second = layout.nodes[secondNode.id];
           const overlaps = first.x < second.x + second.width && first.x + first.width > second.x
@@ -54,9 +59,48 @@ for (const viewport of viewports) {
         }
       }
 
+      const routes = buildFlowEdgeRoutes(diagram, layout);
+      if (routes.length !== diagram.edges.length) failures.push(`${viewport.width}x${viewport.height}/${locale}/${diagram.id}: a route was not generated`);
+
       for (const edge of diagram.edges) {
         if (!layout.nodes[edge.from] || !layout.nodes[edge.to]) {
           failures.push(`${viewport.width}x${viewport.height}/${locale}/${diagram.id}: edge endpoint is missing`);
+        }
+      }
+
+      for (const route of routes) {
+        const target = layout.nodes[route.edge.to];
+        const epsilon = .01;
+        const endsAtTargetBoundary = route.endDirection === "bottom"
+          ? Math.abs(route.end.y - target.y) < epsilon
+          : route.endDirection === "top"
+            ? Math.abs(route.end.y - (target.y + target.height)) < epsilon
+            : route.endDirection === "right"
+              ? Math.abs(route.end.x - target.x) < epsilon
+              : Math.abs(route.end.x - (target.x + target.width)) < epsilon;
+        if (!endsAtTargetBoundary) failures.push(`${viewport.width}x${viewport.height}/${locale}/${diagram.id}/${route.key}: arrowhead misses its target boundary`);
+        if (route.end.x < 0 || route.end.x > layout.width || route.end.y < 0 || route.end.y > layout.height) {
+          failures.push(`${viewport.width}x${viewport.height}/${locale}/${diagram.id}/${route.key}: arrowhead leaves the canvas`);
+        }
+        if (route.label) {
+          for (const node of diagram.nodes) {
+            const box = layout.nodes[node.id];
+            if (route.label.x > box.x - 5 && route.label.x < box.x + box.width + 5 && route.label.y > box.y - 5 && route.label.y < box.y + box.height + 5) {
+              failures.push(`${viewport.width}x${viewport.height}/${locale}/${diagram.id}/${route.key}: edge label overlaps ${node.id}`);
+            }
+          }
+        }
+      }
+
+      if (diagram.edges.some((edge) => edge.loop)) {
+        for (const lane of layout.loopLanes) {
+          if (lane < 0 || lane > layout.width) failures.push(`${viewport.width}x${viewport.height}/${locale}/${diagram.id}: return lane leaves the canvas`);
+          for (const node of diagram.nodes) {
+            const box = layout.nodes[node.id];
+            if (lane >= box.x && lane <= box.x + box.width) {
+              failures.push(`${viewport.width}x${viewport.height}/${locale}/${diagram.id}: return lane crosses ${node.id}`);
+            }
+          }
         }
       }
     }
