@@ -1576,3 +1576,61 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .flowchart-demo-mini-palette { right: 9px; transform: none; }
   .flowchart-demo-hand { left: auto; right: 56px; }
 }
+
+/* Week 3 onboarding: one large action and one clear outcome per scene. */
+.week-three-demo { isolation: isolate; overflow: hidden; background: radial-gradient(circle at 50% 0,rgba(219,234,254,.78),transparent 50%),linear-gradient(145deg,#f8fafc,#eff6ff); }
+.week-three-demo-kicker { position: absolute; z-index: 5; left: 6%; top: 8%; padding: 3px 7px; color: #4338ca; background: rgba(255,255,255,.9); border: 1px solid #c7d2fe; border-radius: 999px; font-size: 7px; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
+.week-three-demo-hand { position: absolute; z-index: 10; display: block; font-size: clamp(17px,4vw,22px); line-height: 1; pointer-events: none; }
+
+.week-three-hierarchy-source { position: absolute; z-index: 2; left: 7%; top: 28%; width: 28%; display: grid; gap: 5px; }
+.week-three-hierarchy-source span,.week-three-hierarchy-flying-card { display: grid; place-items: center; min-height: 25px; padding: 4px 6px; color: #334155; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 4px 10px rgba(15,23,42,.08); font-size: clamp(7px,1.5vw,9px); font-weight: 850; line-height: 1.08; text-align: center; }
+.week-three-hierarchy-pyramid { position: absolute; right: 7%; top: 16%; width: 41%; display: grid; justify-items: center; gap: 5px; }
+.week-three-hierarchy-layer { width: 100%; min-height: 26px; display: grid; place-items: center; padding: 4px 7px; color: #475569; background: #fff; border: 1.5px dashed #94a3b8; border-radius: 7px; box-shadow: 0 4px 9px rgba(15,23,42,.05); text-align: center; }
+.week-three-hierarchy-layer small { font-size: clamp(7px,1.4vw,9px); font-weight: 900; line-height: 1.05; }
+.week-three-hierarchy-layer.core { width: 58%; border-radius: 9px 9px 4px 4px; }
+.week-three-hierarchy-layer.subprocess { width: 78%; }
+.week-three-hierarchy-layer.activity { border-radius: 4px 4px 9px 9px; }
+.week-three-hierarchy-flying-card { position: absolute; z-index: 7; width: 27%; color: #312e81; border-color: #818cf8; box-shadow: 0 9px 18px rgba(79,70,229,.22); }
+.week-three-demo-verdict { position: absolute; z-index: 9; width: 25px; height: 25px; display: grid; place-items: center; border-radius: 50%; font-size: 17px; font-weight: 950; }
+.week-three-demo-verdict.correct { right: 10%; bottom: 10%; color: #fff; background: #10b981; box-shadow: 0 0 0 5px rgba(16,185,129,.16); }
+.week-three-demo-verdict.wrong { right: 18%; top: 37%; color: #fff; background: #ef4444; box-shadow: 0 0 0 5px rgba(239,68,68,.14); }
+
+.week-three-missing-chain { position: absolute; left: 5%; right: 5%; top: 15%; display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1.16fr) auto minmax(0,1fr); align-items: center; gap: 5px; }
+.week-three-missing-chain > span:not(.week-three-missing-slot),.week-three-missing-options > span,.week-three-missing-flying-option { min-height: 31px; display: grid; place-items: center; padding: 4px; color: #334155; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 3px 8px rgba(15,23,42,.06); font-size: clamp(7px,1.45vw,9px); font-weight: 850; line-height: 1.1; text-align: center; }
+.week-three-missing-chain > b { color: #94a3b8; font-size: 15px; }
+.week-three-missing-slot { position: relative; min-height: 45px; display: grid; place-items: center; overflow: hidden; color: #64748b; border: 2px dashed #94a3b8; border-radius: 10px; box-shadow: inset 0 1px rgba(255,255,255,.85); }
+.week-three-missing-slot i { color: #6366f1; font-size: 20px; font-style: normal; font-weight: 950; }
+.week-three-missing-slot small { position: absolute; inset: 0; display: grid; place-items: center; padding: 4px; color: #047857; font-size: clamp(7px,1.45vw,9px); font-weight: 900; line-height: 1.05; text-align: center; }
+.week-three-missing-slot em { position: absolute; color: #dc2626; font-size: 24px; font-style: normal; font-weight: 950; }
+.week-three-missing-options { position: absolute; left: 5%; right: 5%; bottom: 9%; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; }
+.week-three-missing-flying-option { position: absolute; z-index: 7; width: 27%; color: #166534; border-color: #86efac; box-shadow: 0 9px 17px rgba(16,185,129,.18); }
+.week-three-missing-flying-option.wrong { color: #be123c; border-color: #fda4af; box-shadow: 0 9px 17px rgba(239,68,68,.16); }
+
+.week-three-flow-map { position: absolute; left: 18%; right: 3%; top: 5%; bottom: 2%; width: 79%; height: 93%; overflow: visible; }
+.week-three-flow-line { fill: none; stroke: #64748b; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.week-three-flow-line.return { stroke: #7c3aed; stroke-dasharray: 5 4; }
+.week-three-flow-map marker path { fill: #64748b; }
+.week-three-flow-slot { fill: #f8fafc; stroke: #94a3b8; stroke-width: 2; stroke-dasharray: 5 4; }
+.week-three-flow-text { fill: #1e293b; font-size: 10px; font-weight: 900; text-anchor: middle; dominant-baseline: middle; }
+.week-three-flow-label { fill: #6d28d9; font-size: 8px; font-weight: 900; text-anchor: middle; paint-order: stroke; stroke: #fff; stroke-width: 3px; }
+.week-three-flow-wrong-symbol .flowchart-svg-shape { fill: #fff1f2; stroke: #ef4444; }
+.week-three-flow-palette { position: absolute; z-index: 4; left: 4%; top: 13%; width: 13%; display: grid; gap: 7px; }
+.week-three-flow-palette > span { min-height: 32px; display: grid; grid-template-columns: 1fr; place-items: center; gap: 1px; padding: 3px; color: #334155; background: rgba(255,255,255,.94); border: 1px solid #cbd5e1; border-radius: 7px; box-shadow: 0 4px 9px rgba(15,23,42,.07); }
+.week-three-flow-palette .flowchart-demo-symbol { width: 34px; height: 16px; }
+.week-three-flow-palette small { overflow: hidden; max-width: 100%; font-size: clamp(6px,1.15vw,7px); font-weight: 900; line-height: 1; text-align: center; }
+.week-three-flow-moving-symbol { position: absolute; z-index: 8; width: 14%; display: grid; place-items: center; padding: 4px; background: rgba(255,255,255,.97); border: 1px solid #86efac; border-radius: 8px; box-shadow: 0 8px 17px rgba(16,185,129,.18); }
+.week-three-flow-moving-symbol.wrong { border-color: #fda4af; box-shadow: 0 8px 17px rgba(239,68,68,.16); }
+.week-three-flow-moving-symbol .flowchart-demo-symbol { width: 100%; height: auto; }
+
+@media (max-width: 620px) {
+  .week-three-demo-kicker { font-size: 6px; }
+  .week-three-hierarchy-source { width: 30%; }
+  .week-three-hierarchy-pyramid { width: 43%; }
+  .week-three-hierarchy-source span,.week-three-hierarchy-flying-card { min-height: 23px; padding: 3px 4px; }
+  .week-three-missing-chain { gap: 3px; }
+  .week-three-missing-chain > span:not(.week-three-missing-slot),.week-three-missing-options > span,.week-three-missing-flying-option { min-height: 29px; padding: 3px; }
+  .week-three-flow-map { left: 16%; width: 81%; }
+  .week-three-flow-palette { left: 2%; width: 14%; }
+  .week-three-flow-palette > span { min-height: 29px; }
+  .week-three-flow-palette .flowchart-demo-symbol { width: 28px; }
+}

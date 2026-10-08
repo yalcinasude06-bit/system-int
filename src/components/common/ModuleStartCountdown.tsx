@@ -41,12 +41,12 @@ const weekThreeModuleOneBrief: Record<"tr" | "en", ModuleBrief> = {
   tr: {
     icon: "🔺",
     title: "Modül 1: Süreç Hiyerarşisi",
-    description: "Yandaki üç örneği piramidin doğru katmanına bırak; üçü de doğruysa piramit tamamlanır, yanlışsa kırmızı yanar ve sıradaki piramide geçilir. 5 piramit tamamlanacak.",
+    description: "Kartı doğru piramit katmanına bırak.",
   },
   en: {
     icon: "🔺",
     title: "Module 1: Process Hierarchy",
-    description: "Place the three examples on the correct pyramid layers. If all three are correct, the pyramid is complete; otherwise, the incorrect slots turn red and the next pyramid begins. Complete 5 pyramids.",
+    description: "Drag the card to its correct pyramid layer.",
   },
 };
 
@@ -54,12 +54,12 @@ const weekThreeModuleTwoBrief: Record<"tr" | "en", ModuleBrief> = {
   tr: {
     icon: "⬛",
     title: "Modül 2: Kara Kutuda Eksik Adım",
-    description: "Süreç zincirindeki eksik adımı bul; üç seçenekten doğru olanı seç. Kesikli boş yuva doğru adımı kısa süre gösterir; yanlış seçim kırmızıyla vurgulanır.",
+    description: "Eksik adımı seç; süreç zincirini tamamla.",
   },
   en: {
     icon: "⬛",
     title: "Module 2: Missing Step in the Black Box",
-    description: "Find the missing step in the process chain and choose the correct option from three choices. The dashed slot briefly shows the correct step, while an incorrect choice is highlighted in red.",
+    description: "Choose the missing step to complete the process chain.",
   },
 };
 
@@ -67,12 +67,12 @@ const weekThreeModuleThreeBrief: Record<"tr" | "en", ModuleBrief> = {
   tr: {
     icon: "◇",
     title: "Modül 3: Akış Diyagramı Sembolleri",
-    description: "Akış diyagramındaki boş adımlara doğru sembolü sürükle. Süre yok; hazır olunca Kontrol Et'e bas. Tümü doğruysa sıradaki seviyeye, yanlış varsa kırmızı yanıp sıradaki seviyeye geçilir. Kolay → Orta → Zor, 3 seviye.",
+    description: "Sembolü boş şekle bırak; karar dalını takip et.",
   },
   en: {
     icon: "◇",
     title: "Module 3: Flowchart Symbols",
-    description: "Drag the correct symbol into each blank flowchart step. There is no time limit; press Check when ready. All correct moves to the next level; incorrect choices flash red before the next level. Easy → Medium → Hard, 3 levels.",
+    description: "Drag the symbol into the blank shape; follow the decision branch.",
   },
 };
 
