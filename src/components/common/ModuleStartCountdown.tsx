@@ -78,12 +78,12 @@ const weekThreeModuleThreeBrief: Record<"tr" | "en", ModuleBrief> = {
 
 const weekFourModuleOneBrief: Record<"tr" | "en", ModuleBrief> = {
   tr: {
-    icon: "🧑‍💼",
+    icon: "💬",
     title: "Modül 1: Patronun Yaklaşımını Bul",
     description: "Patronun söylediğini oku, yaklaşımını seç!",
   },
   en: {
-    icon: "🧑‍💼",
+    icon: "💬",
     title: "Module 1: Find the Boss’s Approach",
     description: "Read the boss's statement and choose the approach!",
   },
@@ -92,13 +92,13 @@ const weekFourModuleOneBrief: Record<"tr" | "en", ModuleBrief> = {
 const weekFourModuleTwoBrief: Record<"tr" | "en", ModuleBrief> = {
   tr: {
     icon: "↔️",
-    title: "Modül 2: Sistem Süreci: Nedir, Ne Değildir?",
-    description: "Kartları doğru kutuya taşı, sonra kontrol et!",
+    title: "Modül 2: Sistem Nedir, Ne Değildir?",
+    description: "Kartları doğru alana sürükle.",
   },
   en: {
     icon: "↔️",
-    title: "Module 2: System Process: What It Is and Is Not",
-    description: "Move the cards to the correct boxes, then check!",
+    title: "Module 2: What Is and Is Not a System?",
+    description: "Drag the cards to the correct area.",
   },
 };
 

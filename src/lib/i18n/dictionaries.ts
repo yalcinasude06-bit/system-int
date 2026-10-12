@@ -664,9 +664,9 @@ Object.assign(dictionaries.en, {
   "Patronun Yaklaşımını Bul": "Find the Boss’s Approach",
   "10 farklı yönetici sözü": "10 different manager statements",
   "Yöneticinin kullandığı sistem yaklaşımını dört seçenek arasından belirle.": "Identify the systems approach used by the manager from four options.",
-  "Sistem Süreci: Nedir, Ne Değildir?": "System Process: What It Is and Is Not",
-  "12 kartlık sınıflandırma": "12-card classification",
-  "İfadeleri sistem süreci olan ve olmayan alanlara yerleştir.": "Place statements in the areas for what is and is not a system process.",
+  "Sistem Nedir, Ne Değildir?": "What Is and Is Not a System?",
+  "6 kartlık sınıflandırma": "6-card classification",
+  "Sistem düşüncesine uygun ifadeleri Sistemdir veya Uygun değil alanına yerleştir.": "Place statements that align with systems thinking in the System or Not suitable area.",
   "İlk kontrolde doğru:": "Correct on the first check:",
 });
 

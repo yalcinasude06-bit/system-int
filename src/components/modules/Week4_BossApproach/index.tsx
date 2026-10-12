@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Check, LockKeyhole, RotateCcw, Sparkles, X } from "lucide-react";
+import { Check, LockKeyhole, RotateCcw, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { useI18n } from "@/lib/i18n/I18nContext";
 import type { LearningModuleProps, ModuleDraft, ModuleSubmission } from "@/types";
 import { approachLabels, buildBossApproachRound, type ApproachId } from "./approachContent";
+import { BossPortrait } from "./BossPortrait";
 
 type BossAnswer = {
   questionId: string;
@@ -14,26 +15,19 @@ type BossAnswer = {
   isCorrect: boolean;
 };
 
-type DraftPayload = {
-  answers?: unknown;
-  currentIndex?: unknown;
-  reviewingQuestionId?: unknown;
-};
+type DraftPayload = { answers?: unknown; currentIndex?: unknown };
 
 const pointsPerQuestion = 10;
-const characters = ["🧑🏽‍💼", "👩🏻‍💼", "🧑🏼‍💻", "👨🏾‍🔧", "👩🏿‍🔬", "🧑🏻‍🏫", "👩🏼‍🚀", "🧑🏽‍⚖️"];
+const feedbackDuration = 1050;
 
 const copy = {
   tr: {
     title: "Hafta 4 · Modül 1: Patronun Yaklaşımını Bul",
     instruction: "Patronun sözünü oku ve kullandığı yaklaşımı seç.",
-    quote: "Patron şöyle diyor",
-    source: "Kaynak sayfa",
+    question: "Soru",
+    score: "Puan",
     correct: "Doğru yaklaşımı buldun.",
-    wrong: "Bu yaklaşım değil. Doğru yaklaşım aşağıda gösterildi.",
-    next: "Sonraki patron",
-    finish: "Sonuçları kaydet",
-    progress: "patron",
+    wrong: "Bu yaklaşım değil. Doğru yaklaşım yeşille gösterildi.",
     completed: "10 patronun yaklaşımını değerlendirdin",
     partial: "Kısmi yanıtın kaydedildi",
     completedDetail: "Her doğru yaklaşım 10 puandır. Öğretmen sonuçları açıklayana kadar puanın gizli kalır.",
@@ -46,13 +40,10 @@ const copy = {
   en: {
     title: "Week 4 · Module 1: Find the Boss’s Approach",
     instruction: "Read the boss’s statement and choose the approach being used.",
-    quote: "The boss says",
-    source: "Source page",
+    question: "Question",
+    score: "Score",
     correct: "You found the correct approach.",
-    wrong: "This is not the approach. The correct approach is shown below.",
-    next: "Next boss",
-    finish: "Save results",
-    progress: "boss",
+    wrong: "That is not the approach. The correct answer is highlighted in green.",
     completed: "You evaluated 10 bosses’ approaches",
     partial: "Your partial answer was saved",
     completedDetail: "Each correct approach is worth 10 points. Your score stays hidden until the teacher reveals the results.",
@@ -62,7 +53,7 @@ const copy = {
     saveError: "The answer could not be saved. Your progress is preserved.",
     retry: "Try saving again",
   },
-};
+} as const;
 
 function answersFromDraft(draft: ModuleDraft | null | undefined): BossAnswer[] {
   const payload = draft?.payload as DraftPayload | undefined;
@@ -70,8 +61,21 @@ function answersFromDraft(draft: ModuleDraft | null | undefined): BossAnswer[] {
   return payload.answers.filter((item): item is BossAnswer => {
     if (!item || typeof item !== "object") return false;
     const answer = item as Partial<BossAnswer>;
-    return typeof answer.questionId === "string" && typeof answer.selectedOptionId === "string" && typeof answer.correctOptionId === "string" && typeof answer.isCorrect === "boolean";
+    return typeof answer.questionId === "string"
+      && typeof answer.selectedOptionId === "string"
+      && typeof answer.correctOptionId === "string"
+      && typeof answer.isCorrect === "boolean";
   });
+}
+
+function characterVariant(seedKey: string, index: number) {
+  let hash = 2166136261;
+  const value = `${seedKey}:character`;
+  for (let cursor = 0; cursor < value.length; cursor += 1) {
+    hash ^= value.charCodeAt(cursor);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash + index * 3) >>> 0;
 }
 
 export function Week4BossApproach({
@@ -87,7 +91,9 @@ export function Week4BossApproach({
   const questions = useMemo(() => buildBossApproachRound(seedKey), [seedKey]);
   const hydratedAnswers = useMemo(() => answersFromDraft(existingDraft), [existingDraft]);
   const draftPayload = existingDraft?.payload as DraftPayload | undefined;
-  const initialIndex = typeof draftPayload?.currentIndex === "number" ? Math.max(0, Math.min(questions.length - 1, draftPayload.currentIndex)) : Math.min(hydratedAnswers.length, questions.length - 1);
+  const initialIndex = typeof draftPayload?.currentIndex === "number"
+    ? Math.max(0, Math.min(questions.length - 1, draftPayload.currentIndex))
+    : Math.min(hydratedAnswers.length, questions.length - 1);
   const [index, setIndex] = useState(initialIndex);
   const [answers, setAnswers] = useState<BossAnswer[]>(hydratedAnswers);
   const [selectedOptionId, setSelectedOptionId] = useState<ApproachId | null>(null);
@@ -96,13 +102,28 @@ export function Week4BossApproach({
   const [completed, setCompleted] = useState(false);
   const [finalSubmission, setFinalSubmission] = useState<ModuleSubmission | null>(null);
   const submissionStarted = useRef(false);
+  const answerLocked = useRef(false);
   const answersRef = useRef(hydratedAnswers);
+  const advanceTimer = useRef<number | null>(null);
   const current = questions[index]!;
   const existingAnswer = answers.find((answer) => answer.questionId === current.id);
   const selected = selectedOptionId ?? existingAnswer?.selectedOptionId ?? null;
   const isRevealed = Boolean(selected);
+  const visibleScore = answers.filter((answer) => answer.isCorrect).length * pointsPerQuestion;
 
-  const submissionFor = useCallback((nextAnswers: BossAnswer[], completionReason: "completed" | "teacher-ended" | "draft", nextIndex = index): ModuleSubmission => {
+  const clearAdvanceTimer = useCallback(() => {
+    if (advanceTimer.current !== null) window.clearTimeout(advanceTimer.current);
+    advanceTimer.current = null;
+  }, []);
+
+  useEffect(() => () => clearAdvanceTimer(), [clearAdvanceTimer]);
+
+  const submissionFor = useCallback((
+    nextAnswers: BossAnswer[],
+    completionReason: "completed" | "teacher-ended" | "draft",
+    nextIndex = index,
+    reviewingQuestionId: string | null = null,
+  ): ModuleSubmission => {
     const correctCount = nextAnswers.filter((answer) => answer.isCorrect).length;
     return {
       stage: 1,
@@ -112,7 +133,7 @@ export function Week4BossApproach({
         selectedQuestionIds: questions.map((question) => question.id),
         answers: nextAnswers,
         currentIndex: nextIndex,
-        reviewingQuestionId: isRevealed ? current.id : null,
+        reviewingQuestionId,
         correctCount,
         answeredCount: nextAnswers.length,
         questionCount: questions.length,
@@ -120,7 +141,7 @@ export function Week4BossApproach({
         completionReason,
       },
     };
-  }, [current.id, index, isRevealed, questions]);
+  }, [index, questions]);
 
   const submitResult = useCallback(async (submission: ModuleSubmission) => {
     setSubmitting(true);
@@ -133,19 +154,44 @@ export function Week4BossApproach({
   const finalize = useCallback(async (nextAnswers: BossAnswer[], completionReason: "completed" | "teacher-ended") => {
     if (submissionStarted.current || existingSubmission) return;
     submissionStarted.current = true;
-    const submission = submissionFor(nextAnswers, completionReason, index);
+    answerLocked.current = true;
+    clearAdvanceTimer();
+    const submission = submissionFor(nextAnswers, completionReason, index, current.id);
     setAnswers(nextAnswers);
     setFinalSubmission(submission);
     setCompleted(true);
     await submitResult(submission);
-  }, [existingSubmission, index, submissionFor, submitResult]);
+  }, [clearAdvanceTimer, current.id, existingSubmission, index, submissionFor, submitResult]);
+
+  const advance = useCallback(() => {
+    if (completed || existingSubmission || forceSubmit || submissionStarted.current) return;
+    clearAdvanceTimer();
+    if (index === questions.length - 1) {
+      void finalize(answersRef.current, "completed");
+      return;
+    }
+    const nextIndex = index + 1;
+    setIndex(nextIndex);
+    setSelectedOptionId(null);
+    answerLocked.current = false;
+    void onDraft?.(submissionFor(answersRef.current, "draft", nextIndex, null));
+  }, [clearAdvanceTimer, completed, existingSubmission, finalize, forceSubmit, index, onDraft, questions.length, submissionFor]);
+
+  useEffect(() => {
+    if (!selected || completed || existingSubmission || forceSubmit) return;
+    answerLocked.current = true;
+    clearAdvanceTimer();
+    advanceTimer.current = window.setTimeout(advance, feedbackDuration);
+    return clearAdvanceTimer;
+  }, [advance, clearAdvanceTimer, completed, existingSubmission, forceSubmit, selected]);
 
   useEffect(() => {
     if (forceSubmit && !completed && !existingSubmission) void finalize(answersRef.current, "teacher-ended");
   }, [completed, existingSubmission, finalize, forceSubmit]);
 
   const choose = useCallback((optionId: ApproachId) => {
-    if (selected || completed || existingSubmission || forceSubmit) return;
+    if (answerLocked.current || selected || completed || existingSubmission || forceSubmit) return;
+    answerLocked.current = true;
     const answer: BossAnswer = {
       questionId: current.id,
       selectedOptionId: optionId,
@@ -156,20 +202,8 @@ export function Week4BossApproach({
     answersRef.current = nextAnswers;
     setAnswers(nextAnswers);
     setSelectedOptionId(optionId);
-    void onDraft?.(submissionFor(nextAnswers, "draft", index));
+    void onDraft?.(submissionFor(nextAnswers, "draft", index, current.id));
   }, [completed, current.approachId, current.id, existingSubmission, forceSubmit, index, onDraft, selected, submissionFor]);
-
-  const next = useCallback(() => {
-    if (!selected || completed || existingSubmission || forceSubmit) return;
-    if (index === questions.length - 1) {
-      void finalize(answersRef.current, "completed");
-      return;
-    }
-    const nextIndex = index + 1;
-    setIndex(nextIndex);
-    setSelectedOptionId(null);
-    void onDraft?.(submissionFor(answersRef.current, "draft", nextIndex));
-  }, [completed, existingSubmission, finalize, forceSubmit, index, onDraft, questions.length, selected, submissionFor]);
 
   if (existingSubmission && !completed) {
     return <section className="panel module-shell boss-approach-shell"><div className="module-title-chip">{text.title}</div><div className="module-complete-card"><LockKeyhole size={42} /><h2>{text.locked}</h2><p>{text.lockedDetail}</p></div></section>;
@@ -180,21 +214,25 @@ export function Week4BossApproach({
   }
 
   const correctOption = current.approachId;
-  const character = characters[index % characters.length]!;
+  const portraitVariant = characterVariant(seedKey, index) % 8;
+
   return <section className="panel module-shell boss-approach-shell">
-    <div className="module-topline"><div className="module-title-chip">{text.title}</div><strong>{index + 1} / {questions.length}</strong></div>
-    <div className="boss-approach-progress" aria-label={`${index + 1} / ${questions.length}`}>{questions.map((question, questionIndex) => <span key={question.id} className={questionIndex < answers.length ? "done" : questionIndex === index ? "active" : ""} />)}</div>
+    <div className="boss-approach-hud">
+      <div className="module-title-chip">{text.title}</div>
+      <div><span>{text.question} {index + 1}/{questions.length}</span><span>{text.score}: {visibleScore}</span></div>
+    </div>
+    <div className="boss-approach-progress" aria-label={`${text.question} ${index + 1} / ${questions.length}`}>{questions.map((question, questionIndex) => <span key={question.id} className={questionIndex < answers.length ? "done" : questionIndex === index ? "active" : ""} />)}</div>
     <p className="boss-approach-instruction">{text.instruction}</p>
-    <article className="boss-quote-card">
-      <div className="boss-character" aria-hidden="true">{character}</div>
-      <div><small>{text.quote}</small><blockquote data-i18n-skip>“{current.speech[locale]}”</blockquote><span>{text.source}: {current.sourcePage}</span></div>
+    <article key={current.id} className="boss-dialogue-stage">
+      <div className="boss-character" aria-hidden="true"><BossPortrait variant={portraitVariant} /></div>
+      <blockquote className="boss-speech-bubble" data-i18n-skip>“{current.speech[locale]}”</blockquote>
     </article>
     <div className="boss-approach-options" aria-label={text.instruction}>
       {current.options.map((optionId) => {
         const isCorrect = optionId === correctOption;
         const isSelected = selected === optionId;
         return <button key={optionId} type="button" disabled={isRevealed} className={`${isRevealed && isCorrect ? "correct" : ""} ${isRevealed && isSelected && !isCorrect ? "wrong" : ""}`} onClick={() => choose(optionId)}>
-          {isRevealed && isCorrect ? <Check size={19} /> : isRevealed && isSelected ? <X size={19} /> : <span className="boss-option-marker" />}
+          {isRevealed && isCorrect ? <Check size={19} aria-hidden="true" /> : isRevealed && isSelected ? <X size={19} aria-hidden="true" /> : <span className="boss-option-marker" />}
           <span data-i18n-skip>{approachLabels[optionId][locale]}</span>
         </button>;
       })}
@@ -202,6 +240,5 @@ export function Week4BossApproach({
     <div className="boss-feedback" aria-live="polite">
       {isRevealed && <div className={selected === correctOption ? "correct" : "wrong"}><strong>{selected === correctOption ? text.correct : text.wrong}</strong><span data-i18n-skip>{current.explanation[locale]}</span></div>}
     </div>
-    {isRevealed && <Button className="boss-next-button" icon={<ArrowRight size={18} />} onClick={next}>{index === questions.length - 1 ? text.finish : text.next}</Button>}
   </section>;
 }

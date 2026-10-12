@@ -26,7 +26,7 @@ const weekThreeModules: typeof weekOneModules = [
 
 const weekFourModules: typeof weekOneModules = [
   { id: 1, title: "Patronun Yaklaşımını Bul", subtitle: "10 farklı yönetici sözü", description: "Yöneticinin kullandığı sistem yaklaşımını dört seçenek arasından belirle.", Icon: UsersRound },
-  { id: 2, title: "Sistem Süreci: Nedir, Ne Değildir?", subtitle: "12 kartlık sınıflandırma", description: "İfadeleri sistem süreci olan ve olmayan alanlara yerleştir.", Icon: ListChecks },
+  { id: 2, title: "Sistem Nedir, Ne Değildir?", subtitle: "6 kartlık sınıflandırma", description: "Sistem düşüncesine uygun ifadeleri Sistemdir veya Uygun değil alanına yerleştir.", Icon: ListChecks },
 ];
 
 export function WeekSelector({ activeWeek, onChange, disabled }: { activeWeek: number; onChange: (week: number) => void; disabled?: boolean }) {

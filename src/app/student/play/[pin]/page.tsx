@@ -221,6 +221,9 @@ export default function StudentPlayPage() {
     && typeof activeSubmission.payload.correctCount === "number"
     ? activeSubmission.payload.correctCount
     : null;
+  const firstCheckTotal = firstCheckCorrect !== null && typeof activeSubmission?.payload.cardCount === "number"
+    ? activeSubmission.payload.cardCount
+    : 6;
   const ranking = [...classmates].sort((a, b) => b.session_score - a.session_score || a.joined_at.localeCompare(b.joined_at));
   const ownRank = ranking.findIndex((item) => item.id === student.id) + 1;
   const studentNav = <Navbar studentContext={{ sessionTitle: session.title, week: session.selected_week, studentName: student.nickname, studentNumber: student.student_number, score: student.session_score, onLeave: () => { localStorage.removeItem(`system-lab:${pin}:student`); router.push("/"); } }} />;
@@ -245,7 +248,7 @@ export default function StudentPlayPage() {
       <span className="eyebrow">Modül {session.current_module} sonucu</span>
       <h1>{activeCompletionStatus === "completed" ? <>Tebrikler, <strong>{scoreEarned} puan</strong> aldın!</> : <>Bu turda <strong>{scoreEarned} puan</strong> topladın.</>}</h1>
       <span className={`student-result-status ${activeCompletionStatus}`}>{activeCompletionStatus === "completed" ? "Modül tamamlandı" : "Modül tamamlanmadı"}</span>
-      {firstCheckCorrect !== null && <p className="first-check-result">İlk kontrolde doğru: <strong>{firstCheckCorrect}/12</strong></p>}
+      {firstCheckCorrect !== null && <p className="first-check-result">İlk kontrolde doğru: <strong>{firstCheckCorrect}/{firstCheckTotal}</strong></p>}
       <div className="student-mini-leaderboard">
         <strong className="mini-leaderboard-title"><Trophy size={18} /> Canlı Liderlik</strong>
         <ol>{ranking.slice(0, 3).map((item, index) => <li key={item.id} className={item.id === student.id ? "is-me" : ""}><span aria-hidden="true">{["🥇", "🥈", "🥉"][index]}</span><b><span>{index + 1}. </span><span data-i18n-skip>{item.nickname}</span></b><strong>{item.session_score} puan</strong></li>)}</ol>

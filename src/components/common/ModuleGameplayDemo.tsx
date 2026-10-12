@@ -2,6 +2,7 @@
 
 import { MotionConfig, motion } from "framer-motion";
 import { type ReactNode, useEffect, useRef, useState } from "react";
+import { BossPortrait } from "@/components/modules/Week4_BossApproach/BossPortrait";
 import { FlowSymbolShape } from "@/components/modules/Week3_FlowchartSymbols/FlowSymbolShape";
 import type { FlowSymbol } from "@/components/modules/Week3_FlowchartSymbols/flowchartContent";
 import { useI18n } from "@/lib/i18n/I18nContext";
@@ -19,6 +20,13 @@ type FlowDemoLayout = {
   decision: RelativeRect;
   process: RelativeRect;
   target: RelativeRect;
+};
+
+type SystemDemoLayout = {
+  correct: RelativeRect;
+  wrong: RelativeRect;
+  system: RelativeRect;
+  trash: RelativeRect;
 };
 
 function getRelativeRect(container: DOMRect, element: Element): RelativeRect {
@@ -64,6 +72,46 @@ function useFlowDemoLayout() {
   return { demoRef, decisionPaletteRef, processPaletteRef, decisionSlotRef, layout };
 }
 
+function useSystemDemoLayout() {
+  const demoRef = useRef<HTMLDivElement>(null);
+  const correctCardRef = useRef<HTMLSpanElement>(null);
+  const wrongCardRef = useRef<HTMLSpanElement>(null);
+  const systemTargetRef = useRef<HTMLDivElement>(null);
+  const trashTargetRef = useRef<HTMLDivElement>(null);
+  const [layout, setLayout] = useState<SystemDemoLayout | null>(null);
+
+  useEffect(() => {
+    const measure = () => {
+      const demo = demoRef.current;
+      const correct = correctCardRef.current;
+      const wrong = wrongCardRef.current;
+      const system = systemTargetRef.current;
+      const trash = trashTargetRef.current;
+      if (!demo || !correct || !wrong || !system || !trash) return;
+      const demoRect = demo.getBoundingClientRect();
+      if (!demoRect.width || !demoRect.height) return;
+      setLayout({
+        correct: getRelativeRect(demoRect, correct),
+        wrong: getRelativeRect(demoRect, wrong),
+        system: getRelativeRect(demoRect, system),
+        trash: getRelativeRect(demoRect, trash),
+      });
+    };
+
+    measure();
+    const elements = [demoRef.current, correctCardRef.current, wrongCardRef.current, systemTargetRef.current, trashTargetRef.current].filter(Boolean) as Element[];
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
+    elements.forEach((element) => observer?.observe(element));
+    window.addEventListener("resize", measure);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, []);
+
+  return { demoRef, correctCardRef, wrongCardRef, systemTargetRef, trashTargetRef, layout };
+}
+
 const weekThreeDemoCopy = {
   tr: {
     hierarchy: { pool: "Kart havuzu", activity: "İş emri", core: "Temel süreç", subprocess: "Alt süreç", task: "Faaliyet", correct: "✓", wrong: "×" },
@@ -84,11 +132,11 @@ const weekFourDemoCopy = {
     otherApproach: "Mekanik Yaklaşım",
     analytical: "Analitik Yaklaşım",
     reductionist: "İndirgemeci Yaklaşım",
-    systemIs: "NEDİR?",
-    systemIsNot: "NE DEĞİLDİR?",
-    correctCard: "Geri bildirim, sürecin işleyişini yeniden değerlendirmeyi sağlar.",
-    wrongCard: "Sistem, birbirinden bağımsız parçaların toplamından ibarettir.",
-    check: "Kontrol Et",
+    systemIs: "Sistemdir",
+    systemIsNot: "Uygun değil",
+    correctCard: "Parçalar ilişkilidir",
+    wrongCard: "Çevre önemsizdir",
+    drag: "Kartları doğru alana sürükle.",
   },
   en: {
     bossQuote: "Let’s test the new method and measure the results.",
@@ -96,11 +144,11 @@ const weekFourDemoCopy = {
     otherApproach: "Mechanical Approach",
     analytical: "Analytical Approach",
     reductionist: "Reductionist Approach",
-    systemIs: "WHAT IT IS",
-    systemIsNot: "WHAT IT IS NOT",
-    correctCard: "Feedback enables us to reassess how a process works.",
-    wrongCard: "A system is merely the sum of parts that are independent from one another.",
-    check: "Check",
+    systemIs: "System",
+    systemIsNot: "Not suitable",
+    correctCard: "Parts are connected",
+    wrongCard: "The environment is irrelevant",
+    drag: "Drag the cards to the correct area.",
   },
 } as const;
 
@@ -259,7 +307,7 @@ function WeekFourBossApproachDemo() {
   const text = weekFourDemoCopy[locale];
   const transition = { duration: 4.3, repeat: Infinity, ease: "easeInOut" as const, times: [0, .24, .42, .67, 1] };
   return <div className="module-demo week-four-demo week-four-boss-demo" aria-hidden="true">
-    <div className="week-four-boss-avatar">🧑🏽‍💼</div>
+    <div className="week-four-boss-avatar"><BossPortrait variant={2} /></div>
     <blockquote data-i18n-skip>“{text.bossQuote}”</blockquote>
     <div className="week-four-boss-options"><span>{text.otherApproach}</span><span>{text.analytical}</span><span>{text.reductionist}</span><motion.span animate={{ color: ["#334155", "#334155", "#047857", "#047857", "#334155"], backgroundColor: ["#fff", "#fff", "#d1fae5", "#d1fae5", "#fff"], borderColor: ["#cbd5e1", "#cbd5e1", "#34d399", "#34d399", "#cbd5e1"], scale: [1, 1, 1.04, 1.04, 1] }} transition={transition}>✓ {text.experimental}</motion.span></div>
     <motion.span className="week-four-demo-hand week-four-boss-hand" animate={{ x: [0, 0, 0, 0, 0], y: [7, 7, -3, -3, 7], scale: [1, 1, .83, 1, 1] }} transition={transition}>👆</motion.span>
@@ -269,12 +317,30 @@ function WeekFourBossApproachDemo() {
 function WeekFourSystemProcessDemo() {
   const { locale } = useI18n();
   const text = weekFourDemoCopy[locale];
-  const transition = { duration: 6, repeat: Infinity, ease: "easeInOut" as const, times: [0, .13, .31, .43, .56, .72, .85, 1] };
-  return <div className="module-demo week-four-demo week-four-system-demo" aria-hidden="true">
-    <div className="week-four-system-pool"><motion.span className="week-four-system-card correct" data-i18n-skip animate={{ x: [0, 0, 135, 135, 0, 0, 0, 0], y: [0, 0, 0, 0, 0, 0, 0, 0], opacity: [1, 1, 1, 0, 0, 0, 0, 1] }} transition={transition}>{text.correctCard}</motion.span><motion.span className="week-four-system-card wrong" data-i18n-skip animate={{ x: [0, 0, 0, 0, 135, 135, 135, 0], y: [0, 0, 0, 0, -58, -58, 0, 0], opacity: [0, 0, 1, 1, 1, 1, 1, 0] }} transition={transition}>{text.wrongCard}</motion.span></div>
-    <div className="week-four-system-zones"><motion.div animate={{ backgroundColor: ["#e3f4e8", "#e3f4e8", "#d1fae5", "#e3f4e8", "#fbe8e8", "#fbe8e8", "#e3f4e8", "#e3f4e8"], borderColor: ["#6ee7b7", "#6ee7b7", "#34d399", "#6ee7b7", "#fb7185", "#fb7185", "#6ee7b7", "#6ee7b7"] }} transition={transition}><b>✓</b>{text.systemIs}</motion.div><motion.div animate={{ backgroundColor: ["#fbe8e8", "#fbe8e8", "#fbe8e8", "#fbe8e8", "#fbe8e8", "#fbe8e8", "#e3f4e8", "#fbe8e8"], borderColor: ["#fda4af", "#fda4af", "#fda4af", "#fda4af", "#fda4af", "#fda4af", "#34d399", "#fda4af"] }} transition={transition}><b>×</b>{text.systemIsNot}</motion.div></div>
-    <motion.span className="week-four-check-chip" animate={{ scale: [1, 1, 1, 1.06, 1.06, 1, 1, 1], backgroundColor: ["#4338ca", "#4338ca", "#4338ca", "#3730a3", "#3730a3", "#4338ca", "#4338ca", "#4338ca"] }} transition={transition}>{text.check}</motion.span>
-    <motion.span className="week-four-demo-hand week-four-system-hand" animate={{ x: [0, 0, 130, 130, 130, 130, 130, 0], y: [0, 0, 28, 28, 28, 78, 78, 0], opacity: [1, 1, 1, 0, 1, 1, 1, 0] }} transition={transition}>👉</motion.span>
+  const { demoRef, correctCardRef, wrongCardRef, systemTargetRef, trashTargetRef, layout } = useSystemDemoLayout();
+  const transition = { duration: 5.8, repeat: Infinity, ease: "easeInOut" as const, times: [0, .08, .25, .34, .43, .5, .57, .72, .79, .88, 1] };
+  const delta = (source: RelativeRect, target: RelativeRect) => ({
+    x: target.left + target.width / 2 - (source.left + source.width / 2),
+    y: target.top + target.height / 2 - (source.top + source.height / 2),
+  });
+  const correctDelta = layout ? delta(layout.correct, layout.system) : { x: 0, y: 0 };
+  const wrongDelta = layout ? delta(layout.wrong, layout.trash) : { x: 0, y: 0 };
+  const cardStyle = (rect: RelativeRect) => ({ left: rect.left, top: rect.top, width: rect.width, height: rect.height });
+  const handStyle = (rect: RelativeRect) => ({ left: rect.left + rect.width * .67, top: rect.top + rect.height * .52 });
+
+  return <div ref={demoRef} className="module-demo week-four-demo week-four-system-demo" aria-hidden="true">
+    <p className="week-four-system-prompt" data-i18n-skip>{text.drag}</p>
+    <div className="week-four-system-targets">
+      <motion.div ref={systemTargetRef} className="week-four-system-target accept" animate={{ borderColor: ["#75bd93", "#75bd93", "#23824f", "#75bd93", "#75bd93", "#75bd93", "#75bd93", "#75bd93", "#75bd93", "#75bd93", "#75bd93"], scale: [1, 1, 1.025, 1, 1, 1, 1, 1, 1, 1, 1] }} transition={transition}><b>✓</b><span>{text.systemIs}</span></motion.div>
+      <div className="week-four-system-target reject"><div className="week-four-demo-trash"><motion.i className="week-four-demo-trash-lid" animate={{ rotate: [0, 0, 0, 0, 0, -32, -32, -32, 0, 0, 0] }} transition={transition} /><div ref={trashTargetRef} className="week-four-demo-trash-mouth" /><div className="week-four-demo-trash-body">×</div></div><span>{text.systemIsNot}</span></div>
+    </div>
+    <div className="week-four-system-source"><span ref={correctCardRef} /><span ref={wrongCardRef} /></div>
+    {layout && <>
+      <motion.span className="week-four-system-moving-card correct" style={cardStyle(layout.correct)} data-i18n-skip animate={{ x: [0, 0, correctDelta.x, correctDelta.x, correctDelta.x, 0, 0, 0, 0, 0, 0], y: [0, 0, correctDelta.y, correctDelta.y, correctDelta.y, 0, 0, 0, 0, 0, 0], opacity: [1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1], scale: [1, 1.03, .94, .94, .94, 1, 1, 1, 1, 1, 1] }} transition={transition}>{text.correctCard}</motion.span>
+      <motion.span className="week-four-demo-hand correct" style={handStyle(layout.correct)} animate={{ x: [0, 0, correctDelta.x, correctDelta.x, correctDelta.x, 0, 0, 0, 0, 0, 0], y: [0, 0, correctDelta.y, correctDelta.y, correctDelta.y, 0, 0, 0, 0, 0, 0], opacity: [1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1], scale: [1, .84, 1, 1, 1, 1, 1, 1, 1, 1, 1] }} transition={transition}>👆</motion.span>
+      <motion.span className="week-four-system-moving-card wrong" style={cardStyle(layout.wrong)} data-i18n-skip animate={{ x: [0, 0, 0, 0, 0, 0, 0, wrongDelta.x, wrongDelta.x, wrongDelta.x, 0], y: [0, 0, 0, 0, 0, 0, 0, wrongDelta.y, wrongDelta.y, wrongDelta.y, 0], opacity: [0, 0, 0, 0, 1, 1, 1, 1, .18, 0, 0], scale: [1, 1, 1, 1, 1, 1.03, 1, .62, .24, .2, 1] }} transition={transition}>{text.wrongCard}</motion.span>
+      <motion.span className="week-four-demo-hand wrong" style={handStyle(layout.wrong)} animate={{ x: [0, 0, 0, 0, 0, 0, 0, wrongDelta.x, wrongDelta.x, wrongDelta.x, 0], y: [0, 0, 0, 0, 0, 0, 0, wrongDelta.y, wrongDelta.y, wrongDelta.y, 0], opacity: [0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0], scale: [1, 1, 1, 1, 1, .84, 1, 1, 1, 1, 1] }} transition={transition}>👆</motion.span>
+    </>}
   </div>;
 }
 
