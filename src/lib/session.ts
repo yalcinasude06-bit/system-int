@@ -1,4 +1,4 @@
-import type { ModuleId, Session, Student, StudentProfile, Submission } from "@/types";
+import type { ModuleDraft, ModuleId, Session, Student, StudentProfile, Submission } from "@/types";
 import { requireSupabase } from "./supabase";
 
 type DatabaseFailure = { code?: string; message?: string };
@@ -72,6 +72,7 @@ export interface StudentGameState {
   submissions: Submission[];
   classmates: Student[];
   feedback_keys: string[];
+  draft?: ModuleDraft | null;
 }
 
 export async function getStudentGameState(pin: string, studentId: string): Promise<StudentGameState> {

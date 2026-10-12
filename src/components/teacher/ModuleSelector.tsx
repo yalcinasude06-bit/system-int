@@ -1,4 +1,4 @@
-import { Boxes, CheckCircle2, Layers3, Network, Play, ScanSearch, Shapes, Square, Target, UsersRound, Workflow } from "lucide-react";
+import { Boxes, CheckCircle2, Layers3, ListChecks, Network, Play, ScanSearch, Shapes, Square, Target, UsersRound, Workflow } from "lucide-react";
 import type { ComponentType } from "react";
 import type { ModuleId } from "@/types";
 
@@ -22,6 +22,11 @@ const weekThreeModules: typeof weekOneModules = [
   { id: 1, title: "Süreç Hiyerarşisi", subtitle: "5 piramitlik süreç oyunu", description: "Temel süreç, alt süreç ve faaliyet örneklerini doğru piramit katmanlarına yerleştir.", Icon: Layers3 },
   { id: 2, title: "Kara Kutuda Eksik Adım", subtitle: "10 süreç zinciri", description: "Süreç zincirindeki eksik adımı üç seçenek arasından bularak kara kutuyu aç.", Icon: Workflow },
   { id: 3, title: "Akış Diyagramı Sembolleri", subtitle: "Kolaydan zora sembol yerleştirme", description: "Akış diyagramındaki eksik şekilleri doğru sembollerle tamamla.", Icon: Workflow },
+];
+
+const weekFourModules: typeof weekOneModules = [
+  { id: 1, title: "Patronun Yaklaşımını Bul", subtitle: "10 farklı yönetici sözü", description: "Yöneticinin kullandığı sistem yaklaşımını dört seçenek arasından belirle.", Icon: UsersRound },
+  { id: 2, title: "Sistem Süreci: Nedir, Ne Değildir?", subtitle: "12 kartlık sınıflandırma", description: "İfadeleri sistem süreci olan ve olmayan alanlara yerleştir.", Icon: ListChecks },
 ];
 
 export function WeekSelector({ activeWeek, onChange, disabled }: { activeWeek: number; onChange: (week: number) => void; disabled?: boolean }) {
@@ -57,7 +62,7 @@ type ModuleSelectorProps = {
 };
 
 export function ModuleSelector({ activeWeek, activeModule, moduleStage, isModuleStarted, submittedCount, totalStudents, disabled, onStart, onFinish }: ModuleSelectorProps) {
-  if (activeWeek !== 1 && activeWeek !== 3) {
+  if (activeWeek !== 1 && activeWeek !== 3 && activeWeek !== 4) {
     return (
       <div className="coming-soon-card" role="status">
         <span aria-hidden="true">🚧</span>
@@ -66,7 +71,7 @@ export function ModuleSelector({ activeWeek, activeModule, moduleStage, isModule
     );
   }
 
-  const modules = activeWeek === 3 ? weekThreeModules : weekOneModules;
+  const modules = activeWeek === 1 ? weekOneModules : activeWeek === 3 ? weekThreeModules : weekFourModules;
 
   return (
     <div className="dashboard-module-list" role="list" aria-label={`Hafta ${activeWeek} modülleri`}>
@@ -90,10 +95,6 @@ export function ModuleSelector({ activeWeek, activeModule, moduleStage, isModule
           </article>
         );
       })}
-      {activeWeek === 3 && <div className="coming-soon-card compact" role="status">
-        <span aria-hidden="true">🚧</span>
-        <div><strong>Hafta 3’ün diğer modülleri yakında</strong><p>Bu hafta Modül 1: Süreç Hiyerarşisi, Modül 2: Kara Kutuda Eksik Adım ve Modül 3: Akış Diyagramı Sembolleri kullanıma açıktır.</p></div>
-      </div>}
     </div>
   );
 }

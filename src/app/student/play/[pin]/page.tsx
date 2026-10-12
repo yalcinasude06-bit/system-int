@@ -16,9 +16,11 @@ import { Module5RelationBalloons } from "@/components/modules/Module5_RelationBa
 import { Week3ProcessHierarchy } from "@/components/modules/Week3_ProcessHierarchy";
 import { Week3MissingProcess } from "@/components/modules/Week3_MissingProcess";
 import { Week3FlowchartSymbols } from "@/components/modules/Week3_FlowchartSymbols";
+import { Week4BossApproach } from "@/components/modules/Week4_BossApproach";
+import { Week4SystemProcess } from "@/components/modules/Week4_SystemProcess";
 import { getRemainingCountdown } from "@/lib/moduleCountdown";
 import { getStudentGameState, saveModuleDraft, saveSubmission, submitModuleFeedback } from "@/lib/session";
-import type { ModuleId, ModuleSubmission, Session, Student, StudentProfile, Submission } from "@/types";
+import type { ModuleDraft, ModuleId, ModuleSubmission, Session, Student, StudentProfile, Submission } from "@/types";
 
 export default function StudentPlayPage() {
   const { pin } = useParams<{ pin: string }>();
@@ -27,6 +29,7 @@ export default function StudentPlayPage() {
   const [student, setStudent] = useState<Student | null>(null);
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [draft, setDraft] = useState<ModuleDraft | null>(null);
   const [classmates, setClassmates] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -53,6 +56,7 @@ export default function StudentPlayPage() {
       setSession(gameState.session);
       setStudent(gameState.student);
       setSubmissions(gameState.submissions);
+      setDraft(gameState.draft || null);
       setClassmates(gameState.classmates);
       setProfile(gameState.profile);
       setFeedbackKeys(gameState.feedback_keys || []);
@@ -78,6 +82,7 @@ export default function StudentPlayPage() {
     () => submissions.find((item) => item.is_submitted && item.week_id === session?.selected_week && item.module_id === session?.current_module) || null,
     [session?.current_module, session?.selected_week, submissions],
   );
+  const activeDraft = draft && draft.week_id === session?.selected_week && draft.module_id === session?.current_module ? draft : null;
   const currentWeek = session?.selected_week;
   const currentModule = session?.current_module;
   const isModuleStarted = session?.is_module_started;
@@ -151,6 +156,16 @@ export default function StudentPlayPage() {
           ? submission.payload.evaluatedBlankCount
           : 0;
     const revision = ++draftRevision.current;
+    setDraft({
+      session_id: session.id,
+      student_id: student.id,
+      week_id: session.selected_week,
+      module_id: moduleId,
+      stage: submission.stage || 1,
+      payload: submission.payload,
+      score: submission.score,
+      updated_at: new Date().toISOString(),
+    });
     const task = saveModuleDraft({
         sessionId: session.id,
         studentId: student.id,
@@ -200,6 +215,12 @@ export default function StudentPlayPage() {
   if (!session || !student) return <><Navbar /><main className="container page"><div className="notice error">{error || "Katılımcı kaydı bulunamadı."}</div></main></>;
 
   const scoreEarned = (activeSubmission?.score ?? 0) + (activeSubmission?.speed_bonus ?? 0);
+  const firstCheckCorrect = session.selected_week === 4
+    && session.current_module === 2
+    && activeSubmission?.payload.isChecked === true
+    && typeof activeSubmission.payload.correctCount === "number"
+    ? activeSubmission.payload.correctCount
+    : null;
   const ranking = [...classmates].sort((a, b) => b.session_score - a.session_score || a.joined_at.localeCompare(b.joined_at));
   const ownRank = ranking.findIndex((item) => item.id === student.id) + 1;
   const studentNav = <Navbar studentContext={{ sessionTitle: session.title, week: session.selected_week, studentName: student.nickname, studentNumber: student.student_number, score: student.session_score, onLeave: () => { localStorage.removeItem(`system-lab:${pin}:student`); router.push("/"); } }} />;
@@ -210,7 +231,9 @@ export default function StudentPlayPage() {
 
   if (!session.is_active) return <>{studentNav}<main className="container page"><div className="student-result-card panel"><Trophy size={58} color="var(--amber)" /><span className="eyebrow">Oturum tamamlandı</span><h1>Harika iş çıkardın!</h1><p className="lead">Genel toplam puanın <strong className="score-pop">{profile?.total_score ?? student.score}</strong></p><Button onClick={() => router.push("/")}>Ana sayfaya dön</Button></div></main></>;
 
-  const isSupportedModule = session.selected_week === 1 || (session.selected_week === 3 && (session.current_module === 1 || session.current_module === 2 || session.current_module === 3));
+  const isSupportedModule = session.selected_week === 1
+    || (session.selected_week === 3 && (session.current_module === 1 || session.current_module === 2 || session.current_module === 3))
+    || (session.selected_week === 4 && (session.current_module === 1 || session.current_module === 2));
   if (!isSupportedModule) return <>{studentNav}<main className="container page"><div className="student-waiting-card panel"><span className="waiting-illustration">🚧</span><span className="eyebrow">Hafta {session.selected_week}</span><h1>Yeni içerikler hazırlanıyor</h1><p>Bu haftanın modülleri ve interaktif içerikleri yakında eklenecektir.</p><div className="waiting-pulse"><i /> Öğretmenin yönlendirmesini bekleyin</div></div></main></>;
 
   if (resultsRevealed && !activeSubmission) return <>{studentNav}<main className="container page"><section className="student-waiting-card panel"><span className="waiting-illustration">⏳</span><span className="eyebrow">Sonuç hazırlanıyor</span><h1>Puanın hesaplanıyor…</h1><div className="waiting-pulse"><i /> Sonuç kaydı alınıyor</div></section></main></>;
@@ -222,6 +245,7 @@ export default function StudentPlayPage() {
       <span className="eyebrow">Modül {session.current_module} sonucu</span>
       <h1>{activeCompletionStatus === "completed" ? <>Tebrikler, <strong>{scoreEarned} puan</strong> aldın!</> : <>Bu turda <strong>{scoreEarned} puan</strong> topladın.</>}</h1>
       <span className={`student-result-status ${activeCompletionStatus}`}>{activeCompletionStatus === "completed" ? "Modül tamamlandı" : "Modül tamamlanmadı"}</span>
+      {firstCheckCorrect !== null && <p className="first-check-result">İlk kontrolde doğru: <strong>{firstCheckCorrect}/12</strong></p>}
       <div className="student-mini-leaderboard">
         <strong className="mini-leaderboard-title"><Trophy size={18} /> Canlı Liderlik</strong>
         <ol>{ranking.slice(0, 3).map((item, index) => <li key={item.id} className={item.id === student.id ? "is-me" : ""}><span aria-hidden="true">{["🥇", "🥈", "🥉"][index]}</span><b><span>{index + 1}. </span><span data-i18n-skip>{item.nickname}</span></b><strong>{item.session_score} puan</strong></li>)}</ol>
@@ -266,6 +290,10 @@ export default function StudentPlayPage() {
       ? <Week3MissingProcess sessionId={session.id} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(2, draft)} onSubmit={(submission) => submit(2, submission)} />
       : session.selected_week === 3 && session.current_module === 3
         ? <Week3FlowchartSymbols sessionId={session.id} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(3, draft)} onSubmit={(submission) => submit(3, submission)} />
+      : session.selected_week === 4 && session.current_module === 1
+        ? <Week4BossApproach seedKey={`${session.id}:${student.id}:4:1`} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(1, draft)} onSubmit={(submission) => submit(1, submission)} />
+      : session.selected_week === 4 && session.current_module === 2
+        ? <Week4SystemProcess seedKey={`${session.id}:${student.id}:4:2`} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(2, draft)} onSubmit={(submission) => submit(2, submission)} />
       : modules[session.current_module];
 
   return <>{studentNav}<main className="container student-module-page stack">

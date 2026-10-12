@@ -34,7 +34,9 @@ function isLocalizedContent(node) {
   for (let current = node.parent; current; current = current.parent) {
     if (ts.isCallExpression(current) && current.arguments.length >= 2) {
       const callee = current.expression;
-      if (ts.isIdentifier(callee) && ["t", "text", "node"].includes(callee.text)) return true;
+      // Content-pool constructors receive each Turkish string together with its
+      // English counterpart and are typed as Record<Locale, string>.
+      if (ts.isIdentifier(callee) && ["t", "text", "node", "question", "card"].includes(callee.text)) return true;
     }
     if (ts.isConditionalExpression(current) && (ts.isStringLiteral(current.whenTrue) || ts.isNoSubstitutionTemplateLiteral(current.whenTrue)) && (ts.isStringLiteral(current.whenFalse) || ts.isNoSubstitutionTemplateLiteral(current.whenFalse))) {
       return true;

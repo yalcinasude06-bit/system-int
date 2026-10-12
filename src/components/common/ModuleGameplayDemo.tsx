@@ -77,6 +77,33 @@ const weekThreeDemoCopy = {
   },
 } as const;
 
+const weekFourDemoCopy = {
+  tr: {
+    bossQuote: "Yeni yöntemi deneyip sonuçlarını ölçelim.",
+    experimental: "Deneysel Yaklaşım",
+    otherApproach: "Mekanik Yaklaşım",
+    analytical: "Analitik Yaklaşım",
+    reductionist: "İndirgemeci Yaklaşım",
+    systemIs: "NEDİR?",
+    systemIsNot: "NE DEĞİLDİR?",
+    correctCard: "Geri bildirim, sürecin işleyişini yeniden değerlendirmeyi sağlar.",
+    wrongCard: "Sistem, birbirinden bağımsız parçaların toplamından ibarettir.",
+    check: "Kontrol Et",
+  },
+  en: {
+    bossQuote: "Let’s test the new method and measure the results.",
+    experimental: "Experimental Approach",
+    otherApproach: "Mechanical Approach",
+    analytical: "Analytical Approach",
+    reductionist: "Reductionist Approach",
+    systemIs: "WHAT IT IS",
+    systemIsNot: "WHAT IT IS NOT",
+    correctCard: "Feedback enables us to reassess how a process works.",
+    wrongCard: "A system is merely the sum of parts that are independent from one another.",
+    check: "Check",
+  },
+} as const;
+
 function ModuleOneDemo() {
   return <div className="module-demo module-demo-one" aria-hidden="true">
     <motion.div
@@ -227,6 +254,30 @@ function WeekThreeFlowchartDemo() {
   </div>;
 }
 
+function WeekFourBossApproachDemo() {
+  const { locale } = useI18n();
+  const text = weekFourDemoCopy[locale];
+  const transition = { duration: 4.3, repeat: Infinity, ease: "easeInOut" as const, times: [0, .24, .42, .67, 1] };
+  return <div className="module-demo week-four-demo week-four-boss-demo" aria-hidden="true">
+    <div className="week-four-boss-avatar">🧑🏽‍💼</div>
+    <blockquote data-i18n-skip>“{text.bossQuote}”</blockquote>
+    <div className="week-four-boss-options"><span>{text.otherApproach}</span><span>{text.analytical}</span><span>{text.reductionist}</span><motion.span animate={{ color: ["#334155", "#334155", "#047857", "#047857", "#334155"], backgroundColor: ["#fff", "#fff", "#d1fae5", "#d1fae5", "#fff"], borderColor: ["#cbd5e1", "#cbd5e1", "#34d399", "#34d399", "#cbd5e1"], scale: [1, 1, 1.04, 1.04, 1] }} transition={transition}>✓ {text.experimental}</motion.span></div>
+    <motion.span className="week-four-demo-hand week-four-boss-hand" animate={{ x: [0, 0, 0, 0, 0], y: [7, 7, -3, -3, 7], scale: [1, 1, .83, 1, 1] }} transition={transition}>👆</motion.span>
+  </div>;
+}
+
+function WeekFourSystemProcessDemo() {
+  const { locale } = useI18n();
+  const text = weekFourDemoCopy[locale];
+  const transition = { duration: 6, repeat: Infinity, ease: "easeInOut" as const, times: [0, .13, .31, .43, .56, .72, .85, 1] };
+  return <div className="module-demo week-four-demo week-four-system-demo" aria-hidden="true">
+    <div className="week-four-system-pool"><motion.span className="week-four-system-card correct" data-i18n-skip animate={{ x: [0, 0, 135, 135, 0, 0, 0, 0], y: [0, 0, 0, 0, 0, 0, 0, 0], opacity: [1, 1, 1, 0, 0, 0, 0, 1] }} transition={transition}>{text.correctCard}</motion.span><motion.span className="week-four-system-card wrong" data-i18n-skip animate={{ x: [0, 0, 0, 0, 135, 135, 135, 0], y: [0, 0, 0, 0, -58, -58, 0, 0], opacity: [0, 0, 1, 1, 1, 1, 1, 0] }} transition={transition}>{text.wrongCard}</motion.span></div>
+    <div className="week-four-system-zones"><motion.div animate={{ backgroundColor: ["#e3f4e8", "#e3f4e8", "#d1fae5", "#e3f4e8", "#fbe8e8", "#fbe8e8", "#e3f4e8", "#e3f4e8"], borderColor: ["#6ee7b7", "#6ee7b7", "#34d399", "#6ee7b7", "#fb7185", "#fb7185", "#6ee7b7", "#6ee7b7"] }} transition={transition}><b>✓</b>{text.systemIs}</motion.div><motion.div animate={{ backgroundColor: ["#fbe8e8", "#fbe8e8", "#fbe8e8", "#fbe8e8", "#fbe8e8", "#fbe8e8", "#e3f4e8", "#fbe8e8"], borderColor: ["#fda4af", "#fda4af", "#fda4af", "#fda4af", "#fda4af", "#fda4af", "#34d399", "#fda4af"] }} transition={transition}><b>×</b>{text.systemIsNot}</motion.div></div>
+    <motion.span className="week-four-check-chip" animate={{ scale: [1, 1, 1, 1.06, 1.06, 1, 1, 1], backgroundColor: ["#4338ca", "#4338ca", "#4338ca", "#3730a3", "#3730a3", "#4338ca", "#4338ca", "#4338ca"] }} transition={transition}>{text.check}</motion.span>
+    <motion.span className="week-four-demo-hand week-four-system-hand" animate={{ x: [0, 0, 130, 130, 130, 130, 130, 0], y: [0, 0, 28, 28, 28, 78, 78, 0], opacity: [1, 1, 1, 0, 1, 1, 1, 0] }} transition={transition}>👉</motion.span>
+  </div>;
+}
+
 const demos: Record<ModuleId, () => ReactNode> = {
   1: ModuleOneDemo,
   2: ModuleTwoDemo,
@@ -242,6 +293,10 @@ export function ModuleGameplayDemo({ moduleId, weekId = 1 }: { moduleId: ModuleI
       ? WeekThreeMissingStepDemo
       : weekId === 3 && moduleId === 3
         ? WeekThreeFlowchartDemo
+      : weekId === 4 && moduleId === 1
+        ? WeekFourBossApproachDemo
+      : weekId === 4 && moduleId === 2
+        ? WeekFourSystemProcessDemo
       : demos[moduleId];
   return <MotionConfig reducedMotion="user"><Demo /></MotionConfig>;
 }

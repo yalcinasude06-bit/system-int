@@ -116,8 +116,6 @@ const englishDictionary = {
     "Akış Diyagramı Sembolleri": "Flowchart Symbols",
     "Kolaydan zora sembol yerleştirme": "Symbol placement from easy to hard",
     "Akış diyagramındaki eksik şekilleri doğru sembollerle tamamla.": "Complete the missing flowchart shapes with the correct symbols.",
-    "Hafta 3’ün diğer modülleri yakında": "More Week 3 modules are coming soon",
-    "Bu hafta Modül 1: Süreç Hiyerarşisi, Modül 2: Kara Kutuda Eksik Adım ve Modül 3: Akış Diyagramı Sembolleri kullanıma açıktır.": "This week, Module 1: Process Hierarchy, Module 2: Missing Step in the Black Box, and Module 3: Flowchart Symbols are available.",
     "Temel süreçler": "Core processes",
     "Alt süreçler": "Sub-processes",
     "Faaliyetler / görevler": "Activities / tasks",
@@ -663,10 +661,18 @@ Object.assign(dictionaries.en, {
   "Canlı token simülasyonu": "Live token simulation",
   "Siparişi başlat ve token’ın uçtan uca akışını doğrula.": "Start the order and verify the token’s end-to-end flow.",
   "Müşteri → Firma → Müşteri": "Customer → Company → Customer",
+  "Patronun Yaklaşımını Bul": "Find the Boss’s Approach",
+  "10 farklı yönetici sözü": "10 different manager statements",
+  "Yöneticinin kullandığı sistem yaklaşımını dört seçenek arasından belirle.": "Identify the systems approach used by the manager from four options.",
+  "Sistem Süreci: Nedir, Ne Değildir?": "System Process: What It Is and Is Not",
+  "12 kartlık sınıflandırma": "12-card classification",
+  "İfadeleri sistem süreci olan ve olmayan alanlara yerleştir.": "Place statements in the areas for what is and is not a system process.",
+  "İlk kontrolde doğru:": "Correct on the first check:",
 });
 
 const dynamicTranslations: Array<[RegExp, (match: RegExpMatchArray) => string]> = [
   [/^Hafta (\d+)$/, (m) => `Week ${m[1]}`],
+  [/^Hafta (\d+) modülleri$/, (m) => `Week ${m[1]} modules`],
   [/^Modül (\d+)$/, (m) => `Module ${m[1]}`],
   [/^Modül (\d+) sonucu$/, (m) => `Module ${m[1]} result`],
   [/^Hafta (\d+) · Modül (\d+)$/, (m) => `Week ${m[1]} · Module ${m[2]}`],

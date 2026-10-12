@@ -866,6 +866,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .student-result-status { width: fit-content; display: inline-flex; margin: 2px auto 8px; padding: 6px 11px; border-radius: 999px; font-size: 10px; font-weight: 900; }
 .student-result-status.completed { color: #047857; background: #ecfdf5; border: 1px solid #a7f3d0; }
 .student-result-status.incomplete { color: #b45309; background: #fffbeb; border: 1px solid #fde68a; }
+.first-check-result { width: fit-content; margin: -2px auto 9px; padding: 7px 11px; color: #065f46; background: #ecfdf5; border: 1px solid #86efac; border-radius: 10px; font-size: 12px; font-weight: 750; }
 .result-trophy { display: block; margin: 2px 0 12px; font-size: 66px; animation: countPop .7s ease; }
 .result-spark { position: absolute; top: 24px; right: 28px; color: #f59e0b; animation: pulse 1.5s ease-in-out infinite; }
 .student-mini-leaderboard { display: grid; gap: 10px; margin-top: 28px; padding: 18px; text-align: left; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 20px; }
@@ -1633,4 +1634,107 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .week-three-flow-palette > span { min-height: 39px; }
   .week-three-flow-palette-symbol { width: min(100%,28px); height: 14px; }
   .week-three-flow-palette .flowchart-demo-symbol { height: 14px; }
+}
+
+/* Week 4 module boards and start previews. */
+.boss-approach-shell,.system-process-shell { display: grid; gap: 16px; }
+.boss-approach-progress { display: grid; grid-template-columns: repeat(10,minmax(0,1fr)); gap: 5px; }
+.boss-approach-progress span { height: 7px; background: #e2e8f0; border-radius: 999px; }
+.boss-approach-progress span.active { background: #818cf8; box-shadow: 0 0 0 3px rgba(99,102,241,.14); }
+.boss-approach-progress span.done { background: #34d399; }
+.boss-approach-instruction,.system-process-instruction { margin: -5px 0 0; color: #64748b; font-size: 13px; line-height: 1.5; }
+.boss-quote-card { display: grid; grid-template-columns: 72px minmax(0,1fr); gap: 15px; align-items: center; padding: clamp(16px,3vw,24px); background: radial-gradient(circle at 10% 0,#e0e7ff,transparent 44%),#f8fafc; border: 1px solid #c7d2fe; border-radius: 20px; }
+.boss-character { width: 64px; height: 64px; display: grid; place-items: center; background: #fff; border: 1px solid #c7d2fe; border-radius: 50%; box-shadow: 0 8px 18px rgba(79,70,229,.13); font-size: 35px; }
+.boss-quote-card small { color: #6366f1; font-size: 10px; font-weight: 900; letter-spacing: .07em; text-transform: uppercase; }
+.boss-quote-card blockquote { margin: 7px 0 8px; color: #1e293b; font-size: clamp(16px,2.3vw,22px); font-weight: 800; line-height: 1.45; }
+.boss-quote-card > div:last-child > span { color: #94a3b8; font-size: 10px; font-weight: 750; }
+.boss-approach-options { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+.boss-approach-options button { min-height: 61px; display: flex; align-items: center; gap: 10px; padding: 11px 13px; color: #334155; background: #fff; border: 1px solid #cbd5e1; border-radius: 14px; cursor: pointer; font: inherit; font-size: 13px; font-weight: 800; line-height: 1.25; text-align: left; transition: transform .16s ease,border-color .16s ease,box-shadow .16s ease; }
+.boss-approach-options button:hover:not(:disabled),.boss-approach-options button:focus-visible { border-color: #818cf8; box-shadow: 0 7px 16px rgba(79,70,229,.12); transform: translateY(-2px); outline: none; }
+.boss-approach-options button:disabled { cursor: default; }
+.boss-approach-options button.correct { color: #047857; background: #ecfdf5; border-color: #34d399; }
+.boss-approach-options button.wrong { color: #be123c; background: #fff1f2; border-color: #fb7185; }
+.boss-option-marker { width: 16px; height: 16px; flex: 0 0 auto; border: 2px solid #94a3b8; border-radius: 50%; }
+.boss-feedback { min-height: 52px; }
+.boss-feedback > div { display: grid; gap: 3px; padding: 10px 13px; border-radius: 13px; font-size: 12px; line-height: 1.42; }
+.boss-feedback .correct { color: #065f46; background: #ecfdf5; border: 1px solid #86efac; }
+.boss-feedback .wrong { color: #9f1239; background: #fff1f2; border: 1px solid #fda4af; }
+.boss-next-button { justify-self: end; }
+
+.system-process-board { position: relative; display: grid; grid-template-columns: minmax(0,.95fr) minmax(0,1.05fr); gap: 14px; min-height: 440px; padding: 14px; background: linear-gradient(145deg,#f8fafc,#eff6ff); border: 1px solid #dbeafe; border-radius: 20px; }
+.system-card-pool,.system-process-zone { min-width: 0; padding: 12px; background: rgba(255,255,255,.9); border: 1px solid #cbd5e1; border-radius: 16px; }
+.system-region-heading { display: flex; justify-content: space-between; gap: 10px; padding-bottom: 9px; color: #4338ca; border-bottom: 1px solid #e2e8f0; }
+.system-region-heading h2,.system-process-zone h2 { margin: 0; color: #1e293b; font-size: 14px; }
+.system-region-heading p { margin: 3px 0 0; color: #64748b; font-size: 10px; font-weight: 650; line-height: 1.35; }
+.system-card-list,.system-zone-cards { display: grid; align-content: start; gap: 7px; padding-top: 10px; }
+.system-process-card { position: relative; min-width: 0; min-height: 42px; display: flex; align-items: center; gap: 7px; padding: 8px 9px; color: #334155; background: #fff; border: 1px solid #cbd5e1; border-radius: 10px; box-shadow: 0 3px 7px rgba(15,23,42,.05); cursor: grab; font: inherit; font-size: 10px; font-weight: 750; line-height: 1.28; text-align: left; transition: border-color .16s ease,box-shadow .16s ease,transform .16s ease,opacity .16s ease; }
+.system-process-card:hover,.system-process-card:focus-visible,.system-process-card.selected { border-color: #818cf8; box-shadow: 0 5px 12px rgba(79,70,229,.13); outline: none; }
+.system-process-card.selected { background: #eef2ff; transform: translateY(-1px); }
+.system-process-card > svg { flex: 0 0 auto; color: #64748b; }
+.system-process-card small { margin-left: auto; color: #4338ca; font-size: 8px; font-weight: 900; }
+.system-process-zones { display: grid; grid-template-rows: repeat(2,minmax(0,1fr)); gap: 12px; }
+.system-process-zone { outline: none; transition: background .16s ease,border-color .16s ease,box-shadow .16s ease; }
+.system-process-zone.ready,.system-process-zone:focus-visible { border-color: #818cf8; box-shadow: 0 0 0 3px rgba(99,102,241,.12); }
+.system-process-zone.is { border-color: #86efac; background: #e3f4e8; }
+.system-process-zone.isNot { border-color: #fda4af; background: #fbe8e8; }
+.system-process-zone header { display: flex; align-items: center; gap: 7px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0; }
+.system-process-zone header > span { width: 25px; height: 25px; display: grid; place-items: center; color: #047857; background: #ecfdf5; border-radius: 8px; }
+.system-process-zone.isNot header > span { color: #9f1239; background: #fbe8e8; }
+.system-zone-empty,.system-pool-empty { margin: 8px 0; color: #94a3b8; font-size: 10px; font-style: italic; text-align: center; }
+.system-process-card.placed { cursor: pointer; }
+.system-process-card.wrong-placement { color: #9f1239; background: #fff1f2; border-color: #fb7185; animation: systemWrongPulse .65s ease both; }
+.system-process-card.flying-source { opacity: .2; }
+.system-process-flyer { position: absolute; z-index: 7; min-height: 42px; padding: 8px 9px; color: #334155; background: #fff; border: 2px solid #818cf8; border-radius: 10px; box-shadow: 0 10px 22px rgba(79,70,229,.22); font-size: 10px; font-weight: 750; line-height: 1.28; pointer-events: none; }
+.system-process-footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 43px; color: #64748b; font-size: 12px; }
+.system-process-footer > div { display: grid; gap: 3px; }
+.system-process-footer strong { color: #047857; }
+.system-process-review { width: min(620px,100%); display: grid; gap: 6px; margin-top: 6px; text-align: left; }
+.system-process-review h3 { margin: 0; color: #334155; font-size: 13px; }
+.system-process-review details { padding: 8px 10px; color: #475569; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 11px; line-height: 1.4; }
+.system-process-review summary { color: #9f1239; cursor: pointer; font-weight: 800; }
+.system-process-review p { margin: 7px 0 0; }
+@keyframes systemWrongPulse { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+
+.week-four-demo { isolation: isolate; overflow: hidden; background: radial-gradient(circle at 82% 12%,rgba(196,181,253,.55),transparent 34%),linear-gradient(145deg,#f8fafc,#eef2ff); }
+.week-four-boss-avatar { position: absolute; left: 8%; top: 16px; width: 48px; height: 48px; display: grid; place-items: center; background: #fff; border: 1px solid #c7d2fe; border-radius: 50%; box-shadow: 0 5px 12px rgba(79,70,229,.11); font-size: 28px; }
+.week-four-boss-demo blockquote { position: absolute; left: 23%; right: 7%; top: 13px; margin: 0; padding: 10px 12px; color: #1e293b; background: #fff; border: 1px solid #cbd5e1; border-radius: 11px; font-size: clamp(9px,1.8vw,12px); font-weight: 800; line-height: 1.34; }
+.week-four-boss-options { position: absolute; left: 8%; right: 8%; bottom: 11px; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 5px; }
+.week-four-boss-options span { min-height: 25px; display: grid; place-items: center; padding: 3px 5px; color: #334155; background: #fff; border: 1px solid #cbd5e1; border-radius: 7px; font-size: clamp(6px,1.25vw,8px); font-weight: 850; line-height: 1.08; text-align: center; }
+.week-four-demo-hand { position: absolute; z-index: 5; display: block; font-size: 22px; line-height: 1; pointer-events: none; }
+.week-four-boss-hand { right: 24%; bottom: 8px; }
+.week-four-system-pool { position: absolute; left: 5%; top: 18px; width: 34%; height: 114px; }
+.week-four-system-card { position: absolute; left: 0; width: 100%; min-height: 45px; display: grid; place-items: center; padding: 5px 6px; color: #334155; background: #fff; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 4px 10px rgba(15,23,42,.08); font-size: clamp(6px,1.15vw,8px); font-weight: 800; line-height: 1.12; text-align: center; }
+.week-four-system-card.wrong { top: 58px; }
+.week-four-system-zones { position: absolute; right: 5%; top: 18px; width: 43%; display: grid; gap: 8px; }
+.week-four-system-zones > div { min-height: 50px; display: grid; grid-template-columns: 17px minmax(0,1fr); align-items: center; gap: 5px; padding: 7px; color: #334155; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 9px; font-size: clamp(7px,1.35vw,9px); font-weight: 850; line-height: 1.1; }
+.week-four-system-zones b { display: grid; place-items: center; width: 17px; height: 17px; color: #fff; background: #10b981; border-radius: 50%; font-size: 11px; }
+.week-four-system-zones > div:last-child b { background: #e11d48; }
+.week-four-check-chip { position: absolute; z-index: 4; right: 7%; bottom: 8px; padding: 5px 9px; color: #fff; background: #4338ca; border-radius: 8px; font-size: 8px; font-weight: 900; }
+.week-four-system-hand { left: 31%; top: 43px; }
+
+@media (max-width: 760px) {
+  .boss-approach-options { grid-template-columns: 1fr; }
+  .system-process-board { grid-template-columns: 1fr; min-height: 0; }
+  .system-card-pool { order: 2; }
+  .system-card-list { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .system-process-zones { grid-template-rows: auto; grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .system-process-zone { min-height: 180px; }
+}
+@media (max-width: 520px) {
+  .boss-quote-card { grid-template-columns: 50px minmax(0,1fr); gap: 10px; padding: 13px; }
+  .boss-character { width: 46px; height: 46px; font-size: 26px; }
+  .boss-quote-card blockquote { font-size: 14px; }
+  .system-process-board { padding: 8px; gap: 8px; border-radius: 15px; }
+  .system-card-pool,.system-process-zone { padding: 8px; border-radius: 12px; }
+  .system-card-list { grid-template-columns: 1fr; }
+  .system-process-zones { grid-template-columns: 1fr; }
+  .system-process-zone { min-height: 0; }
+  .system-process-card { min-height: 38px; font-size: 9px; }
+  .system-process-footer { align-items: flex-start; flex-direction: column; }
+  .system-process-footer .btn { width: 100%; }
+  .week-four-boss-demo blockquote { left: 25%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .system-process-card,.boss-approach-options button { transition: none; }
+  .system-process-card.wrong-placement { animation: none; }
 }

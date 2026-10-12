@@ -72,10 +72,23 @@ export interface ModuleSubmission {
   stage?: number;
 }
 
+export interface ModuleDraft {
+  id?: string;
+  session_id?: string;
+  student_id?: string;
+  week_id?: number;
+  module_id?: ModuleId;
+  stage?: number;
+  payload: Record<string, unknown>;
+  score: number;
+  updated_at?: string;
+}
+
 export interface LearningModuleProps {
   onSubmit: (submission: ModuleSubmission) => Promise<boolean | void> | boolean | void;
   onDraft?: (submission: ModuleSubmission) => Promise<void> | void;
   faultInjected?: boolean;
   existingSubmission?: Submission | null;
+  existingDraft?: ModuleDraft | null;
   forceSubmit?: boolean;
 }
