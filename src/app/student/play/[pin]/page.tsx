@@ -278,10 +278,10 @@ export default function StudentPlayPage() {
   if (!activeSubmission && session.module_started_at && countdownTimeLeft > 0 && readyModuleKey !== activeModuleKey) return <>{studentNav}<ModuleStartCountdown key={`${activeModuleKey}:${session.module_started_at}`} weekId={session.selected_week} moduleId={session.current_module} startedAt={session.module_started_at} onComplete={() => setReadyModuleKey(activeModuleKey)} /></>;
 
   const modules = {
-    1: <Module1SystemBuild existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(1, draft)} onSubmit={(submission) => submit(1, submission)} />,
+    1: <Module1SystemBuild existingSubmission={activeSubmission} existingDraft={activeDraft} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(1, draft)} onSubmit={(submission) => submit(1, submission)} />,
     2: <Module2Relations existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(2, draft)} onSubmit={(submission) => submit(2, submission)} />,
     3: <Module3Boundary existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(3, draft)} onSubmit={(submission) => submit(3, submission)} />,
-    4: <Module4CompleteSystem existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(4, draft)} onSubmit={(submission) => submit(4, submission)} />,
+    4: <Module4CompleteSystem existingSubmission={activeSubmission} existingDraft={activeDraft} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(4, draft)} onSubmit={(submission) => submit(4, submission)} />,
     5: <Module5RelationBalloons existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(5, draft)} onSubmit={(submission) => submit(5, submission)} />,
   };
   const activeModule = session.selected_week === 3 && session.current_module === 1

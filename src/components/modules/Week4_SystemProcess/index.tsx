@@ -5,6 +5,8 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Check, GripVertical, LockKeyhole, MousePointerClick, RotateCcw, Trash2, Undo2, X } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { useI18n } from "@/lib/i18n/I18nContext";
+import { ANSWER_REVIEW_MARK_MS, ANSWER_REVIEW_MOVE_MS, ANSWER_REVIEW_TOTAL_MS, currentReviewTimestamp, remainingReviewTime } from "@/lib/answerReview";
+import { useAnswerReviewTimer } from "@/lib/useAnswerReviewTimer";
 import type { LearningModuleProps, ModuleDraft, ModuleSubmission } from "@/types";
 import { buildSystemProcessRound, type PresentedSystemProcessCard, type SystemProcessTarget } from "./systemProcessContent";
 
@@ -13,7 +15,7 @@ type Placements = Record<string, Placement>;
 type Flyer = { id: string; left: number; top: number; x: number; y: number; width: number };
 type PointerCandidate = { id: string; pointerId: number; startX: number; startY: number; left: number; top: number; width: number };
 type PointerFlyer = Flyer;
-type DraftPayload = { placements?: unknown; submittedPlacements?: unknown; evaluatedPlacements?: unknown; isChecked?: unknown };
+type DraftPayload = { placements?: unknown; submittedPlacements?: unknown; evaluatedPlacements?: unknown; isChecked?: unknown; reviewStartedAt?: unknown; reviewDurationMs?: unknown };
 
 const pointsPerCard = 10;
 const targets: SystemProcessTarget[] = ["is", "isNot"];
@@ -35,6 +37,10 @@ const copy = {
     checkHint: "Kontrol etmek için tüm 8 kartı yerleştir.",
     checking: "İlk yerleşimlerin kontrol ediliyor…",
     corrected: "Yanlış kartlar doğru alanlarına taşındı.",
+    correctedBadge: "İlk yerleşim yanlıştı · Düzeltildi",
+    correctedLog: "Düzeltildi",
+    correct: "Doğru",
+    wrong: "Yanlış",
     allCorrect: "Tüm kartlar ilk kontrolde doğru yerdeydi.",
     locked: "Bu modül tamamlandı",
     lockedDetail: "Yanıtların kilitlendi. Öğretmen sonuçları açıklayana kadar bekleyin.",
@@ -58,6 +64,10 @@ const copy = {
     checkHint: "Place all 8 cards before checking.",
     checking: "Checking your first placements…",
     corrected: "Incorrect cards moved to their correct areas.",
+    correctedBadge: "Initial placement was incorrect · Corrected",
+    correctedLog: "Corrected",
+    correct: "Correct",
+    wrong: "Incorrect",
     allCorrect: "Every card was in the correct area on the first check.",
     locked: "This module is complete",
     lockedDetail: "Your answers are locked. Wait until the teacher reveals the results.",
@@ -148,7 +158,8 @@ export function Week4SystemProcess({
   const suppressClick = useRef(false);
   const trashBusy = useRef(false);
   const pendingTrashCard = useRef<string | null>(null);
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = Boolean(useReducedMotion());
+  const { start: startReviewClock, cancel: cancelReviewClock } = useAnswerReviewTimer();
   const currentPlacedCount = placedCount(placements);
 
   const clearTimers = useCallback(() => {
@@ -158,7 +169,7 @@ export function Week4SystemProcess({
 
   useEffect(() => () => clearTimers(), [clearTimers]);
 
-  const submissionFor = useCallback((nextPlacements: Placements, completionReason: "completed" | "teacher-ended" | "draft", evaluatedSnapshot?: Placements): ModuleSubmission => {
+  const submissionFor = useCallback((nextPlacements: Placements, completionReason: "completed" | "teacher-ended" | "draft", evaluatedSnapshot?: Placements, review?: { startedAt: number; durationMs: number }): ModuleSubmission => {
     const snapshot = evaluatedSnapshot ?? nextPlacements;
     const correctCount = cards.filter((card) => snapshot[card.id] === card.target).length;
     return {
@@ -177,6 +188,8 @@ export function Week4SystemProcess({
         cardCount: cards.length,
         pointsPerCard,
         completionReason,
+        reviewStartedAt: review?.startedAt ?? null,
+        reviewDurationMs: review?.durationMs ?? null,
       },
     };
   }, [cards]);
@@ -186,14 +199,18 @@ export function Week4SystemProcess({
     setSubmitFailed(false);
     const accepted = await onSubmit(submission);
     setSubmitting(false);
-    if (accepted === false) setSubmitFailed(true);
+    if (accepted === false) {
+      submissionStarted.current = false;
+      setSubmitFailed(true);
+    }
   }, [onSubmit]);
 
   const finalize = useCallback(async (snapshot: Placements, completionReason: "completed" | "teacher-ended") => {
     if (submissionStarted.current || existingSubmission) return;
     submissionStarted.current = true;
     clearTimers();
-    const evaluatedSnapshot = snapshotRef.current ? snapshot : completionReason === "completed" ? snapshot : undefined;
+    cancelReviewClock();
+    const evaluatedSnapshot = snapshotRef.current ?? snapshot;
     const submission = submissionFor(placementsRef.current, completionReason, evaluatedSnapshot);
     setFinalSubmission(submission);
     setCompleted(true);
@@ -202,7 +219,7 @@ export function Week4SystemProcess({
     setPointerFlyer(null);
     setSwallowFlyer(null);
     await submitResult(submission);
-  }, [clearTimers, existingSubmission, submissionFor, submitResult]);
+  }, [cancelReviewClock, clearTimers, existingSubmission, submissionFor, submitResult]);
 
   useEffect(() => {
     if (!forceSubmit || completed || existingSubmission) return;
@@ -224,12 +241,15 @@ export function Week4SystemProcess({
     setPlacements(corrected);
     setCorrectionComplete(true);
     setAnnouncement(text.corrected);
-    void finalize(initialSnapshot, "completed");
-  }, [cards, completed, existingSubmission, finalize, forceSubmit, initialSnapshot, text.corrected]);
+    const payload = existingDraft?.payload as DraftPayload | undefined;
+    const duration = typeof payload?.reviewDurationMs === "number" ? payload.reviewDurationMs : ANSWER_REVIEW_TOTAL_MS;
+    const startedAt = typeof payload?.reviewStartedAt === "number" ? payload.reviewStartedAt : currentReviewTimestamp();
+    startReviewClock(duration, () => void finalize(initialSnapshot, "completed"), remainingReviewTime(startedAt, duration));
+  }, [cards, completed, existingDraft, existingSubmission, finalize, forceSubmit, initialSnapshot, startReviewClock, text.corrected]);
 
-  const saveDraft = useCallback((nextPlacements: Placements) => {
+  const saveDraft = useCallback((nextPlacements: Placements, evaluatedSnapshot?: Placements, review?: { startedAt: number; durationMs: number }) => {
     placementsRef.current = nextPlacements;
-    void onDraft?.(submissionFor(nextPlacements, "draft"));
+    void onDraft?.(submissionFor(nextPlacements, "draft", evaluatedSnapshot, review));
   }, [onDraft, submissionFor]);
 
   const commitMove = useCallback((cardId: string, target: Placement) => {
@@ -358,9 +378,7 @@ export function Week4SystemProcess({
     setTrashOpen(false);
     setCorrectionComplete(true);
     setAnnouncement(text.corrected);
-    const reviewTimer = window.setTimeout(() => void finalize(snapshot, "completed"), reduceMotion ? 900 : 1900);
-    timerIds.current.push(reviewTimer);
-  }, [cards, finalize, reduceMotion, text.corrected]);
+  }, [cards, text.corrected]);
 
   const measureFlyers = useCallback((wrongIds: string[]) => {
     const boardElement = boardRef.current;
@@ -392,15 +410,15 @@ export function Week4SystemProcess({
     setChecked(true);
     setSelectedCardId(null);
     setAnnouncement(text.checking);
-    void onDraft?.(submissionFor(snapshot, "draft", snapshot));
-    const flashDelay = reduceMotion ? 0 : 650;
-    const travelDelay = reduceMotion ? 0 : 760;
+    const startedAt = currentReviewTimestamp();
+    void onDraft?.(submissionFor(snapshot, "draft", snapshot, { startedAt, durationMs: ANSWER_REVIEW_TOTAL_MS }));
+    startReviewClock(ANSWER_REVIEW_TOTAL_MS, () => void finalize(snapshot, "completed"));
+    const flashDelay = ANSWER_REVIEW_MARK_MS;
+    const travelDelay = reduceMotion ? 0 : ANSWER_REVIEW_MOVE_MS;
     const flashTimer = window.setTimeout(() => {
       if (wrongIds.length === 0) {
         setCorrectionComplete(true);
         setAnnouncement(text.allCorrect);
-        const reviewTimer = window.setTimeout(() => void finalize(snapshot, "completed"), reduceMotion ? 700 : 1200);
-        timerIds.current.push(reviewTimer);
         return;
       }
       setCorrecting(true);
@@ -410,16 +428,20 @@ export function Week4SystemProcess({
       timerIds.current.push(travelTimer);
     }, flashDelay);
     timerIds.current.push(flashTimer);
-  }, [cards, completed, currentPlacedCount, finalize, finishCorrection, measureFlyers, onDraft, reduceMotion, submissionFor, text.allCorrect, text.checking]);
+  }, [cards, completed, currentPlacedCount, finalize, finishCorrection, measureFlyers, onDraft, reduceMotion, startReviewClock, submissionFor, text.allCorrect, text.checking]);
 
   if (existingSubmission && !completed) {
     return <section className="panel module-shell system-process-shell"><div className="module-title-chip">{text.title}</div><div className="module-complete-card"><LockKeyhole size={42} /><h2>{text.locked}</h2><p>{text.lockedDetail}</p></div></section>;
   }
 
   const cardsFor = (target: Placement) => cards.filter((card) => placements[card.id] === target);
-  const isWrong = (id: string) => checked && !correctionComplete && evaluationSnapshot?.[id] !== cards.find((card) => card.id === id)?.target;
-  const isCorrectPlacement = (id: string) => checked && !isWrong(id);
+  const wasInitiallyWrong = (id: string) => checked && evaluationSnapshot?.[id] !== cards.find((card) => card.id === id)?.target;
+  const wasInitiallyCorrect = (id: string) => checked && !wasInitiallyWrong(id);
+  const isWrong = (id: string) => wasInitiallyWrong(id) && !correctionComplete;
+  const isCorrected = (id: string) => wasInitiallyWrong(id) && correctionComplete;
   const trashCount = cardsFor("isNot").length;
+  const correctedTrashCards = correctionComplete ? cards.filter((card) => card.target === "isNot" && wasInitiallyWrong(card.id)) : [];
+  const visibleCardsFor = (target: Placement) => cardsFor(target).filter((card) => target !== "isNot" || !isCorrected(card.id));
 
   return <section className="panel module-shell system-process-shell">
     <div className="module-topline"><div className="module-title-chip">{text.title}</div><strong>{currentPlacedCount} / {cards.length}</strong></div>
@@ -439,15 +461,17 @@ export function Week4SystemProcess({
           <header><span>{target === "is" ? <Check size={20} /> : <Trash2 size={20} />}</span><div><h2>{text[target]}</h2><small>{cardsFor(target).length} {text.placed}</small></div></header>
           {target === "isNot" && <div className={`system-trash ${trashOpen ? "open" : ""}`} aria-hidden="true"><div className="system-trash-lid" data-system-trash-mouth><i /></div><div className="system-trash-body"><Trash2 size={42} /><b>{trashCount}</b></div></div>}
           <div className="system-zone-cards">
-            {cardsFor(target).map((card) => <button
+            {visibleCardsFor(target).map((card) => <button
               data-system-card={card.id}
               key={card.id}
               type="button"
-              className={`system-process-card placed ${settlingCardId === card.id ? "settling" : ""} ${isWrong(card.id) ? "wrong-placement" : ""} ${correcting && isWrong(card.id) ? "flying-source" : ""}`}
+              className={`system-process-card placed ${settlingCardId === card.id ? "settling" : ""} ${isWrong(card.id) ? "wrong-placement" : ""} ${wasInitiallyCorrect(card.id) ? "correct-placement" : ""} ${isCorrected(card.id) ? "corrected-placement" : ""} ${correcting && isWrong(card.id) ? "flying-source" : ""}`}
               onClick={(event) => { event.stopPropagation(); select(card.id); }}
-            ><span data-i18n-skip>{card.text[locale]}</span>{isWrong(card.id) ? <X size={15} aria-hidden="true" /> : isCorrectPlacement(card.id) ? <Check size={15} aria-hidden="true" /> : <Undo2 size={15} aria-label={text.return} />}</button>)}
-            {cardsFor(target).length === 0 && <p className="system-zone-empty">{text.empty}</p>}
+              aria-label={`${card.text[locale]}${wasInitiallyCorrect(card.id) ? `. ${text.correct}` : isCorrected(card.id) ? `. ${text.correctedBadge}` : isWrong(card.id) ? `. ${text.wrong}` : ""}`}
+            ><span data-i18n-skip>{card.text[locale]}</span>{isWrong(card.id) ? <X size={15} aria-label={text.wrong} /> : wasInitiallyCorrect(card.id) ? <Check size={15} aria-label={text.correct} /> : isCorrected(card.id) ? <><Check size={15} aria-hidden="true" /><small className="system-correction-badge">✕ {text.correctedBadge}</small></> : <Undo2 size={15} aria-label={text.return} />}</button>)}
+            {visibleCardsFor(target).length === 0 && <p className="system-zone-empty">{text.empty}</p>}
           </div>
+          {target === "isNot" && correctedTrashCards.length > 0 && <div className="system-correction-log" aria-live="polite"><strong>✓ {text.correctedLog}</strong>{correctedTrashCards.map((card) => <span key={card.id} data-i18n-skip>{card.text[locale]}</span>)}</div>}
         </section>)}
       </div>
       <section className="system-card-pool">
@@ -474,6 +498,6 @@ export function Week4SystemProcess({
     </div>
     <div className="system-process-footer"><div aria-live="polite">{announcement || (currentPlacedCount < cards.length ? text.checkHint : "")}</div><Button icon={<Check size={18} />} disabled={currentPlacedCount !== cards.length || checked || Boolean(swallowFlyer)} onClick={check}>{text.check}</Button></div>
     {submitting && <div className="notice">{text.saving}</div>}
-    {submitFailed && finalSubmission && <><div className="notice error">{text.saveError}</div><Button loading={submitting} icon={<RotateCcw size={17} />} onClick={() => void submitResult(finalSubmission)}>{text.retry}</Button></>}
+    {submitFailed && finalSubmission && <><div className="notice error">{text.saveError}</div><Button loading={submitting} icon={<RotateCcw size={17} />} onClick={() => { if (submissionStarted.current) return; submissionStarted.current = true; void submitResult(finalSubmission); }}>{text.retry}</Button></>}
   </section>;
 }
