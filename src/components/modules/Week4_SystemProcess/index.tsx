@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Check, GripVertical, LockKeyhole, MousePointerClick, RotateCcw, Sparkles, Trash2, Undo2, X } from "lucide-react";
+import { Check, GripVertical, LockKeyhole, MousePointerClick, RotateCcw, Trash2, Undo2, X } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { useI18n } from "@/lib/i18n/I18nContext";
 import type { LearningModuleProps, ModuleDraft, ModuleSubmission } from "@/types";
@@ -25,8 +25,8 @@ const copy = {
     interactionHint: "Kartı sürükle veya seç; sonra doğru hedefe dokun.",
     pool: "Kartlar",
     poolHint: "Kartları doğru alana sürükle.",
-    is: "SİSTEM YAKLAŞIMINA UYGUN",
-    isNot: "UYGUN DEĞİL",
+    is: "Sistem Nedir?",
+    isNot: "Sistem Ne Değildir?",
     empty: "Kartı buraya bırak",
     selected: "seçildi",
     return: "Kartı havuza geri al",
@@ -36,24 +36,11 @@ const copy = {
     checking: "İlk yerleşimlerin kontrol ediliyor…",
     corrected: "Yanlış kartlar doğru alanlarına taşındı.",
     allCorrect: "Tüm kartlar ilk kontrolde doğru yerdeydi.",
-    firstCheck: "İlk kontrolde doğru",
-    review: "Kartların ve kısa açıklamaları",
-    completed: "Kart sınıflandırman tamamlandı",
-    completedDetail: "Puanın ilk kontroldeki doğru yerleşimlerinden hesaplandı. Aşağıda bütün kartları inceleyebilirsin.",
-    partial: "Kısmi yerleşimin kaydedildi",
-    partialDetail: "Öğretmen modülü sonlandırdığı için yerleştirdiğin kartlar kaydedildi.",
     locked: "Bu modül tamamlandı",
     lockedDetail: "Yanıtların kilitlendi. Öğretmen sonuçları açıklayana kadar bekleyin.",
     saving: "Yanıt kaydediliyor…",
     saveError: "Yanıt kaydedilemedi. İlerlemen korundu.",
     retry: "Kaydı tekrar dene",
-    points: "Toplam puan",
-    correct: "Doğru",
-    incorrect: "Yanlış",
-    yourPlacement: "Senin yerleştirmen",
-    correctTarget: "Doğru hedef",
-    notPlaced: "Yerleştirilmedi",
-    continueFeedback: "Geri bildirime geç",
   },
   en: {
     title: "Week 4 · Module 3: What Is and Is Not a System?",
@@ -61,8 +48,8 @@ const copy = {
     interactionHint: "Drag or select a card, then tap the correct target.",
     pool: "Cards",
     poolHint: "Drag the cards to the correct area.",
-    is: "ALIGNS WITH SYSTEMS THINKING",
-    isNot: "NOT SUITABLE",
+    is: "What Is a System?",
+    isNot: "What Is Not a System?",
     empty: "Drop a card here",
     selected: "selected",
     return: "Return card to the pool",
@@ -72,24 +59,11 @@ const copy = {
     checking: "Checking your first placements…",
     corrected: "Incorrect cards moved to their correct areas.",
     allCorrect: "Every card was in the correct area on the first check.",
-    firstCheck: "Correct on the first check",
-    review: "Your cards and brief explanations",
-    completed: "Your card classification is complete",
-    completedDetail: "Your score was calculated from correct first placements. You can review every card below.",
-    partial: "Your partial placement was saved",
-    partialDetail: "The cards you placed were saved because the teacher ended the module.",
     locked: "This module is complete",
     lockedDetail: "Your answers are locked. Wait until the teacher reveals the results.",
     saving: "Saving your answer…",
     saveError: "The answer could not be saved. Your progress is preserved.",
     retry: "Try saving again",
-    points: "Total score",
-    correct: "Correct",
-    incorrect: "Incorrect",
-    yourPlacement: "Your placement",
-    correctTarget: "Correct target",
-    notPlaced: "Not placed",
-    continueFeedback: "Continue to feedback",
   },
 } as const;
 
@@ -139,8 +113,6 @@ export function Week4SystemProcess({
   existingSubmission,
   existingDraft,
   forceSubmit,
-  reviewMode,
-  onReviewComplete,
   seedKey,
 }: LearningModuleProps & { seedKey: string }) {
   const { locale } = useI18n();
@@ -178,7 +150,6 @@ export function Week4SystemProcess({
   const pendingTrashCard = useRef<string | null>(null);
   const reduceMotion = useReducedMotion();
   const currentPlacedCount = placedCount(placements);
-  const firstScore = evaluationSnapshot ? cards.filter((card) => evaluationSnapshot[card.id] === card.target).length : 0;
 
   const clearTimers = useCallback(() => {
     timerIds.current.forEach((timer) => window.clearTimeout(timer));
@@ -441,24 +412,13 @@ export function Week4SystemProcess({
     timerIds.current.push(flashTimer);
   }, [cards, completed, currentPlacedCount, finalize, finishCorrection, measureFlyers, onDraft, reduceMotion, submissionFor, text.allCorrect, text.checking]);
 
-  if (existingSubmission && !completed && !reviewMode) {
+  if (existingSubmission && !completed) {
     return <section className="panel module-shell system-process-shell"><div className="module-title-chip">{text.title}</div><div className="module-complete-card"><LockKeyhole size={42} /><h2>{text.locked}</h2><p>{text.lockedDetail}</p></div></section>;
-  }
-
-  if (completed || (reviewMode && existingSubmission)) {
-    const storedPayload = existingSubmission?.payload as DraftPayload | undefined;
-    const storedPlacements = placementsFromPayload(cards, storedPayload);
-    const storedSnapshot = submittedPlacementsFromPayload(cards, storedPayload);
-    const snapshot = completed ? evaluationSnapshot ?? placements : storedSnapshot ?? storedPlacements;
-    const score = cards.filter((card) => snapshot[card.id] === card.target).length;
-    const endedByTeacher = (finalSubmission?.payload.completionReason ?? existingSubmission?.payload.completionReason) === "teacher-ended";
-    return <section className="panel module-shell system-process-shell"><div className="module-title-chip">{text.title}</div><div className="module-complete-card system-process-result"><Sparkles size={42} /><h2>{endedByTeacher ? text.partial : text.completed}</h2><p>{endedByTeacher ? text.partialDetail : text.completedDetail}</p><strong className="system-process-final-score">{text.points}: {score * pointsPerCard} / {cards.length * pointsPerCard}</strong><div className="system-process-result-stats"><span><Check size={18} />{text.correct}<b>{score}</b></span><span><X size={18} />{text.incorrect}<b>{cards.length - score}</b></span></div><section className="system-process-review"><h3>{text.review}</h3>{cards.map((card) => { const chosen = snapshot[card.id]; const isCorrect = chosen === card.target; return <details key={card.id} className={isCorrect ? "correct" : "incorrect"}><summary><span aria-hidden="true">{isCorrect ? "✓" : "✕"}</span><span data-i18n-skip>{card.text[locale]}</span><small>{isCorrect ? text.correct : text.incorrect}</small></summary><div className="system-review-detail"><p><b>{text.yourPlacement}:</b> {chosen === "pool" ? text.notPlaced : text[chosen]}</p><p><b>{text.correctTarget}:</b> {text[card.target]}</p><p data-i18n-skip>{card.explanation[locale]}</p></div></details>; })}</section>{submitting && <div className="notice">{text.saving}</div>}{submitFailed && finalSubmission && <><div className="notice error">{text.saveError}</div><Button loading={submitting} icon={<RotateCcw size={17} />} onClick={() => void submitResult(finalSubmission)}>{text.retry}</Button></>}{reviewMode && onReviewComplete && <Button onClick={onReviewComplete}>{text.continueFeedback}</Button>}</div></section>;
   }
 
   const cardsFor = (target: Placement) => cards.filter((card) => placements[card.id] === target);
   const isWrong = (id: string) => checked && !correctionComplete && evaluationSnapshot?.[id] !== cards.find((card) => card.id === id)?.target;
   const isCorrectPlacement = (id: string) => checked && !isWrong(id);
-  const reviewCards = evaluationSnapshot ? cards.filter((card) => evaluationSnapshot[card.id] !== card.target) : [];
   const trashCount = cardsFor("isNot").length;
 
   return <section className="panel module-shell system-process-shell">
@@ -477,9 +437,7 @@ export function Week4SystemProcess({
           onClick={() => activateZone(target)}
         >
           <header><span>{target === "is" ? <Check size={20} /> : <Trash2 size={20} />}</span><div><h2>{text[target]}</h2><small>{cardsFor(target).length} {text.placed}</small></div></header>
-          {target === "is"
-            ? <div className="system-accept-visual" aria-hidden="true"><Check size={34} /><span>{text.is}</span></div>
-            : <div className={`system-trash ${trashOpen ? "open" : ""}`} aria-hidden="true"><div className="system-trash-lid" data-system-trash-mouth><i /></div><div className="system-trash-body"><Trash2 size={42} /><b>{trashCount}</b></div></div>}
+          {target === "isNot" && <div className={`system-trash ${trashOpen ? "open" : ""}`} aria-hidden="true"><div className="system-trash-lid" data-system-trash-mouth><i /></div><div className="system-trash-body"><Trash2 size={42} /><b>{trashCount}</b></div></div>}
           <div className="system-zone-cards">
             {cardsFor(target).map((card) => <button
               data-system-card={card.id}
@@ -514,7 +472,8 @@ export function Week4SystemProcess({
       <AnimatePresence>{swallowFlyer && <motion.div key={swallowFlyer.id} className="system-process-flyer trash-flight" style={{ left: swallowFlyer.left, top: swallowFlyer.top, width: swallowFlyer.width }} initial={{ x: 0, y: 0, opacity: 1, scale: 1 }} animate={{ x: swallowFlyer.x, y: swallowFlyer.y, opacity: .2, scale: .24 }} exit={{ opacity: 0 }} transition={{ duration: .48, ease: "easeIn" }} data-i18n-skip>{cards.find((card) => card.id === swallowFlyer.id)?.text[locale]}</motion.div>}</AnimatePresence>
       <AnimatePresence>{flyers.map((flyer) => { const card = cards.find((item) => item.id === flyer.id); return card ? <motion.div key={flyer.id} className={`system-process-flyer ${card.target === "isNot" ? "trash-flight" : ""}`} style={{ left: flyer.left, top: flyer.top, width: flyer.width }} initial={{ x: 0, y: 0, opacity: 1, scale: 1 }} animate={{ x: flyer.x, y: flyer.y, opacity: card.target === "isNot" ? .15 : 1, scale: card.target === "isNot" ? .25 : 1 }} exit={{ opacity: 0 }} transition={{ duration: reduceMotion ? 0 : .72, ease: "easeInOut" }} data-i18n-skip>{card.text[locale]}</motion.div> : null; })}</AnimatePresence>
     </div>
-    <div className="system-process-footer"><div aria-live="polite">{announcement || (currentPlacedCount < cards.length ? text.checkHint : "")}{evaluationSnapshot && !completed && <strong>{text.firstCheck}: {firstScore}/{cards.length}</strong>}</div><Button icon={<Check size={18} />} disabled={currentPlacedCount !== cards.length || checked || Boolean(swallowFlyer)} onClick={check}>{text.check}</Button></div>
-    {correctionComplete && reviewCards.length > 0 && <section className="system-process-review"><h3>{text.review}</h3>{reviewCards.map((card) => <details key={card.id}><summary data-i18n-skip>{card.text[locale]}</summary><p data-i18n-skip>{card.explanation[locale]}</p></details>)}</section>}
+    <div className="system-process-footer"><div aria-live="polite">{announcement || (currentPlacedCount < cards.length ? text.checkHint : "")}</div><Button icon={<Check size={18} />} disabled={currentPlacedCount !== cards.length || checked || Boolean(swallowFlyer)} onClick={check}>{text.check}</Button></div>
+    {submitting && <div className="notice">{text.saving}</div>}
+    {submitFailed && finalSubmission && <><div className="notice error">{text.saveError}</div><Button loading={submitting} icon={<RotateCcw size={17} />} onClick={() => void submitResult(finalSubmission)}>{text.retry}</Button></>}
   </section>;
 }

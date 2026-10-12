@@ -89,7 +89,13 @@ assert.match(factorySource, /points: 4/, "Module 1 must award four points for a 
 assert.doesNotMatch(factorySource, /<Button onClick=\{advance\}/, "Module 1 must advance without an explicit next-decision action");
 assert.match(factorySource, /window\.setTimeout\(advance, delay\)/, "Module 1 must auto-advance after visual feedback");
 assert.doesNotMatch(factorySource, /className="factory-hud"|className="factory-metrics"/, "Module 1 gameplay must not expose live score or metric panels");
-assert.match(factorySource, /continueFeedback/, "Module 1 results must require explicit acknowledgement before feedback");
+assert.match(factorySource, /if \(phaseRef\.current !== "recovery-choice"\) return;/, "Module 1 stale timeout callbacks must be ignored after the recovery choice resolves");
+assert.match(factorySource, /if \(phase !== "recovery-choice" \|\| !inProgress\) return;/, "Module 1 timer must run only while the second choice is active");
+assert.match(factorySource, /activeDeadlineEpoch\.current = null;\s+deadlinePerf\.current = null;\s+setRemainingMs\(0\);\s+phaseRef\.current = "recovery-repair";/, "A correct second choice must stop the recovery timer immediately");
+assert.doesNotMatch(factorySource, /setNotification\(current\.hints\[zone\]\[locale\]\)/, "Inspection hints must not be duplicated in the common factory status panel");
+assert.match(factorySource, /className="factory-zone-hint"/, "Inspection hints must render under the selected factory component");
+assert.match(factorySource, /aria-expanded=/, "Factory inspection controls must expose their expanded state");
+assert.doesNotMatch(factorySource, /factory-answer-review|continueFeedback/, "Module 1 must not render an intermediate result/review screen");
 assert.doesNotMatch(bossSource, /boss-next-button|Sonraki patron|Next boss/, "Module 2 must advance without a next button");
 assert.doesNotMatch(bossSource, /current\.sourcePage|Kaynak sayfa|Source page/, "Module 2 must not expose source-page metadata");
 assert.match(bossSource, /feedbackDuration = 1050/, "Module 2 feedback must auto-advance after about one second");
@@ -100,8 +106,12 @@ assert.match(systemSource, /onPointerMove/, "Module 3 must provide pointer dragg
 assert.match(systemSource, /onZoneKeyDown/, "Module 3 must retain a keyboard placement path");
 assert.match(systemSource, /system-trash-lid/, "Module 3 must render an animated trash lid");
 assert.match(systemSource, /submittedPlacements/, "Module 3 must preserve the first-check scoring snapshot");
-assert.match(systemSource, /continueFeedback/, "Module 3 results must require explicit acknowledgement before feedback");
-assert.match(studentSource, /result-review/, "The student route must persist the result-review transition across reloads");
+assert.match(systemSource, /is: "Sistem Nedir\?"/, "Module 3 must use the exact requested positive target title");
+assert.match(systemSource, /isNot: "Sistem Ne Değildir\?"/, "Module 3 must use the exact requested negative target title");
+assert.doesNotMatch(systemSource, /<div className="system-accept-visual"|system-process-review|continueFeedback/, "Module 3 must not render the repeated accept label or an intermediate result/review screen");
+assert.doesNotMatch(studentSource, /result-review|completeResultReview|showingModuleReview/, "The student route must not retain the removed result-review transition");
+assert.match(studentSource, /feedbackAvailable[\s\S]*shouldShowFeedback/, "The student route must derive the direct feedback transition centrally");
+assert.match(studentSource, /if \(shouldShowFeedback && activeSubmission\)/, "The feedback form must take precedence as soon as a submission is available");
 assert.doesNotMatch(studentSource, /firstCheckCorrect\}\/12/, "The result screen must not retain the old 12-card denominator");
 assert.match(studentSource, /payload\.cardCount/, "The result denominator must come from the submitted round");
 assert.match(demoSource, /Parçalar ilişkilidir/, "The onboarding demo must use the specified positive example");
@@ -111,10 +121,11 @@ assert.match(demoSource, /Fabrikayı incele, karar ver; gerekirse 5 saniyede kur
 assert.match(demoSource, /duration: 10/, "Factory onboarding must use the ten-second storyboard");
 assert.match(demoSource, /İncele → Karar ver → Kurtar/, "Factory onboarding must end with the interaction summary");
 assert.match(globalStyles, /\.factory-zone\.repair-target/, "The repair target must receive a visible factory-scene highlight");
+assert.match(globalStyles, /\.factory-zone-hint/, "Factory inspection hints must have a responsive anchored visual");
 assert.match(globalStyles, /@media \(max-width: 700px\)[\s\S]*?\.factory-scene/, "The factory must provide a narrow-screen layout");
 assert.match(globalStyles, /\.system-process-zones \{[^}]*grid-template:[^}]*repeat\(2/s, "Desktop targets must remain side by side");
 assert.match(globalStyles, /@media \(max-width: 700px\)[\s\S]*?\.system-process-zones \{ grid-template-columns: repeat\(2/, "The two targets must remain side by side on phones when space permits");
-assert.match(globalStyles, /@media \(max-width: 350px\)[\s\S]*?\.system-process-zones \{ grid-template-columns: 1fr;/, "The target layout must stack only on exceptionally narrow screens");
+assert.doesNotMatch(globalStyles, /@media \(max-width: 350px\)[\s\S]*?\.system-process-zones \{ grid-template-columns: 1fr;/, "The two Module 3 targets must not be stacked by the narrow-screen override");
 assert.match(globalStyles, /@media \(prefers-reduced-motion: reduce\)/, "Week 4 interactions must honor reduced-motion preferences");
 assert.match(scoreCapMigration, /target_module_id = 3 then 80/, "Module 3 score cap must match eight ten-point cards");
 

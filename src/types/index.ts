@@ -87,8 +87,6 @@ export interface ModuleDraft {
 export interface LearningModuleProps {
   onSubmit: (submission: ModuleSubmission) => Promise<boolean | void> | boolean | void;
   onDraft?: (submission: ModuleSubmission) => Promise<void> | void;
-  onReviewComplete?: () => void;
-  reviewMode?: boolean;
   faultInjected?: boolean;
   existingSubmission?: Submission | null;
   existingDraft?: ModuleDraft | null;

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "framer-motion";
-import { AlertTriangle, Boxes, Check, Cog, LockKeyhole, Radio, RotateCcw, Sparkles, Users, X } from "lucide-react";
+import { AlertTriangle, Boxes, Check, Cog, LockKeyhole, Radio, RotateCcw, Users, X } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { useI18n } from "@/lib/i18n/I18nContext";
 import type { LearningModuleProps, ModuleDraft, ModuleSubmission } from "@/types";
@@ -62,13 +62,7 @@ const copy = {
   tr: {
     title: "Hafta 4 · Modül 1: Fabrikayı Dönüştür",
     inspect: "Fabrikayı incele, karar ver; gerekirse 5 saniyede kurtar!",
-    stage: "Aşama",
     decision: "Karar",
-    score: "Puan",
-    production: "Üretim",
-    adaptation: "Uyum",
-    participation: "Çalışan Katılımı",
-    representative: "temsili gösterge",
     factoryEvent: "Fabrikada ne oluyor?",
     inspectHint: "Fabrikadaki işaretlere dokun, sorunu araştır.",
     choose: "Kararın",
@@ -81,43 +75,17 @@ const copy = {
     repaired: "Fabrikayı zamanında kurtardın! +4 puan",
     secondWrong: "İkinci karar da sorunu çözemedi.",
     timeout: "Kurtarma süresi doldu.",
-    wrongZone: "Bu bölge arızanın kaynağı değil; süre devam ediyor.",
-    next: "Sonraki Karar",
-    results: "Sonuçları Gör",
-    effectFlow: "Neden-sonuç akışı",
-    learning: "Bu aşamanın sistem dersi",
-    completed: "Fabrika Dönüşümü Tamamlandı!",
-    completedDetail: "Üç farklı sistem modelinde dokuz kararı tamamladın.",
-    firstCorrect: "İlk denemede doğru",
-    recovered: "Kurtarılan",
-    unrecovered: "Kurtarılamayan",
-    modelSummary: "Mekanik model düzeni, biyolojik model çevreye uyumu, sosyo-kültürel model ise ortak amaç ve katılımı öne çıkarır. Hiçbiri her durumda tek başına en iyi değildir.",
-    partial: "Kısmi fabrika kararların kaydedildi",
-    partialDetail: "Öğretmen modülü sonlandırdığı için o ana kadarki kararların güvenle kaydedildi.",
+    wrongZone: "Bu bölge arızanın kaynağı değil; doğru onarım bölgesini bul.",
     locked: "Bu modül tamamlandı",
     lockedDetail: "Kararların kilitlendi. Öğretmen sonuçları açıklayana kadar bekleyin.",
     saving: "Yanıt kaydediliyor…",
     saveError: "Yanıt kaydedilemedi. İlerlemen korundu.",
     retry: "Kaydı tekrar dene",
-    totalScore: "Toplam puan",
-    correctCount: "Doğru",
-    incorrectCount: "Yanlış",
-    answerReview: "Kararların ve açıklamaları",
-    yourAnswer: "İlk kararın",
-    correctAnswer: "Doğru karar",
-    notAnswered: "Yanıtlanmadı",
-    continueFeedback: "Geri bildirime geç",
   },
   en: {
     title: "Week 4 · Module 1: Transform the Factory",
     inspect: "Inspect the factory, decide, and rescue it in 5 seconds if needed!",
-    stage: "Stage",
     decision: "Decision",
-    score: "Score",
-    production: "Production",
-    adaptation: "Adaptation",
-    participation: "Employee Participation",
-    representative: "illustrative metric",
     factoryEvent: "What is happening in the factory?",
     inspectHint: "Tap the factory markers and investigate the problem.",
     choose: "Your decision",
@@ -130,32 +98,12 @@ const copy = {
     repaired: "You rescued the factory in time! +4 points",
     secondWrong: "The second decision did not solve the problem either.",
     timeout: "The rescue window expired.",
-    wrongZone: "This zone is not the source of the fault; the timer keeps running.",
-    next: "Next Decision",
-    results: "View Results",
-    effectFlow: "Cause-and-effect flow",
-    learning: "Systems lesson from this stage",
-    completed: "Factory Transformation Complete!",
-    completedDetail: "You completed nine decisions across three different system models.",
-    firstCorrect: "Correct on first try",
-    recovered: "Recovered",
-    unrecovered: "Not recovered",
-    modelSummary: "The mechanical model emphasizes order, the biological model adaptation to the environment, and the socio-cultural model shared purpose and participation. None is universally best on its own.",
-    partial: "Your partial factory decisions were saved",
-    partialDetail: "Your decisions up to that point were saved because the teacher ended the module.",
+    wrongZone: "This zone is not the source of the fault; find the correct repair zone.",
     locked: "This module is complete",
     lockedDetail: "Your decisions are locked. Wait until the teacher reveals the results.",
     saving: "Saving your answer…",
     saveError: "The answer could not be saved. Your progress is preserved.",
     retry: "Try saving again",
-    totalScore: "Total score",
-    correctCount: "Correct",
-    incorrectCount: "Incorrect",
-    answerReview: "Your decisions and explanations",
-    yourAnswer: "Your first decision",
-    correctAnswer: "Correct decision",
-    notAnswered: "Not answered",
-    continueFeedback: "Continue to feedback",
   },
 } as const;
 
@@ -217,12 +165,14 @@ function FactoryScene({
   effect,
   repairTarget,
   inspectedZone,
+  inspectedHint,
   onZone,
   locale,
 }: {
   effect: FactoryEffectType | null;
   repairTarget: FactoryZone | null;
   inspectedZone: FactoryZone | null;
+  inspectedHint: string | null;
   onZone: (zone: FactoryZone) => void;
   locale: "tr" | "en";
 }) {
@@ -231,14 +181,17 @@ function FactoryScene({
     <div className="factory-building"><b>SYS LAB</b><i /><i /><i /></div>
     <div className="factory-smoke" aria-hidden="true"><i /><i /><i /></div>
     <div className="factory-conveyor" aria-hidden="true"><div className="factory-belt"><i /><i /><i /><i /></div><span className="factory-package p1"><Boxes size={22} /></span><span className="factory-package p2"><Boxes size={22} /></span><span className="factory-package p3"><Boxes size={22} /></span></div>
-    <button type="button" className={`factory-zone machine ${repairTarget === "machine" ? "repair-target" : ""} ${inspectedZone === "machine" ? "inspected" : ""}`} onClick={() => onZone("machine")} aria-label={factoryZoneLabels.machine[locale]}>
+    <button type="button" className={`factory-zone machine ${repairTarget === "machine" ? "repair-target" : ""} ${inspectedZone === "machine" ? "inspected" : ""}`} onClick={() => onZone("machine")} aria-label={factoryZoneLabels.machine[locale]} aria-expanded={inspectedZone === "machine" && Boolean(inspectedHint)} aria-controls={inspectedZone === "machine" && inspectedHint ? "factory-hint-machine" : undefined}>
       <span className="factory-machine"><Cog className="gear main" /><Cog className="gear small" /><i className="machine-light" /></span><i className="factory-zone-ping" /><b><Cog size={15} /> {factoryZoneLabels.machine[locale]}</b>
+      {inspectedZone === "machine" && inspectedHint && <span id="factory-hint-machine" className="factory-zone-hint" role="status" data-i18n-skip>{inspectedHint}</span>}
     </button>
-    <button type="button" className={`factory-zone sensor ${repairTarget === "sensor" ? "repair-target" : ""} ${inspectedZone === "sensor" ? "inspected" : ""}`} onClick={() => onZone("sensor")} aria-label={factoryZoneLabels.sensor[locale]}>
+    <button type="button" className={`factory-zone sensor ${repairTarget === "sensor" ? "repair-target" : ""} ${inspectedZone === "sensor" ? "inspected" : ""}`} onClick={() => onZone("sensor")} aria-label={factoryZoneLabels.sensor[locale]} aria-expanded={inspectedZone === "sensor" && Boolean(inspectedHint)} aria-controls={inspectedZone === "sensor" && inspectedHint ? "factory-hint-sensor" : undefined}>
       <span className="factory-sensor"><Radio /><i /><i /><i /></span><i className="factory-zone-ping" /><b><Radio size={15} /> {factoryZoneLabels.sensor[locale]}</b>
+      {inspectedZone === "sensor" && inspectedHint && <span id="factory-hint-sensor" className="factory-zone-hint" role="status" data-i18n-skip>{inspectedHint}</span>}
     </button>
-    <button type="button" className={`factory-zone workers ${repairTarget === "workers" ? "repair-target" : ""} ${inspectedZone === "workers" ? "inspected" : ""}`} onClick={() => onZone("workers")} aria-label={factoryZoneLabels.workers[locale]}>
+    <button type="button" className={`factory-zone workers ${repairTarget === "workers" ? "repair-target" : ""} ${inspectedZone === "workers" ? "inspected" : ""}`} onClick={() => onZone("workers")} aria-label={factoryZoneLabels.workers[locale]} aria-expanded={inspectedZone === "workers" && Boolean(inspectedHint)} aria-controls={inspectedZone === "workers" && inspectedHint ? "factory-hint-workers" : undefined}>
       <span className="factory-workers"><i /><i /><i /></span><i className="factory-zone-ping" /><b><Users size={15} /> {factoryZoneLabels.workers[locale]}</b>
+      {inspectedZone === "workers" && inspectedHint && <span id="factory-hint-workers" className="factory-zone-hint" role="status" data-i18n-skip>{inspectedHint}</span>}
     </button>
     <div className="factory-stock" aria-hidden="true"><Boxes /><Boxes /><Boxes /></div>
     <div className="factory-feedback-line" aria-hidden="true"><span>•••••</span></div>
@@ -252,8 +205,6 @@ export function Week4FactoryTransform({
   existingSubmission,
   existingDraft,
   forceSubmit,
-  reviewMode,
-  onReviewComplete,
   seedKey,
 }: LearningModuleProps & { seedKey: string }) {
   const { locale } = useI18n();
@@ -377,7 +328,7 @@ export function Week4FactoryTransform({
   }, [index, saveDraft]);
 
   const resolveTimeout = useCallback(() => {
-    if (phaseRef.current !== "recovery-choice" && phaseRef.current !== "recovery-repair") return;
+    if (phaseRef.current !== "recovery-choice") return;
     const progress = inProgressRef.current;
     if (!progress || progress.scenarioId !== current.id) return;
     const first = current.options.find((option) => option.id === progress.firstOptionId);
@@ -404,7 +355,7 @@ export function Week4FactoryTransform({
   }, [resolveTimeout]);
 
   useEffect(() => {
-    if ((phase !== "recovery-choice" && phase !== "recovery-repair") || !inProgress) return;
+    if (phase !== "recovery-choice" || !inProgress) return;
     if (activeDeadlineEpoch.current !== inProgress.deadlineEpoch) {
       const remaining = Math.max(0, inProgress.deadlineEpoch - Date.now());
       activeDeadlineEpoch.current = inProgress.deadlineEpoch;
@@ -517,6 +468,9 @@ export function Week4FactoryTransform({
       actionLocked.current = false;
       return;
     }
+    activeDeadlineEpoch.current = null;
+    deadlinePerf.current = null;
+    setRemainingMs(0);
     phaseRef.current = "recovery-repair";
     setPhase("recovery-repair");
     setNotification(t.recoveryRepair);
@@ -528,10 +482,8 @@ export function Week4FactoryTransform({
     if (completed || existingSubmission || forceSubmit) return;
     setInspectedZone(zone);
     if (phaseRef.current !== "recovery-repair" || !inProgressRef.current) {
-      setNotification(current.hints[zone][locale]);
       return;
     }
-    if ((deadlinePerf.current ?? 0) <= performance.now()) { resolveTimeout(); return; }
     const zones = [...inProgressRef.current.clickedRepairZones, zone];
     const progress = { ...inProgressRef.current, clickedRepairZones: zones };
     inProgressRef.current = progress;
@@ -562,7 +514,7 @@ export function Week4FactoryTransform({
     setSelectedOptionId(progress.recoveryOptionId);
     setNotification(t.repaired);
     void first;
-  }, [activeEffect, commitResolvedAnswer, completed, current, existingSubmission, forceSubmit, index, locale, resolveTimeout, saveDraft, t.repaired, t.wrongZone]);
+  }, [activeEffect, commitResolvedAnswer, completed, current, existingSubmission, forceSubmit, index, saveDraft, t.repaired, t.wrongZone]);
 
   const advance = useCallback(() => {
     if (phaseRef.current !== "outcome" || completed || existingSubmission || forceSubmit) return;
@@ -595,55 +547,14 @@ export function Week4FactoryTransform({
     };
   }, [advance, completed, current.id, existingSubmission, forceSubmit, phase, reduceMotion]);
 
-  if (existingSubmission && !completed && !reviewMode) {
+  if (existingSubmission && !completed) {
     return <section className="panel module-shell factory-transform-shell"><div className="module-title-chip">{t.title}</div><div className="module-complete-card"><LockKeyhole size={42} /><h2>{t.locked}</h2><p>{t.lockedDetail}</p></div></section>;
-  }
-
-  if (completed || (reviewMode && existingSubmission)) {
-    const resultAnswers = completed ? answers : answersFromPayload(existingSubmission?.payload as DraftPayload | undefined);
-    const firstCorrect = resultAnswers.filter((answer) => answer.firstCorrect).length;
-    const recovered = resultAnswers.filter((answer) => answer.recoveryOutcome === "recovered").length;
-    const unrecovered = resultAnswers.filter((answer) => answer.recoveryOutcome === "second-wrong" || answer.recoveryOutcome === "timeout").length;
-    const successful = resultAnswers.filter((answer) => answer.points > 0).length;
-    const endedByTeacher = (finalSubmission?.payload.completionReason ?? existingSubmission?.payload.completionReason) === "teacher-ended";
-    return <section className="panel module-shell factory-transform-shell">
-      <div className="module-title-chip">{t.title}</div>
-      <div className="module-complete-card factory-complete">
-        <Sparkles size={42} />
-        <h2>{endedByTeacher ? t.partial : t.completed}</h2>
-        <p>{endedByTeacher ? t.partialDetail : t.completedDetail}</p>
-        <strong className="factory-final-score">{t.totalScore}: {resultAnswers.reduce((total, answer) => total + answer.points, 0)} / 90</strong>
-        <div className="factory-result-stats">
-          <span><Check size={18} />{t.correctCount}<b>{successful}</b></span>
-          <span><X size={18} />{t.incorrectCount}<b>{scenarios.length - successful}</b></span>
-          <span>{t.firstCorrect}<b>{firstCorrect}</b></span>
-          <span>{t.recovered}<b>{recovered}</b></span>
-          <span>{t.unrecovered}<b>{unrecovered}</b></span>
-        </div>
-        <p className="factory-model-summary">{t.modelSummary}</p>
-        <section className="factory-answer-review">
-          <h3>{t.answerReview}</h3>
-          {scenarios.map((scenario) => {
-            const answer = resultAnswers.find((item) => item.scenarioId === scenario.id);
-            const chosen = scenario.options.find((option) => option.id === answer?.firstOptionId);
-            const correct = scenario.options.find((option) => option.isCorrect);
-            const succeeded = Boolean(answer && answer.points > 0);
-            return <details key={scenario.id} className={succeeded ? "correct" : "incorrect"}>
-              <summary><span aria-hidden="true">{succeeded ? "✓" : "✕"}</span><span data-i18n-skip>{scenario.question[locale]}</span><small>{succeeded ? t.correctCount : t.incorrectCount}</small></summary>
-              <div><p><b>{t.yourAnswer}:</b> <span data-i18n-skip>{chosen?.text[locale] ?? t.notAnswered}</span></p><p><b>{t.correctAnswer}:</b> <span data-i18n-skip>{correct?.text[locale]}</span></p><p data-i18n-skip>{correct?.explanation[locale] ?? scenario.learning[locale]}</p></div>
-            </details>;
-          })}
-        </section>
-        {submitting && <div className="notice">{t.saving}</div>}
-        {submitFailed && finalSubmission && <><div className="notice error">{t.saveError}</div><Button loading={submitting} icon={<RotateCcw size={17} />} onClick={() => void submitResult(finalSubmission)}>{t.retry}</Button></>}
-        {reviewMode && onReviewComplete && <Button onClick={onReviewComplete}>{t.continueFeedback}</Button>}
-      </div>
-    </section>;
   }
 
   const progress = inProgress;
   const outcomeAnswer = answers.find((answer) => answer.scenarioId === current.id);
   const repairTarget = phase === "recovery-repair" ? current.repairZone : null;
+  const inspectedHint = phase === "decision" && inspectedZone ? current.hints[inspectedZone][locale] : null;
   const outcomeSucceeded = Boolean(outcomeAnswer && outcomeAnswer.points > 0);
   const notificationTone = phase.startsWith("recovery")
     ? "urgent"
@@ -662,11 +573,11 @@ export function Week4FactoryTransform({
     <div className="module-title-chip">{t.title}</div>
     <div className="factory-decision-progress" aria-label={`${t.decision} ${index + 1} / ${scenarios.length}`}>{scenarios.map((scenario, itemIndex) => <i key={scenario.id} className={itemIndex < index ? "done" : itemIndex === index ? "active" : ""} />)}</div>
     <p className="factory-instruction">{t.inspect}</p>
-    <FactoryScene effect={activeEffect} repairTarget={repairTarget} inspectedZone={inspectedZone} onZone={handleZone} locale={locale} />
+    <FactoryScene effect={activeEffect} repairTarget={repairTarget} inspectedZone={inspectedZone} inspectedHint={inspectedHint} onZone={handleZone} locale={locale} />
     <div className={`factory-notification ${notificationTone}`} aria-live="polite">
       <span>{notificationTone === "success" ? <Check size={18} /> : notificationTone === "urgent" || notificationTone === "fault" ? <AlertTriangle size={18} /> : <Radio size={18} />}</span>
       <div><strong>{notificationTitle}</strong><p data-i18n-skip>{notification || current.event[locale]}</p></div>
-      {phase.startsWith("recovery") && <div className="factory-recovery-timer"><b>{(remainingMs / 1000).toFixed(1)}</b><small>{t.recoveryTime}</small><i style={{ width: `${Math.max(0, Math.min(100, remainingMs / recoveryWindowMs * 100))}%` }} /></div>}
+      {phase === "recovery-choice" && <div className="factory-recovery-timer"><b>{(remainingMs / 1000).toFixed(1)}</b><small>{t.recoveryTime}</small><i style={{ width: `${Math.max(0, Math.min(100, remainingMs / recoveryWindowMs * 100))}%` }} /></div>}
     </div>
     {phase === "decision" && <p className="factory-inspect-hint">{t.inspectHint}</p>}
     <div className="factory-decision-panel">
@@ -685,5 +596,7 @@ export function Week4FactoryTransform({
         })}
       </div>
     </div>
+    {submitting && <div className="notice">{t.saving}</div>}
+    {submitFailed && finalSubmission && <><div className="notice error">{t.saveError}</div><Button loading={submitting} icon={<RotateCcw size={17} />} onClick={() => void submitResult(finalSubmission)}>{t.retry}</Button></>}
   </section>;
 }
