@@ -1,9 +1,7 @@
 export const ANSWER_REVIEW_TOTAL_MS = 5000;
-export const ANSWER_REVIEW_MARK_MS = 450;
-export const ANSWER_REVIEW_MOVE_MS = 720;
-export const MATCHING_ROUND_ONE_REVIEW_MS = 3800;
+export const MATCHING_ROUND_ONE_REVIEW_MS = 4000;
 
-export type AnswerReviewPhase = "editing" | "marking" | "correcting" | "reviewing" | "submitting" | "done";
+export type AnswerReviewPhase = "editing" | "reviewing" | "submitting" | "done";
 
 export function currentReviewTimestamp() {
   return Date.now();

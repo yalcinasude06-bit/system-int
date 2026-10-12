@@ -1,11 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { motion, useReducedMotion } from "framer-motion";
-import { CheckCircle2, LockKeyhole, RotateCcw, XCircle } from "lucide-react";
+import { RotateCcw, XCircle } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { useI18n } from "@/lib/i18n/I18nContext";
-import { ANSWER_REVIEW_MARK_MS, ANSWER_REVIEW_MOVE_MS, ANSWER_REVIEW_TOTAL_MS, currentReviewTimestamp, evaluatePlacementSnapshot, remainingReviewTime, type AnswerReviewPhase } from "@/lib/answerReview";
+import { ANSWER_REVIEW_TOTAL_MS, currentReviewTimestamp, evaluatePlacementSnapshot, remainingReviewTime, type AnswerReviewPhase } from "@/lib/answerReview";
 import { useAnswerReviewTimer } from "@/lib/useAnswerReviewTimer";
 import type { ModuleDraft, ModuleSubmission, Submission } from "@/types";
 
@@ -37,34 +36,22 @@ const anatomyAnswerKey = Object.fromEntries((Object.entries(anatomy) as Array<[Z
 
 const reviewCopy = {
   tr: {
-    correct: "Doğru",
     wrong: "Yanlış",
-    corrected: "İlk yerleşim yanlıştı · Düzeltildi",
-    checking: "İlk yerleşimlerin kontrol ediliyor…",
-    allCorrect: "Tebrikler! Dokuz yerleşimin tamamı doğru.",
-    review: "Yanlış yerleşimler doğru yuvalarına taşındı. İlk cevap işaretlerini inceleyebilirsin.",
     saving: "Yanıt kaydediliyor…",
     saveError: "Yanıt kaydedilemedi. İlk yerleşimlerin korundu.",
     retry: "Kaydı tekrar dene",
     check: "Kontrol Et",
     reviewing: "İnceleniyor…",
     reset: "Sıfırla",
-    lockedReview: "Yanıtlar kilitlendi · puan gizli",
   },
   en: {
-    correct: "Correct",
     wrong: "Incorrect",
-    corrected: "Initial placement was incorrect · Corrected",
-    checking: "Checking your initial placements…",
-    allCorrect: "Great! All nine placements are correct.",
-    review: "Incorrect placements moved to their correct slots. You can review the initial-answer markers.",
     saving: "Saving your answer…",
     saveError: "The answer could not be saved. Your initial placements are preserved.",
     retry: "Try saving again",
     check: "Check",
     reviewing: "Reviewing…",
     reset: "Reset",
-    lockedReview: "Answers locked · score hidden",
   },
 } as const;
 
@@ -84,19 +71,13 @@ function savedOriginalPlacements(draft?: ModuleDraft | null) {
   return Object.keys(parsed).length === cards.length ? parsed : null;
 }
 
-function correctedAnatomyPlacements() {
-  return { ...anatomyAnswerKey };
-}
-
-function AnatomySlot({ id, placements, selected, locked, originalPlacements, correctionComplete, reduceMotion, labels, dragOver, pointerCard, onPlace, onSelect, onDragOver, getPointerHandlers, consumeSuppressedClick }: {
+function AnatomySlot({ id, placements, selected, locked, originalPlacements, labels, dragOver, pointerCard, onPlace, onSelect, onDragOver, getPointerHandlers, consumeSuppressedClick }: {
   id: ZoneId;
   placements: Record<string, string>;
   selected: string | null;
   locked: boolean;
   originalPlacements: Record<string, string> | null;
-  correctionComplete: boolean;
-  reduceMotion: boolean;
-  labels: { correct: string; wrong: string; corrected: string };
+  labels: { wrong: string };
   dragOver: string | null;
   pointerCard: string | null;
   onPlace: (zoneId: ZoneId, card: string, sourceZone?: ZoneId) => void;
@@ -107,16 +88,10 @@ function AnatomySlot({ id, placements, selected, locked, originalPlacements, cor
 }) {
   const zone = anatomy[id];
   const value = placements[id];
-  const evaluated = Boolean(originalPlacements);
-  const initiallyCorrect = evaluated && originalPlacements?.[id] === zone.answer;
-  const initiallyWrong = evaluated && !initiallyCorrect;
-  const corrected = initiallyWrong && correctionComplete && value === zone.answer;
-  const correct = initiallyCorrect || corrected;
-  const wrong = initiallyWrong && !corrected;
-  const evaluationLabel = initiallyCorrect ? labels.correct : corrected ? labels.corrected : initiallyWrong ? labels.wrong : "";
+  const wrong = Boolean(originalPlacements && originalPlacements[id] !== zone.answer);
 
   return <div
-    className={`scene-slot slot-${id} ${value ? "filled" : ""} ${correct ? "correct" : ""} ${wrong ? "wrong" : ""} ${corrected ? "corrected" : ""} ${dragOver === id ? "drag-over" : ""} ${locked ? "locked" : ""}`}
+    className={`scene-slot slot-${id} ${value ? "filled" : ""} ${wrong ? "wrong" : ""} ${dragOver === id ? "drag-over" : ""} ${locked ? "locked" : ""}`}
     data-anatomy-drop={id}
     onDragEnter={(event) => { if (!locked) { event.preventDefault(); onDragOver(id); } }}
     onDragOver={(event) => { if (!locked) event.preventDefault(); }}
@@ -128,22 +103,18 @@ function AnatomySlot({ id, placements, selected, locked, originalPlacements, cor
     }}
     onClick={() => { if (!locked && selected) onPlace(id, selected); }}
     role="group"
-    aria-label={`${zone.hint}: ${value || "boş"}${evaluationLabel ? `. ${evaluationLabel}` : ""}`}
+    aria-label={`${zone.hint}: ${value || "boş"}${wrong ? `. ${labels.wrong}` : ""}`}
   >
     <span className="slot-number" aria-hidden="true">{slotNumbers[id]}</span>
-    {value && <motion.button
+    {value && <button
       type="button"
       disabled={locked}
       draggable={false}
-      layoutId={`anatomy-card-${value}`}
-      transition={{ duration: reduceMotion ? 0 : ANSWER_REVIEW_MOVE_MS / 1000, ease: "easeInOut" }}
       className={`placed-anatomy-card ${selected === value ? "selected" : ""} ${pointerCard === value ? "pointer-source" : ""}`}
       {...getPointerHandlers(value, id)}
       onClick={(event) => { event.stopPropagation(); if (consumeSuppressedClick()) return; if (!locked) onSelect(value); }}
-    >{value}</motion.button>}
-    {correct && <CheckCircle2 className="slot-check" size={18} aria-label={labels.correct} />}
+    >{value}</button>}
     {wrong && <XCircle className="slot-check wrong-check" size={18} aria-label={labels.wrong} />}
-    {corrected && <span className="anatomy-correction-badge"><XCircle size={11} aria-hidden="true" /> {labels.corrected}</span>}
   </div>;
 }
 
@@ -216,20 +187,18 @@ export function ConceptualStage({ onComplete, onProgress, initialSubmission, ini
 }) {
   const { locale } = useI18n();
   const text = reviewCopy[locale];
-  const reduceMotion = Boolean(useReducedMotion());
   const draftOriginal = savedOriginalPlacements(initialDraft);
   const savedDraftPlacements = savedPlacements(initialDraft);
   const initial = savedPlacements(initialSubmission);
   const initialPlacements = Object.keys(initial).length
     ? initial
     : draftOriginal
-      ? correctedAnatomyPlacements()
+      ? draftOriginal
       : savedDraftPlacements;
   const initialPhase: AnswerReviewPhase = initialSubmission?.is_submitted ? "done" : draftOriginal ? "reviewing" : "editing";
   const [placements, setPlacements] = useState<Record<string, string>>(initialPlacements);
   const [originalPlacements, setOriginalPlacements] = useState<Record<string, string> | null>(draftOriginal);
   const [phase, setPhase] = useState<AnswerReviewPhase>(initialPhase);
-  const [correctionComplete, setCorrectionComplete] = useState(Boolean(draftOriginal));
   const [selected, setSelected] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitFailed, setSubmitFailed] = useState(false);
@@ -242,16 +211,10 @@ export function ConceptualStage({ onComplete, onProgress, initialSubmission, ini
   const phaseRef = useRef<AnswerReviewPhase>(initialPhase);
   const placementsRef = useRef(initialPlacements);
   const originalPlacementsRef = useRef<Record<string, string> | null>(draftOriginal);
-  const correctionTimers = useRef<number[]>([]);
   const restoredReview = useRef(false);
   const { start: startReviewClock, cancel: cancelReviewClock } = useAnswerReviewTimer();
   const locked = phase !== "editing";
   const available = useMemo(() => cards.filter((card) => !Object.values(placements).includes(card)), [placements]);
-
-  const clearCorrectionTimers = useCallback(() => {
-    correctionTimers.current.forEach((timer) => window.clearTimeout(timer));
-    correctionTimers.current = [];
-  }, []);
 
   const progressSubmission = useCallback((nextPlacements: Record<string, string>, review?: { snapshot: Record<string, string>; startedAt: number }): ModuleSubmission => {
     const evaluation = evaluatePlacementSnapshot(review?.snapshot ?? nextPlacements, anatomyAnswerKey);
@@ -362,7 +325,6 @@ export function ConceptualStage({ onComplete, onProgress, initialSubmission, ini
   const submitSnapshot = useCallback(async (snapshot: Record<string, string>, completionReason: "completed" | "teacher-ended") => {
     if (submissionStarted.current || (completionReason === "completed" && Object.keys(snapshot).length !== cards.length)) return;
     submissionStarted.current = true;
-    clearCorrectionTimers();
     cancelReviewClock();
     phaseRef.current = "submitting";
     setPhase("submitting");
@@ -390,39 +352,22 @@ export function ConceptualStage({ onComplete, onProgress, initialSubmission, ini
       setPhase("reviewing");
       setSubmitFailed(true);
     }
-  }, [cancelReviewClock, clearCorrectionTimers, onComplete]);
+  }, [cancelReviewClock, onComplete]);
 
   const startReview = useCallback(() => {
     if (phaseRef.current !== "editing" || Object.keys(placementsRef.current).length !== cards.length) return;
     const snapshot = { ...placementsRef.current };
     const startedAt = currentReviewTimestamp();
-    phaseRef.current = "marking";
+    phaseRef.current = "reviewing";
     originalPlacementsRef.current = snapshot;
     setOriginalPlacements(snapshot);
-    setPhase("marking");
-    setCorrectionComplete(false);
+    setPhase("reviewing");
     setSelected(null);
     setDragOver(null);
     void onProgress?.(progressSubmission(snapshot, { snapshot, startedAt }));
 
-    const markTimer = window.setTimeout(() => {
-      if (phaseRef.current !== "marking") return;
-      const corrected = correctedAnatomyPlacements();
-      phaseRef.current = "correcting";
-      placementsRef.current = corrected;
-      setPhase("correcting");
-      setPlacements(corrected);
-      const moveTimer = window.setTimeout(() => {
-        if (phaseRef.current !== "correcting") return;
-        phaseRef.current = "reviewing";
-        setCorrectionComplete(true);
-        setPhase("reviewing");
-      }, reduceMotion ? 0 : ANSWER_REVIEW_MOVE_MS);
-      correctionTimers.current.push(moveTimer);
-    }, ANSWER_REVIEW_MARK_MS);
-    correctionTimers.current.push(markTimer);
     startReviewClock(ANSWER_REVIEW_TOTAL_MS, () => void submitSnapshot(snapshot, "completed"));
-  }, [onProgress, progressSubmission, reduceMotion, startReviewClock, submitSnapshot]);
+  }, [onProgress, progressSubmission, startReviewClock, submitSnapshot]);
 
   useEffect(() => {
     if (!draftOriginal || restoredReview.current || initialSubmission?.is_submitted || forceSubmit) return;
@@ -434,16 +379,12 @@ export function ConceptualStage({ onComplete, onProgress, initialSubmission, ini
 
   useEffect(() => {
     if (!forceSubmit || phaseRef.current === "done" || initialSubmission?.is_submitted) return;
-    clearCorrectionTimers();
     cancelReviewClock();
     const snapshot = originalPlacementsRef.current ?? placementsRef.current;
     void submitSnapshot(snapshot, "teacher-ended");
-  }, [cancelReviewClock, clearCorrectionTimers, forceSubmit, initialSubmission, submitSnapshot]);
+  }, [cancelReviewClock, forceSubmit, initialSubmission, submitSnapshot]);
 
-  useEffect(() => clearCorrectionTimers, [clearCorrectionTimers]);
-
-  const allCorrect = Boolean(originalPlacements && evaluatePlacementSnapshot(originalPlacements, anatomyAnswerKey).score === 100);
-  const slotProps = { placements, selected, locked, originalPlacements, correctionComplete, reduceMotion, labels: text, dragOver, pointerCard: pointerDrag?.card || null, onPlace: place, onSelect: setSelected, onDragOver: (zone: ZoneId | null) => setDragOver(zone), getPointerHandlers, consumeSuppressedClick };
+  const slotProps = { placements, selected, locked, originalPlacements, labels: text, dragOver, pointerCard: pointerDrag?.card || null, onPlace: place, onSelect: setSelected, onDragOver: (zone: ZoneId | null) => setDragOver(zone), getPointerHandlers, consumeSuppressedClick };
 
   return <div className="module-shell">
     <p className="touch-drag-hint"><span aria-hidden="true">☝️</span> Kartı basılı tutup hedef yuvaya sürükleyin. Dokunarak yerleştirme de kullanılabilir.</p>
@@ -459,14 +400,12 @@ export function ConceptualStage({ onComplete, onProgress, initialSubmission, ini
     >
       {available.map((card) => <button draggable={false} key={card} type="button" className={`drag-card ${selected === card ? "selected" : ""} ${pointerDrag?.card === card ? "pointer-source" : ""}`} {...getPointerHandlers(card)} onClick={(event) => { event.stopPropagation(); if (consumeSuppressedClick()) return; if (!locked) setSelected(card); }}>{card}</button>)}
       {!available.length && !locked && <span className="anatomy-tray-empty">Tüm kartlar şemada · Geri almak için buraya bırak.</span>}
-      {locked && <span className="locked-badge"><LockKeyhole size={14} /> {text.lockedReview}</span>}
     </div>
 
     <div className="system-scene-scroll"><div className="system-scene"><SystemSceneArt /><AnatomySlot id="constraint" {...slotProps} /><AnatomySlot id="components" {...slotProps} /><AnatomySlot id="relations" {...slotProps} /><AnatomySlot id="boundary" {...slotProps} /><AnatomySlot id="purpose" {...slotProps} /><AnatomySlot id="environment" {...slotProps} /><AnatomySlot id="interface" {...slotProps} /><AnatomySlot id="input" {...slotProps} /><AnatomySlot id="output" {...slotProps} /></div></div>
 
     {pointerDrag?.moved && <div className="pointer-drag-ghost anatomy-pointer-ghost" style={{ left: pointerDrag.x, top: pointerDrag.y }} aria-hidden="true">{pointerDrag.card}</div>}
 
-    {originalPlacements && <div className={allCorrect ? "notice success" : "notice anatomy-review-notice"} aria-live="polite">{phase === "marking" || phase === "correcting" ? text.checking : allCorrect ? text.allCorrect : text.review}</div>}
     {submitting && <div className="notice">{text.saving}</div>}
     {submitFailed && finalAttempt && <div className="button-row"><div className="notice error">{text.saveError}</div><Button loading={submitting} icon={<RotateCcw size={16} />} onClick={() => void submitSnapshot(finalAttempt.snapshot, finalAttempt.reason)}>{text.retry}</Button></div>}
     <div className="button-row module-actions"><Button loading={submitting} onClick={startReview} disabled={locked || Object.keys(placements).length !== cards.length}>{locked ? text.reviewing : text.check}</Button><Button variant="secondary" icon={<RotateCcw size={16} />} disabled={locked || submitting} onClick={() => { placementsRef.current = {}; setPlacements({}); setSelected(null); void onProgress?.(progressSubmission({})); }}>{text.reset}</Button></div>

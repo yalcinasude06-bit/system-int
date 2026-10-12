@@ -5,7 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Check, GripVertical, LockKeyhole, MousePointerClick, RotateCcw, Trash2, Undo2, X } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { useI18n } from "@/lib/i18n/I18nContext";
-import { ANSWER_REVIEW_MARK_MS, ANSWER_REVIEW_MOVE_MS, ANSWER_REVIEW_TOTAL_MS, currentReviewTimestamp, remainingReviewTime } from "@/lib/answerReview";
+import { ANSWER_REVIEW_TOTAL_MS, currentReviewTimestamp, remainingReviewTime } from "@/lib/answerReview";
 import { useAnswerReviewTimer } from "@/lib/useAnswerReviewTimer";
 import type { LearningModuleProps, ModuleDraft, ModuleSubmission } from "@/types";
 import { buildSystemProcessRound, type PresentedSystemProcessCard, type SystemProcessTarget } from "./systemProcessContent";
@@ -35,13 +35,7 @@ const copy = {
     placed: "kart yerleştirildi",
     check: "Kontrol Et",
     checkHint: "Kontrol etmek için tüm 8 kartı yerleştir.",
-    checking: "İlk yerleşimlerin kontrol ediliyor…",
-    corrected: "Yanlış kartlar doğru alanlarına taşındı.",
-    correctedBadge: "İlk yerleşim yanlıştı · Düzeltildi",
-    correctedLog: "Düzeltildi",
-    correct: "Doğru",
     wrong: "Yanlış",
-    allCorrect: "Tüm kartlar ilk kontrolde doğru yerdeydi.",
     locked: "Bu modül tamamlandı",
     lockedDetail: "Yanıtların kilitlendi. Öğretmen sonuçları açıklayana kadar bekleyin.",
     saving: "Yanıt kaydediliyor…",
@@ -62,13 +56,7 @@ const copy = {
     placed: "cards placed",
     check: "Check",
     checkHint: "Place all 8 cards before checking.",
-    checking: "Checking your first placements…",
-    corrected: "Incorrect cards moved to their correct areas.",
-    correctedBadge: "Initial placement was incorrect · Corrected",
-    correctedLog: "Corrected",
-    correct: "Correct",
     wrong: "Incorrect",
-    allCorrect: "Every card was in the correct area on the first check.",
     locked: "This module is complete",
     lockedDetail: "Your answers are locked. Wait until the teacher reveals the results.",
     saving: "Saving your answer…",
@@ -133,10 +121,6 @@ export function Week4SystemProcess({
   const [placements, setPlacements] = useState<Placements>(initialPlacements);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [checked, setChecked] = useState(Boolean(initialSnapshot));
-  const [correcting, setCorrecting] = useState(false);
-  const [correctionComplete, setCorrectionComplete] = useState(false);
-  const [announcement, setAnnouncement] = useState("");
-  const [flyers, setFlyers] = useState<Flyer[]>([]);
   const [pointerFlyer, setPointerFlyer] = useState<PointerFlyer | null>(null);
   const [swallowFlyer, setSwallowFlyer] = useState<Flyer | null>(null);
   const [dragOverTarget, setDragOverTarget] = useState<SystemProcessTarget | null>(null);
@@ -181,7 +165,7 @@ export function Week4SystemProcess({
         placements: nextPlacements,
         evaluatedPlacements: evaluatedSnapshot ?? null,
         submittedPlacements: evaluatedSnapshot ?? null,
-        correctedPlacements: evaluatedSnapshot && completionReason !== "draft" ? nextPlacements : null,
+        correctedPlacements: null,
         isChecked: Boolean(evaluatedSnapshot),
         correctCount,
         answeredCount: placedCount(snapshot),
@@ -214,8 +198,6 @@ export function Week4SystemProcess({
     const submission = submissionFor(placementsRef.current, completionReason, evaluatedSnapshot);
     setFinalSubmission(submission);
     setCompleted(true);
-    setCorrecting(false);
-    setFlyers([]);
     setPointerFlyer(null);
     setSwallowFlyer(null);
     await submitResult(submission);
@@ -234,18 +216,14 @@ export function Week4SystemProcess({
   useEffect(() => {
     if (!initialSnapshot || resumedCheckedDraft.current || existingSubmission || forceSubmit || completed) return;
     resumedCheckedDraft.current = true;
-    const corrected = { ...initialSnapshot };
-    cards.forEach((card) => { corrected[card.id] = card.target; });
-    placementsRef.current = corrected;
     snapshotRef.current = initialSnapshot;
-    setPlacements(corrected);
-    setCorrectionComplete(true);
-    setAnnouncement(text.corrected);
+    placementsRef.current = initialSnapshot;
+    setPlacements(initialSnapshot);
     const payload = existingDraft?.payload as DraftPayload | undefined;
     const duration = typeof payload?.reviewDurationMs === "number" ? payload.reviewDurationMs : ANSWER_REVIEW_TOTAL_MS;
     const startedAt = typeof payload?.reviewStartedAt === "number" ? payload.reviewStartedAt : currentReviewTimestamp();
     startReviewClock(duration, () => void finalize(initialSnapshot, "completed"), remainingReviewTime(startedAt, duration));
-  }, [cards, completed, existingDraft, existingSubmission, finalize, forceSubmit, initialSnapshot, startReviewClock, text.corrected]);
+  }, [completed, existingDraft, existingSubmission, finalize, forceSubmit, initialSnapshot, startReviewClock]);
 
   const saveDraft = useCallback((nextPlacements: Placements, evaluatedSnapshot?: Placements, review?: { startedAt: number; durationMs: number }) => {
     placementsRef.current = nextPlacements;
@@ -368,67 +346,18 @@ export function Week4SystemProcess({
     if (target) placeCard(candidate.id, target);
   }, [placeCard, targetAt]);
 
-  const finishCorrection = useCallback((snapshot: Placements, wrongIds: string[]) => {
-    const corrected = { ...snapshot };
-    cards.forEach((card) => { if (wrongIds.includes(card.id)) corrected[card.id] = card.target; });
-    placementsRef.current = corrected;
-    setPlacements(corrected);
-    setFlyers([]);
-    setCorrecting(false);
-    setTrashOpen(false);
-    setCorrectionComplete(true);
-    setAnnouncement(text.corrected);
-  }, [cards, text.corrected]);
-
-  const measureFlyers = useCallback((wrongIds: string[]) => {
-    const boardElement = boardRef.current;
-    const board = boardElement?.getBoundingClientRect();
-    if (!board || !boardElement) return [];
-    return wrongIds.flatMap((id) => {
-      const card = cards.find((item) => item.id === id);
-      const cardBox = boardElement.querySelector<HTMLElement>(`[data-system-card="${id}"]`)?.getBoundingClientRect();
-      const targetElement = card?.target === "isNot"
-        ? boardElement.querySelector<HTMLElement>("[data-system-trash-mouth]")
-        : boardElement.querySelector<HTMLElement>(`[data-system-target="${card?.target}"]`);
-      const targetBox = targetElement?.getBoundingClientRect();
-      if (!cardBox || !targetBox) return [];
-      const left = cardBox.left - board.left;
-      const top = cardBox.top - board.top;
-      const targetLeft = targetBox.left - board.left + Math.max(8, (targetBox.width - cardBox.width) / 2);
-      const targetTop = targetBox.top - board.top + (card?.target === "isNot" ? targetBox.height / 2 : 54);
-      return [{ id, left, top, x: targetLeft - left, y: targetTop - top, width: cardBox.width }];
-    });
-  }, [cards]);
-
   const check = useCallback(() => {
     if (checkStarted.current || completed || currentPlacedCount !== cards.length || trashBusy.current) return;
     checkStarted.current = true;
     const snapshot = { ...placementsRef.current };
-    const wrongIds = cards.filter((card) => snapshot[card.id] !== card.target).map((card) => card.id);
     snapshotRef.current = snapshot;
     setEvaluationSnapshot(snapshot);
     setChecked(true);
     setSelectedCardId(null);
-    setAnnouncement(text.checking);
     const startedAt = currentReviewTimestamp();
     void onDraft?.(submissionFor(snapshot, "draft", snapshot, { startedAt, durationMs: ANSWER_REVIEW_TOTAL_MS }));
     startReviewClock(ANSWER_REVIEW_TOTAL_MS, () => void finalize(snapshot, "completed"));
-    const flashDelay = ANSWER_REVIEW_MARK_MS;
-    const travelDelay = reduceMotion ? 0 : ANSWER_REVIEW_MOVE_MS;
-    const flashTimer = window.setTimeout(() => {
-      if (wrongIds.length === 0) {
-        setCorrectionComplete(true);
-        setAnnouncement(text.allCorrect);
-        return;
-      }
-      setCorrecting(true);
-      setFlyers(measureFlyers(wrongIds));
-      setTrashOpen(wrongIds.some((id) => cards.find((card) => card.id === id)?.target === "isNot"));
-      const travelTimer = window.setTimeout(() => finishCorrection(snapshot, wrongIds), travelDelay);
-      timerIds.current.push(travelTimer);
-    }, flashDelay);
-    timerIds.current.push(flashTimer);
-  }, [cards, completed, currentPlacedCount, finalize, finishCorrection, measureFlyers, onDraft, reduceMotion, startReviewClock, submissionFor, text.allCorrect, text.checking]);
+  }, [cards.length, completed, currentPlacedCount, finalize, onDraft, startReviewClock, submissionFor]);
 
   if (existingSubmission && !completed) {
     return <section className="panel module-shell system-process-shell"><div className="module-title-chip">{text.title}</div><div className="module-complete-card"><LockKeyhole size={42} /><h2>{text.locked}</h2><p>{text.lockedDetail}</p></div></section>;
@@ -436,12 +365,7 @@ export function Week4SystemProcess({
 
   const cardsFor = (target: Placement) => cards.filter((card) => placements[card.id] === target);
   const wasInitiallyWrong = (id: string) => checked && evaluationSnapshot?.[id] !== cards.find((card) => card.id === id)?.target;
-  const wasInitiallyCorrect = (id: string) => checked && !wasInitiallyWrong(id);
-  const isWrong = (id: string) => wasInitiallyWrong(id) && !correctionComplete;
-  const isCorrected = (id: string) => wasInitiallyWrong(id) && correctionComplete;
   const trashCount = cardsFor("isNot").length;
-  const correctedTrashCards = correctionComplete ? cards.filter((card) => card.target === "isNot" && wasInitiallyWrong(card.id)) : [];
-  const visibleCardsFor = (target: Placement) => cardsFor(target).filter((card) => target !== "isNot" || !isCorrected(card.id));
 
   return <section className="panel module-shell system-process-shell">
     <div className="module-topline"><div className="module-title-chip">{text.title}</div><strong>{currentPlacedCount} / {cards.length}</strong></div>
@@ -461,17 +385,17 @@ export function Week4SystemProcess({
           <header><span>{target === "is" ? <Check size={20} /> : <Trash2 size={20} />}</span><div><h2>{text[target]}</h2><small>{cardsFor(target).length} {text.placed}</small></div></header>
           {target === "isNot" && <div className={`system-trash ${trashOpen ? "open" : ""}`} aria-hidden="true"><div className="system-trash-lid" data-system-trash-mouth><i /></div><div className="system-trash-body"><Trash2 size={42} /><b>{trashCount}</b></div></div>}
           <div className="system-zone-cards">
-            {visibleCardsFor(target).map((card) => <button
+            {cardsFor(target).map((card) => <button
               data-system-card={card.id}
               key={card.id}
               type="button"
-              className={`system-process-card placed ${settlingCardId === card.id ? "settling" : ""} ${isWrong(card.id) ? "wrong-placement" : ""} ${wasInitiallyCorrect(card.id) ? "correct-placement" : ""} ${isCorrected(card.id) ? "corrected-placement" : ""} ${correcting && isWrong(card.id) ? "flying-source" : ""}`}
+              className={`system-process-card placed ${settlingCardId === card.id ? "settling" : ""} ${wasInitiallyWrong(card.id) ? "wrong-placement" : ""}`}
+              disabled={checked || completed || Boolean(existingSubmission) || Boolean(forceSubmit)}
               onClick={(event) => { event.stopPropagation(); select(card.id); }}
-              aria-label={`${card.text[locale]}${wasInitiallyCorrect(card.id) ? `. ${text.correct}` : isCorrected(card.id) ? `. ${text.correctedBadge}` : isWrong(card.id) ? `. ${text.wrong}` : ""}`}
-            ><span data-i18n-skip>{card.text[locale]}</span>{isWrong(card.id) ? <X size={15} aria-label={text.wrong} /> : wasInitiallyCorrect(card.id) ? <Check size={15} aria-label={text.correct} /> : isCorrected(card.id) ? <><Check size={15} aria-hidden="true" /><small className="system-correction-badge">✕ {text.correctedBadge}</small></> : <Undo2 size={15} aria-label={text.return} />}</button>)}
-            {visibleCardsFor(target).length === 0 && <p className="system-zone-empty">{text.empty}</p>}
+              aria-label={`${card.text[locale]}${wasInitiallyWrong(card.id) ? `. ${text.wrong}` : ""}`}
+            ><span data-i18n-skip>{card.text[locale]}</span>{wasInitiallyWrong(card.id) ? <X size={15} aria-label={text.wrong} /> : <Undo2 size={15} aria-label={text.return} />}</button>)}
+            {cardsFor(target).length === 0 && <p className="system-zone-empty">{text.empty}</p>}
           </div>
-          {target === "isNot" && correctedTrashCards.length > 0 && <div className="system-correction-log" aria-live="polite"><strong>✓ {text.correctedLog}</strong>{correctedTrashCards.map((card) => <span key={card.id} data-i18n-skip>{card.text[locale]}</span>)}</div>}
         </section>)}
       </div>
       <section className="system-card-pool">
@@ -494,9 +418,8 @@ export function Week4SystemProcess({
       </section>
       {pointerFlyer && <div className="system-process-pointer-flyer" style={{ left: pointerFlyer.left, top: pointerFlyer.top, width: pointerFlyer.width, transform: `translate3d(${pointerFlyer.x}px,${pointerFlyer.y}px,0)` }} data-i18n-skip>{cards.find((card) => card.id === pointerFlyer.id)?.text[locale]}</div>}
       <AnimatePresence>{swallowFlyer && <motion.div key={swallowFlyer.id} className="system-process-flyer trash-flight" style={{ left: swallowFlyer.left, top: swallowFlyer.top, width: swallowFlyer.width }} initial={{ x: 0, y: 0, opacity: 1, scale: 1 }} animate={{ x: swallowFlyer.x, y: swallowFlyer.y, opacity: .2, scale: .24 }} exit={{ opacity: 0 }} transition={{ duration: .48, ease: "easeIn" }} data-i18n-skip>{cards.find((card) => card.id === swallowFlyer.id)?.text[locale]}</motion.div>}</AnimatePresence>
-      <AnimatePresence>{flyers.map((flyer) => { const card = cards.find((item) => item.id === flyer.id); return card ? <motion.div key={flyer.id} className={`system-process-flyer ${card.target === "isNot" ? "trash-flight" : ""}`} style={{ left: flyer.left, top: flyer.top, width: flyer.width }} initial={{ x: 0, y: 0, opacity: 1, scale: 1 }} animate={{ x: flyer.x, y: flyer.y, opacity: card.target === "isNot" ? .15 : 1, scale: card.target === "isNot" ? .25 : 1 }} exit={{ opacity: 0 }} transition={{ duration: reduceMotion ? 0 : .72, ease: "easeInOut" }} data-i18n-skip>{card.text[locale]}</motion.div> : null; })}</AnimatePresence>
     </div>
-    <div className="system-process-footer"><div aria-live="polite">{announcement || (currentPlacedCount < cards.length ? text.checkHint : "")}</div><Button icon={<Check size={18} />} disabled={currentPlacedCount !== cards.length || checked || Boolean(swallowFlyer)} onClick={check}>{text.check}</Button></div>
+    <div className="system-process-footer"><div aria-live="polite">{currentPlacedCount < cards.length ? text.checkHint : ""}</div><Button icon={<Check size={18} />} disabled={currentPlacedCount !== cards.length || checked || Boolean(swallowFlyer)} onClick={check}>{text.check}</Button></div>
     {submitting && <div className="notice">{text.saving}</div>}
     {submitFailed && finalSubmission && <><div className="notice error">{text.saveError}</div><Button loading={submitting} icon={<RotateCcw size={17} />} onClick={() => { if (submissionStarted.current) return; submissionStarted.current = true; void submitResult(finalSubmission); }}>{text.retry}</Button></>}
   </section>;

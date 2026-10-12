@@ -4,7 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type Pointer
 import { Check, LockKeyhole, RotateCcw, Unlink, X } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { useI18n } from "@/lib/i18n/I18nContext";
-import { ANSWER_REVIEW_MARK_MS, ANSWER_REVIEW_TOTAL_MS, MATCHING_ROUND_ONE_REVIEW_MS, currentReviewTimestamp, evaluatePlacementSnapshot, remainingReviewTime, type AnswerReviewPhase } from "@/lib/answerReview";
+import { ANSWER_REVIEW_TOTAL_MS, MATCHING_ROUND_ONE_REVIEW_MS, currentReviewTimestamp, evaluatePlacementSnapshot, remainingReviewTime, type AnswerReviewPhase } from "@/lib/answerReview";
 import { useAnswerReviewTimer } from "@/lib/useAnswerReviewTimer";
 import type { LearningModuleProps, ModuleDraft, ModuleSubmission } from "@/types";
 import { SystemTypeIllustration } from "./SystemTypeIllustration";
@@ -25,7 +25,7 @@ type ConnectionLine = {
   x2: number;
   y2: number;
   color: string;
-  status: "pending" | "correct" | "wrong";
+  status: "pending" | "wrong";
 };
 
 type MatchPointerDrag = { typeId: string; pointerId: number; x: number; y: number; startX: number; startY: number; moved: boolean };
@@ -67,13 +67,7 @@ const copy = {
     visuals: "Görseller",
     connect: "BAĞLA",
     hint: "Sistem türünü görsele sürükleyin. İsterseniz türü ve ardından görseli seçebilirsiniz.",
-    correct: "Doğru",
     wrong: "Yanlış",
-    correctAnswer: "Doğrusu",
-    correctedTarget: "Doğru hedef",
-    firstReview: "İlk beş eşleşme kontrol edildi. Doğru karşılıkları inceleyebilirsin; ikinci tur otomatik açılacak.",
-    finalReview: "İlk seçimlerin kontrol edildi. Doğru karşılıkları inceleyebilirsin.",
-    allCorrect: "Bu turdaki beş eşleşmenin tamamı doğru.",
     check: "Eşleştirmeleri Kontrol Et",
     saving: "Yanıt kaydediliyor…",
     saveError: "Yanıt kaydedilemedi. İlk eşleştirmelerin korundu.",
@@ -88,13 +82,7 @@ const copy = {
     visuals: "Visuals",
     connect: "MATCH",
     hint: "Drag a system type to a visual, or select the type and then the visual.",
-    correct: "Correct",
     wrong: "Incorrect",
-    correctAnswer: "Correct answer",
-    correctedTarget: "Correct target",
-    firstReview: "The first five matches were checked. Review the correct pairs; round two will open automatically.",
-    finalReview: "Your initial choices were checked. You can review the correct pairs.",
-    allCorrect: "All five matches in this round are correct.",
     check: "Check Matches",
     saving: "Saving your answer…",
     saveError: "The answer could not be saved. Your initial matches are preserved.",
@@ -165,7 +153,6 @@ export function Module4CompleteSystem({ onSubmit, onDraft, existingSubmission, e
   const [phase, setPhase] = useState<AnswerReviewPhase>(existingSubmission ? "done" : restoredReviewRound !== null ? "reviewing" : "editing");
   const [reviewingRound, setReviewingRound] = useState<ReviewRound>(restoredReviewRound);
   const [reviewSnapshot, setReviewSnapshot] = useState<Record<string, string> | null>(Object.keys(restoredReviewSnapshot).length ? restoredReviewSnapshot : null);
-  const [showCorrections, setShowCorrections] = useState(restoredReviewRound !== null);
   const [submitting, setSubmitting] = useState(false);
   const [submitFailed, setSubmitFailed] = useState(false);
   const [finalSubmission, setFinalSubmission] = useState<ModuleSubmission | null>(null);
@@ -181,7 +168,6 @@ export function Module4CompleteSystem({ onSubmit, onDraft, existingSubmission, e
   const firstPageSnapshotRef = useRef<Record<string, string> | null>(Object.keys(restoredFirstSnapshot).length ? restoredFirstSnapshot : null);
   const secondPageSnapshotRef = useRef<Record<string, string> | null>(Object.keys(restoredSecondSnapshot).length ? restoredSecondSnapshot : null);
   const submissionStarted = useRef(Boolean(existingSubmission));
-  const correctionTimers = useRef<number[]>([]);
   const restoredReviewStarted = useRef(false);
   const { start: startReviewClock, cancel: cancelReviewClock } = useAnswerReviewTimer();
   const interactionLocked = phase !== "editing";
@@ -189,11 +175,6 @@ export function Module4CompleteSystem({ onSubmit, onDraft, existingSubmission, e
   const currentSystemIds = systemRoundIds[roundIndex];
   const currentVisualCards = visualOrder.filter((id) => currentSystemIds.includes(id)).map((id) => systemTypes.find((item) => item.id === id)!);
   const activeReviewSnapshot = reviewingRound === roundIndex ? reviewSnapshot : null;
-
-  const clearCorrectionTimers = useCallback(() => {
-    correctionTimers.current.forEach((timer) => window.clearTimeout(timer));
-    correctionTimers.current = [];
-  }, []);
 
   const resetPointerDrag = useCallback(() => {
     pointerDragRef.current = null;
@@ -220,7 +201,7 @@ export function Module4CompleteSystem({ onSubmit, onDraft, existingSubmission, e
         x2: visualRect.left - boardRect.left,
         y2: visualRect.top + visualRect.height / 2 - boardRect.top,
         color: system.color,
-        status: activeReviewSnapshot ? typeId === visualId ? "correct" as const : "wrong" as const : "pending" as const,
+        status: activeReviewSnapshot && typeId !== visualId ? "wrong" as const : "pending" as const,
       }];
     });
     setLines(nextLines);
@@ -248,7 +229,6 @@ export function Module4CompleteSystem({ onSubmit, onDraft, existingSubmission, e
     if (submissionStarted.current || existingSubmission) return;
     if (completionReason === "completed" && Object.keys(snapshot).length !== systemTypes.length) return;
     submissionStarted.current = true;
-    clearCorrectionTimers();
     cancelReviewClock();
     phaseRef.current = "submitting";
     setPhase("submitting");
@@ -272,16 +252,14 @@ export function Module4CompleteSystem({ onSubmit, onDraft, existingSubmission, e
     }
     phaseRef.current = "done";
     setPhase("done");
-  }, [cancelReviewClock, clearCorrectionTimers, existingSubmission, onSubmit, reviewingRound, roundIndex]);
+  }, [cancelReviewClock, existingSubmission, onSubmit, reviewingRound, roundIndex]);
 
   const finishFirstRoundReview = useCallback(() => {
     if (phaseRef.current !== "reviewing") return;
-    clearCorrectionTimers();
     phaseRef.current = "editing";
     setPhase("editing");
     setReviewingRound(null);
     setReviewSnapshot(null);
-    setShowCorrections(false);
     setLines([]);
     setRoundIndex(1);
     saveDraft(matchesRef.current, {
@@ -290,7 +268,7 @@ export function Module4CompleteSystem({ onSubmit, onDraft, existingSubmission, e
       firstPageSnapshot: firstPageSnapshotRef.current,
       secondPageSnapshot: secondPageSnapshotRef.current,
     });
-  }, [clearCorrectionTimers, saveDraft]);
+  }, [saveDraft]);
 
   const startRoundReview = useCallback((targetRound: 0 | 1, nextMatches: Record<string, string>) => {
     if (phaseRef.current !== "editing") return;
@@ -302,7 +280,6 @@ export function Module4CompleteSystem({ onSubmit, onDraft, existingSubmission, e
     setPhase("reviewing");
     setReviewingRound(targetRound);
     setReviewSnapshot(snapshot);
-    setShowCorrections(false);
     setSelectedType(null);
     resetPointerDrag();
     if (targetRound === 0) {
@@ -318,8 +295,6 @@ export function Module4CompleteSystem({ onSubmit, onDraft, existingSubmission, e
       firstPageSnapshot: targetRound === 0 ? snapshot : firstPageSnapshotRef.current,
       secondPageSnapshot: targetRound === 1 ? snapshot : secondPageSnapshotRef.current,
     });
-    const correctionTimer = window.setTimeout(() => setShowCorrections(true), ANSWER_REVIEW_MARK_MS);
-    correctionTimers.current.push(correctionTimer);
     startReviewClock(duration, targetRound === 0 ? finishFirstRoundReview : () => void finalize(nextMatches, "completed"));
   }, [finalize, finishFirstRoundReview, resetPointerDrag, saveDraft, startReviewClock]);
 
@@ -334,12 +309,9 @@ export function Module4CompleteSystem({ onSubmit, onDraft, existingSubmission, e
 
   useEffect(() => {
     if (!forceSubmit || phaseRef.current === "done" || existingSubmission) return;
-    clearCorrectionTimers();
     cancelReviewClock();
     void finalize(matchesRef.current, "teacher-ended");
-  }, [cancelReviewClock, clearCorrectionTimers, existingSubmission, finalize, forceSubmit]);
-
-  useEffect(() => clearCorrectionTimers, [clearCorrectionTimers]);
+  }, [cancelReviewClock, existingSubmission, finalize, forceSubmit]);
 
   function selectType(id: string) {
     if (interactionLocked) return;
@@ -424,9 +396,6 @@ export function Module4CompleteSystem({ onSubmit, onDraft, existingSubmission, e
     return <section className="panel module-shell matching-module-shell"><div className="module-title-chip">{text.title}</div><div className="module-complete-card"><LockKeyhole size={42} /><h2>{text.locked}</h2><p>{text.lockedDetail}</p></div></section>;
   }
 
-  const currentReviewEvaluation = activeReviewSnapshot ? evaluatePlacementSnapshot(activeReviewSnapshot, Object.fromEntries(currentSystemIds.map((id) => [id, id]))) : null;
-  const reviewAllCorrect = currentReviewEvaluation?.correctCount === currentSystemIds.length;
-
   return <section className="panel module-shell matching-module-shell">
     <div className="module-topline matching-topline"><div className="module-title-chip">{text.title}</div><strong>{Object.keys(matches).length} / {systemTypes.length} · {text.round} {roundIndex + 1} / 2</strong></div>
     <p className="touch-drag-hint"><span aria-hidden="true">☝️</span> {text.hint}</p>
@@ -434,10 +403,10 @@ export function Module4CompleteSystem({ onSubmit, onDraft, existingSubmission, e
     <div className="matching-board visual-only-board" ref={boardRef} key={roundIndex}>
       <svg className="matching-lines" aria-hidden="true">
         {lines.map((line) => {
-          const stroke = line.status === "correct" ? "#10b981" : line.status === "wrong" ? "#f43f5e" : line.color;
+          const stroke = line.status === "wrong" ? "#f43f5e" : line.color;
           const middleX = (line.x1 + line.x2) / 2;
           const middleY = (line.y1 + line.y2) / 2;
-          return <g key={line.id} className={`match-line-${line.status}`}><path d={`M ${line.x1} ${line.y1} C ${line.x1 + 28} ${line.y1}, ${line.x2 - 28} ${line.y2}, ${line.x2} ${line.y2}`} stroke={stroke} /><circle cx={line.x1} cy={line.y1} r="4" fill={stroke} /><circle cx={line.x2} cy={line.y2} r="4" fill={stroke} />{line.status !== "pending" && <g transform={`translate(${middleX} ${middleY})`}><circle r="11" fill={stroke} /><text textAnchor="middle" dominantBaseline="central">{line.status === "correct" ? "✓" : "×"}</text></g>}</g>;
+          return <g key={line.id} className={`match-line-${line.status}`}><path d={`M ${line.x1} ${line.y1} C ${line.x1 + 28} ${line.y1}, ${line.x2 - 28} ${line.y2}, ${line.x2} ${line.y2}`} stroke={stroke} /><circle cx={line.x1} cy={line.y1} r="4" fill={stroke} /><circle cx={line.x2} cy={line.y2} r="4" fill={stroke} />{line.status === "wrong" && <g transform={`translate(${middleX} ${middleY})`}><circle r="11" fill={stroke} /><text textAnchor="middle" dominantBaseline="central">×</text></g>}</g>;
         })}
       </svg>
 
@@ -445,12 +414,11 @@ export function Module4CompleteSystem({ onSubmit, onDraft, existingSubmission, e
         <h2>{text.types}</h2>
         {currentSystems.map((system, index) => {
           const assigned = (activeReviewSnapshot ?? matches)[system.id];
-          const status = activeReviewSnapshot ? assigned === system.id ? "correct" : "wrong" : "";
+          const status = activeReviewSnapshot && assigned !== system.id ? "wrong" : "";
           return <div className={`system-type-entry ${status}`} key={system.id}>
-            <button type="button" ref={(node) => { typeRefs.current[system.id] = node; }} className={`${selectedType === system.id ? "selected" : ""} ${assigned ? "assigned" : ""} ${status}`} disabled={interactionLocked} {...getTypePointerHandlers(system.id)} onClick={() => { if (!consumeSuppressedClick()) selectType(system.id); }} data-pointer-source={pointerDrag?.typeId === system.id ? "true" : undefined} aria-label={`${system.name}${status ? `. ${status === "correct" ? text.correct : text.wrong}` : ""}`}>
-              <span>{index + 1}</span><strong>{system.name}</strong>{assigned && !activeReviewSnapshot && <i aria-hidden="true"><Unlink size={15} /></i>}{status === "correct" && <Check size={18} aria-label={text.correct} />}{status === "wrong" && <X size={18} aria-label={text.wrong} />}
+            <button type="button" ref={(node) => { typeRefs.current[system.id] = node; }} className={`${selectedType === system.id ? "selected" : ""} ${assigned ? "assigned" : ""} ${status}`} disabled={interactionLocked} {...getTypePointerHandlers(system.id)} onClick={() => { if (!consumeSuppressedClick()) selectType(system.id); }} data-pointer-source={pointerDrag?.typeId === system.id ? "true" : undefined} aria-label={`${system.name}${status ? `. ${text.wrong}` : ""}`}>
+              <span>{index + 1}</span><strong>{system.name}</strong>{assigned && status !== "wrong" && <i aria-hidden="true"><Unlink size={15} /></i>}{status === "wrong" && <X size={18} aria-label={text.wrong} />}
             </button>
-            {status === "wrong" && showCorrections && <div className="type-result-explanation"><strong>✕ {text.wrong} · ✓ {text.correctAnswer}:</strong> {system.visualLabel}. {system.description}</div>}
           </div>;
         })}
       </div>
@@ -462,17 +430,15 @@ export function Module4CompleteSystem({ onSubmit, onDraft, existingSubmission, e
         {currentVisualCards.map((system) => {
           const source = activeReviewSnapshot ?? matches;
           const assignedType = Object.entries(source).find(([, visualId]) => visualId === system.id)?.[0];
-          const status = activeReviewSnapshot && assignedType ? assignedType === system.id ? "correct" : "wrong" : "";
-          const correctedTarget = Boolean(activeReviewSnapshot && showCorrections && activeReviewSnapshot[system.id] !== system.id);
-          return <button type="button" key={system.id} ref={(node) => { visualRefs.current[system.id] = node; }} className={`${assignedType ? "assigned" : ""} ${status} ${correctedTarget ? "corrected-target" : ""} ${dragOverVisual === system.id ? "drag-over" : ""}`} disabled={interactionLocked} onClick={() => assignVisual(system.id)} aria-label={`${system.visual}${status ? `. ${status === "correct" ? text.correct : text.wrong}` : ""}${correctedTarget ? `. ${text.correctedTarget}` : ""}`} data-match-visual={system.id}>
-            <SystemTypeIllustration type={system.id} /><span className="system-visual-name">{system.visualLabel}</span>{assignedType && !activeReviewSnapshot && <i aria-hidden="true">●</i>}{status === "correct" && <i><Check size={17} aria-label={text.correct} /></i>}{status === "wrong" && <i><X size={17} aria-label={text.wrong} /></i>}{correctedTarget && <small className="matching-correct-target">✓ {text.correctedTarget}</small>}
+          const status = activeReviewSnapshot && assignedType && assignedType !== system.id ? "wrong" : "";
+          return <button type="button" key={system.id} ref={(node) => { visualRefs.current[system.id] = node; }} className={`${assignedType ? "assigned" : ""} ${status} ${dragOverVisual === system.id ? "drag-over" : ""}`} disabled={interactionLocked} onClick={() => assignVisual(system.id)} aria-label={`${system.visual}${status ? `. ${text.wrong}` : ""}`} data-match-visual={system.id}>
+            <SystemTypeIllustration type={system.id} /><span className="system-visual-name">{system.visualLabel}</span>{assignedType && status !== "wrong" && <i aria-hidden="true">●</i>}{status === "wrong" && <i><X size={17} aria-label={text.wrong} /></i>}
           </button>;
         })}
       </div>
     </div>
 
     {pointerDrag?.moved && <div className="pointer-drag-ghost matching-pointer-ghost" style={{ left: pointerDrag.x, top: pointerDrag.y }} aria-hidden="true">{systemTypes.find((system) => system.id === pointerDrag.typeId)?.name}</div>}
-    {activeReviewSnapshot && <div className={reviewAllCorrect ? "notice success" : "notice matching-review-notice"} aria-live="polite">{reviewAllCorrect ? text.allCorrect : reviewingRound === 0 ? text.firstReview : text.finalReview}</div>}
     {roundIndex === 1 && <div className="button-row matching-actions"><Button disabled={interactionLocked || Object.keys(matches).length !== systemTypes.length} loading={submitting} icon={<Check size={18} />} onClick={() => startRoundReview(1, matchesRef.current)}>{text.check}</Button></div>}
     {submitting && <div className="notice">{text.saving}</div>}
     {submitFailed && finalSubmission && <><div className="notice error">{text.saveError}</div><Button loading={submitting} icon={<RotateCcw size={17} />} onClick={() => { submissionStarted.current = false; void finalize(validMatches(finalSubmission.payload.matches), String(finalSubmission.payload.completionReason) === "teacher-ended" ? "teacher-ended" : "completed"); }}>{text.retry}</Button></>}

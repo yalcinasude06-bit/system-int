@@ -1,18 +1,14 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import {
-  ANSWER_REVIEW_MARK_MS,
-  ANSWER_REVIEW_MOVE_MS,
   ANSWER_REVIEW_TOTAL_MS,
   MATCHING_ROUND_ONE_REVIEW_MS,
   evaluatePlacementSnapshot,
   remainingReviewTime,
 } from "../src/lib/answerReview.ts";
 
-assert.equal(ANSWER_REVIEW_MARK_MS, 450, "Initial answer markers must remain visible before correction starts");
-assert.ok(ANSWER_REVIEW_MOVE_MS >= 600 && ANSWER_REVIEW_MOVE_MS <= 800, "Correction motion must take 600–800 ms");
 assert.equal(ANSWER_REVIEW_TOTAL_MS, 5000, "Final in-scene review must last five seconds in total");
-assert.equal(MATCHING_ROUND_ONE_REVIEW_MS, 3800, "The first matching page must review for 3.8 seconds");
+assert.equal(MATCHING_ROUND_ONE_REVIEW_MS, 4000, "The first matching page must review for four seconds");
 assert.equal(remainingReviewTime(1_000, 5_000, 3_250), 2_750, "Restored review must resume from the remaining duration");
 assert.equal(remainingReviewTime(1_000, 5_000, 7_000), 0, "Expired review must complete immediately after restore");
 
@@ -29,22 +25,27 @@ const moduleOneSource = await readFile(new URL("../src/components/modules/Module
 const moduleFourSource = await readFile(new URL("../src/components/modules/Module4_CompleteSystem/index.tsx", import.meta.url), "utf8");
 const weekFourSource = await readFile(new URL("../src/components/modules/Week4_SystemProcess/index.tsx", import.meta.url), "utf8");
 const studentSource = await readFile(new URL("../src/app/student/play/[pin]/page.tsx", import.meta.url), "utf8");
+const globalStyles = await readFile(new URL("../src/app/globals.css", import.meta.url), "utf8");
 
 assert.match(moduleOneSource, /originalPlacementsRef/, "Module 1 must preserve an immutable first-placement snapshot");
-assert.match(moduleOneSource, /layoutId=\{`anatomy-card-\$\{value\}`\}/, "Module 1 corrections must use FLIP-style card motion");
 assert.match(moduleOneSource, /startReviewClock\(ANSWER_REVIEW_TOTAL_MS/, "Module 1 must defer its final submission for the full review window");
 assert.match(moduleOneSource, /submitSnapshot\(snapshot, "completed"\)/, "Module 1 must submit the original snapshot after review");
+assert.match(moduleOneSource, /const wrong = Boolean\(originalPlacements/, "Module 1 must mark only incorrect original placements");
+assert.doesNotMatch(moduleOneSource, /motion\.|layoutId=|correctedAnatomyPlacements|anatomy-correction-badge/, "Module 1 must not move or auto-correct cards after checking");
 
 assert.match(moduleFourSource, /startRoundReview\(0, next\)/, "The fifth match must start first-page review instead of advancing immediately");
 assert.match(moduleFourSource, /MATCHING_ROUND_ONE_REVIEW_MS/, "The first matching page must use its bounded review duration");
 assert.match(moduleFourSource, /firstPageSnapshotRef/, "The first matching page must preserve its original snapshot");
 assert.match(moduleFourSource, /secondPageSnapshotRef/, "The second matching page must preserve its original snapshot");
 assert.doesNotMatch(moduleFourSource, /matching-result-modal/, "The matching review must stay in the game scene without a result modal");
+assert.doesNotMatch(moduleFourSource, /type-result-explanation|correctedTarget|matching-correct-target|showCorrections/, "Matching review must not reveal or highlight correct answers");
 
 assert.match(weekFourSource, /snapshotRef\.current \?\? snapshot/, "Week 4 Module 3 must score the immutable first snapshot");
-assert.match(weekFourSource, /wasInitiallyWrong/, "Initial mistakes must remain visible after correction");
-assert.match(weekFourSource, /system-correction-log/, "Cards corrected into the trash must retain a readable correction log");
+assert.match(weekFourSource, /wasInitiallyWrong/, "Initial mistakes must remain visibly marked throughout review");
 assert.match(weekFourSource, /startReviewClock\(ANSWER_REVIEW_TOTAL_MS/, "Week 4 Module 3 must keep the scene visible for five seconds total");
+assert.doesNotMatch(weekFourSource, /finishCorrection|measureFlyers|flyers\.map|system-correction-log|corrected-placement/, "Week 4 Module 3 must not move or auto-correct cards after checking");
+
+assert.doesNotMatch(globalStyles, /systemWrongPulse|anatomy-correction-badge|matching-correct-target|system-correction-log/, "Removed correction animations and explanation UI must not remain in the stylesheet");
 
 assert.match(studentSource, /<Module1SystemBuild[^>]*existingDraft=\{activeDraft\}/, "Module 1 must restore checked drafts without reopening the attempt");
 assert.match(studentSource, /<Module4CompleteSystem[^>]*existingDraft=\{activeDraft\}/, "Module 4 must restore both review pages from drafts");
