@@ -129,12 +129,17 @@ const weekFourDemoCopy = {
   tr: {
     factoryPrompt: "Fabrikayı incele, karar ver; gerekirse 5 saniyede kurtar!",
     machine: "Makine",
+    sensor: "Sensör",
+    workers: "Çalışanlar",
     machineInfo: "iş tekrarı",
+    sensorInfo: "akışta yığılma",
+    workersInfo: "görevler belirsiz",
     wrongDecision: "Hızı artır",
     rightDecision: "Görevleri düzenle",
     jammed: "Hat sıkıştı!",
     rescue: "Kurtarma 5.0",
     repaired: "Akış düzeldi ✓",
+    factoryFlow: "İncele → Karar ver → Kurtar",
     bossQuote: "Yeni yöntemi deneyip sonuçlarını ölçelim.",
     experimental: "Deneysel Yaklaşım",
     otherApproach: "Mekanik Yaklaşım",
@@ -149,12 +154,17 @@ const weekFourDemoCopy = {
   en: {
     factoryPrompt: "Inspect the factory, decide, and rescue it in 5 seconds if needed!",
     machine: "Machine",
+    sensor: "Sensor",
+    workers: "Workers",
     machineInfo: "duplicate work",
+    sensorInfo: "flow buildup",
+    workersInfo: "unclear roles",
     wrongDecision: "Increase speed",
     rightDecision: "Organize roles",
     jammed: "Line jammed!",
     rescue: "Rescue 5.0",
     repaired: "Flow restored ✓",
+    factoryFlow: "Inspect → Decide → Rescue",
     bossQuote: "Let’s test the new method and measure the results.",
     experimental: "Experimental Approach",
     otherApproach: "Mechanical Approach",
@@ -321,17 +331,22 @@ function WeekThreeFlowchartDemo() {
 function WeekFourFactoryDemo() {
   const { locale } = useI18n();
   const text = weekFourDemoCopy[locale];
-  const transition = { duration: 7, repeat: Infinity, ease: "easeInOut" as const, times: [0, .1, .18, .3, .42, .55, .68, .82, .92, 1] };
+  const transition = { duration: 10, repeat: Infinity, ease: "easeInOut" as const, times: [0, .08, .16, .2, .32, .4, .52, .6, .72, .82, 1] };
   return <div className="module-demo week-four-demo week-four-factory-demo" aria-hidden="true">
     <p className="week-four-factory-prompt" data-i18n-skip>{text.factoryPrompt}</p>
-    <motion.div className="week-four-factory-machine" animate={{ borderColor: ["#9fb7aa", "#d4a62a", "#9fb7aa", "#9fb7aa", "#e05a62", "#e05a62", "#d4a62a", "#d4a62a", "#36a269", "#9fb7aa"], boxShadow: ["none", "0 0 0 3px rgba(212,166,42,.2)", "none", "none", "0 0 0 3px rgba(224,90,98,.2)", "none", "0 0 0 4px rgba(212,166,42,.28)", "0 0 0 4px rgba(212,166,42,.28)", "0 0 0 3px rgba(54,162,105,.22)", "none"] }} transition={transition}>
-      <motion.span animate={{ rotate: [0, 45, 90, 160, 310, 310, 310, 345, 420, 450] }} transition={transition}>⚙</motion.span><b>{text.machine}</b>
+    <motion.div className="week-four-factory-marker machine" animate={{ borderColor: ["#9fb7aa", "#d4a62a", "#9fb7aa", "#9fb7aa", "#9fb7aa", "#e05a62", "#e05a62", "#d4a62a", "#d4a62a", "#36a269", "#9fb7aa"], boxShadow: ["none", "0 0 0 3px rgba(212,166,42,.24)", "none", "none", "none", "0 0 0 3px rgba(224,90,98,.22)", "none", "0 0 0 4px rgba(212,166,42,.28)", "0 0 0 4px rgba(212,166,42,.28)", "0 0 0 3px rgba(54,162,105,.24)", "none"] }} transition={transition}>
+      <motion.span animate={{ rotate: [0, 35, 70, 90, 160, 310, 310, 310, 345, 420, 450] }} transition={transition}>⚙</motion.span><b>{text.machine}</b>
     </motion.div>
-    <div className="week-four-factory-belt"><motion.i animate={{ x: [0, 10, 24, 40, 58, 58, 58, 62, 88, 98] }} transition={transition}>▣</motion.i><motion.i animate={{ x: [20, 30, 45, 60, 76, 76, 76, 80, 104, 114] }} transition={transition}>▣</motion.i></div>
-    <motion.span className="week-four-factory-info" data-i18n-skip animate={{ opacity: [0, 1, 1, 0, 0, 0, 0, 0, 0, 0], scale: [.8, 1, 1, .8, .8, .8, .8, .8, .8, .8] }} transition={transition}>{text.machine}: {text.machineInfo}</motion.span>
-    <div className="week-four-factory-options"><motion.span animate={{ backgroundColor: ["#fff", "#fff", "#fff", "#fee2e2", "#fee2e2", "#fff", "#fff", "#fff", "#fff", "#fff"], borderColor: ["#cbd5e1", "#cbd5e1", "#cbd5e1", "#e05a62", "#e05a62", "#cbd5e1", "#cbd5e1", "#cbd5e1", "#cbd5e1", "#cbd5e1"] }} transition={transition}>{text.wrongDecision}</motion.span><motion.span animate={{ backgroundColor: ["#fff", "#fff", "#fff", "#fff", "#fff", "#fff", "#fef3c7", "#fef3c7", "#d1fae5", "#fff"], borderColor: ["#cbd5e1", "#cbd5e1", "#cbd5e1", "#cbd5e1", "#cbd5e1", "#cbd5e1", "#d4a62a", "#d4a62a", "#36a269", "#cbd5e1"] }} transition={transition}>{text.rightDecision}</motion.span></div>
-    <motion.span className="week-four-factory-state" data-i18n-skip animate={{ opacity: [0, 0, 0, 0, 1, 1, 0, 0, 1, 0], color: ["#be314b", "#be314b", "#be314b", "#be314b", "#be314b", "#be314b", "#be314b", "#be314b", "#17643e", "#17643e"] }} transition={transition}>{text.jammed}<motion.b animate={{ opacity: [0, 0, 0, 0, 0, 1, 1, 1, 0, 0] }} transition={transition}> · {text.rescue}</motion.b><motion.em animate={{ opacity: [0, 0, 0, 0, 0, 0, 0, 0, 1, 0] }} transition={transition}> {text.repaired}</motion.em></motion.span>
-    <motion.span className="week-four-demo-hand week-four-factory-hand" animate={{ left: ["24%", "24%", "24%", "29%", "29%", "29%", "71%", "71%", "24%", "24%"], top: ["43%", "43%", "43%", "81%", "81%", "81%", "81%", "81%", "43%", "43%"], scale: [1, .82, 1, .82, 1, 1, .82, 1, .82, 1] }} transition={transition}>👆</motion.span>
+    <motion.div className="week-four-factory-marker sensor" animate={{ borderColor: ["#9fb7aa", "#9fb7aa", "#d4a62a", "#9fb7aa", "#9fb7aa", "#9fb7aa", "#9fb7aa", "#9fb7aa", "#9fb7aa", "#9fb7aa", "#9fb7aa"], boxShadow: ["none", "none", "0 0 0 3px rgba(212,166,42,.24)", "none", "none", "none", "none", "none", "none", "none", "none"] }} transition={transition}><span>◉</span><b>{text.sensor}</b></motion.div>
+    <motion.div className="week-four-factory-marker workers" animate={{ borderColor: ["#9fb7aa", "#9fb7aa", "#9fb7aa", "#d4a62a", "#9fb7aa", "#9fb7aa", "#9fb7aa", "#9fb7aa", "#9fb7aa", "#9fb7aa", "#9fb7aa"], boxShadow: ["none", "none", "none", "0 0 0 3px rgba(212,166,42,.24)", "none", "none", "none", "none", "none", "none", "none"] }} transition={transition}><span>♟♟</span><b>{text.workers}</b></motion.div>
+    <div className="week-four-factory-belt"><motion.i animate={{ x: [0, 10, 24, 40, 58, 58, 58, 62, 88, 98, 108] }} transition={transition}>▣</motion.i><motion.i animate={{ x: [20, 30, 45, 60, 76, 76, 76, 80, 104, 114, 124] }} transition={transition}>▣</motion.i></div>
+    <motion.span className="week-four-factory-info" data-i18n-skip animate={{ opacity: [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0], scale: [.8, 1, .8, .8, .8, .8, .8, .8, .8, .8, .8] }} transition={transition}>{text.machine}: {text.machineInfo}</motion.span>
+    <motion.span className="week-four-factory-info" data-i18n-skip animate={{ opacity: [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0], scale: [.8, .8, 1, .8, .8, .8, .8, .8, .8, .8, .8] }} transition={transition}>{text.sensor}: {text.sensorInfo}</motion.span>
+    <motion.span className="week-four-factory-info" data-i18n-skip animate={{ opacity: [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0], scale: [.8, .8, .8, 1, .8, .8, .8, .8, .8, .8, .8] }} transition={transition}>{text.workers}: {text.workersInfo}</motion.span>
+    <div className="week-four-factory-options"><motion.span animate={{ backgroundColor: ["#fff", "#fff", "#fff", "#fff", "#fff", "#fee2e2", "#fee2e2", "#fff", "#fff", "#fff", "#fff"], borderColor: ["#cbd5e1", "#cbd5e1", "#cbd5e1", "#cbd5e1", "#cbd5e1", "#e05a62", "#e05a62", "#cbd5e1", "#cbd5e1", "#cbd5e1", "#cbd5e1"] }} transition={transition}>{text.wrongDecision}</motion.span><motion.span animate={{ backgroundColor: ["#fff", "#fff", "#fff", "#fff", "#fff", "#fff", "#fff", "#fef3c7", "#fef3c7", "#d1fae5", "#fff"], borderColor: ["#cbd5e1", "#cbd5e1", "#cbd5e1", "#cbd5e1", "#cbd5e1", "#cbd5e1", "#cbd5e1", "#d4a62a", "#d4a62a", "#36a269", "#cbd5e1"] }} transition={transition}>{text.rightDecision}</motion.span></div>
+    <motion.span className="week-four-factory-state" data-i18n-skip animate={{ opacity: [0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0], color: ["#be314b", "#be314b", "#be314b", "#be314b", "#be314b", "#be314b", "#be314b", "#be314b", "#17643e", "#17643e", "#17643e"] }} transition={transition}>{text.jammed}<motion.b animate={{ opacity: [0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0] }} transition={transition}> · {text.rescue}</motion.b><motion.em animate={{ opacity: [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0] }} transition={transition}> {text.repaired}</motion.em></motion.span>
+    <motion.span className="week-four-factory-flow" data-i18n-skip animate={{ opacity: [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0] }} transition={transition}>{text.factoryFlow}</motion.span>
+    <motion.span className="week-four-demo-hand week-four-factory-hand" animate={{ left: ["19%", "19%", "50%", "79%", "29%", "29%", "29%", "71%", "71%", "19%", "19%"], top: ["42%", "42%", "42%", "42%", "82%", "82%", "82%", "82%", "82%", "42%", "42%"], scale: [1, .82, .82, .82, 1, .82, 1, .82, 1, .82, 1] }} transition={transition}>👆</motion.span>
   </div>;
 }
 

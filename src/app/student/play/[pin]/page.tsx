@@ -40,6 +40,8 @@ export default function StudentPlayPage() {
   const [feedbackKeys, setFeedbackKeys] = useState<string[]>([]);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackDismissedKey, setFeedbackDismissedKey] = useState("");
+  const [resultReviewKey, setResultReviewKey] = useState("");
+  const [reviewStateReady, setReviewStateReady] = useState(false);
   const celebratedModuleKey = useRef("");
   const draftRevision = useRef(0);
   const draftWrites = useRef(new Set<Promise<void>>());
@@ -47,7 +49,13 @@ export default function StudentPlayPage() {
   useEffect(() => {
     // Yenilenen sekmenin revision aralığını önceki tarayıcı örneğinin ilerisine taşı.
     draftRevision.current = Date.now() * 1000;
-  }, []);
+    const timer = window.setTimeout(() => {
+      const studentId = localStorage.getItem(`system-lab:${pin}:student`);
+      setResultReviewKey(studentId ? localStorage.getItem(`system-lab:${pin}:${studentId}:result-review`) || "" : "");
+      setReviewStateReady(true);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [pin]);
 
   const load = useCallback(async () => {
     try {
@@ -89,14 +97,30 @@ export default function StudentPlayPage() {
   const isModuleStarted = session?.is_module_started;
   const resultsRevealed = !isModuleStarted && (session?.module_stage ?? 0) >= 3;
   const activeModuleKey = currentWeek && currentModule ? `${currentWeek}:${currentModule}` : "";
+  const activeModuleNeedsReview = currentWeek === 4 && (currentModule === 1 || currentModule === 3);
+  const hasPersistedModuleReview = resultReviewKey === activeModuleKey;
+  const showingModuleReview = Boolean(activeSubmission && (hasPersistedModuleReview || (
+    activeModuleNeedsReview
+    && !feedbackOpen
+    && !feedbackKeys.includes(activeModuleKey)
+    && feedbackDismissedKey !== activeModuleKey
+  )));
   const activeCompletionStatus = activeSubmission?.completion_status
     ?? (activeSubmission?.payload?.completionReason === "teacher-ended" ? "incomplete" : "completed");
 
   useEffect(() => {
-    if (!activeSubmission || !activeModuleKey || feedbackKeys.includes(activeModuleKey) || feedbackDismissedKey === activeModuleKey) return;
+    if (!reviewStateReady || feedbackOpen || !activeSubmission || !activeModuleKey || feedbackKeys.includes(activeModuleKey) || feedbackDismissedKey === activeModuleKey) return;
+    if (activeModuleNeedsReview && !hasPersistedModuleReview && student) {
+      const timer = window.setTimeout(() => {
+        localStorage.setItem(`system-lab:${pin}:${student.id}:result-review`, activeModuleKey);
+        setResultReviewKey(activeModuleKey);
+      }, 0);
+      return () => window.clearTimeout(timer);
+    }
+    if (showingModuleReview) return;
     const timer = window.setTimeout(() => setFeedbackOpen(true), 0);
     return () => window.clearTimeout(timer);
-  }, [activeModuleKey, activeSubmission, feedbackDismissedKey, feedbackKeys]);
+  }, [activeModuleKey, activeModuleNeedsReview, activeSubmission, feedbackDismissedKey, feedbackKeys, feedbackOpen, hasPersistedModuleReview, pin, reviewStateReady, showingModuleReview, student]);
 
   useEffect(() => {
     const interval = window.setInterval(() => void load(), 2500);
@@ -133,8 +157,14 @@ export default function StudentPlayPage() {
     try {
       await Promise.allSettled([...draftWrites.current]);
       const saved = await saveSubmission({ sessionId: session.id, studentId: student.id, studentNumber: student.student_number, weekId: session.selected_week, moduleId, stage: submission.stage || 1, payload: submission.payload, score: submission.score });
+      const needsResultReview = session.selected_week === 4 && (moduleId === 1 || moduleId === 3);
+      if (needsResultReview) {
+        const moduleKey = `${session.selected_week}:${moduleId}`;
+        localStorage.setItem(`system-lab:${pin}:${student.id}:result-review`, moduleKey);
+        setResultReviewKey(moduleKey);
+      }
       setSubmissions((current) => [...current.filter((item) => item.id !== saved.submission.id), saved.submission]);
-      setFeedbackOpen(true);
+      setFeedbackOpen(!needsResultReview);
       setFeedbackDismissedKey("");
       setMessage(saved.wasNew ? "Yanıtınız güvenle kaydedildi." : "Bu modül için yanıt hakkını daha önce kullandın.");
       window.setTimeout(() => setMessage(""), 3500);
@@ -212,6 +242,13 @@ export default function StudentPlayPage() {
     setFeedbackDismissedKey(activeModuleKey);
   }
 
+  function completeResultReview() {
+    if (!student) return;
+    localStorage.removeItem(`system-lab:${pin}:${student.id}:result-review`);
+    setResultReviewKey("");
+    if (!feedbackKeys.includes(activeModuleKey) && feedbackDismissedKey !== activeModuleKey) setFeedbackOpen(true);
+  }
+
   if (loading) return <><Navbar /><main className="container page"><div className="empty">Canlı sınıfa bağlanılıyor…</div></main></>;
   if (!session || !student) return <><Navbar /><main className="container page"><div className="notice error">{error || "Katılımcı kaydı bulunamadı."}</div></main></>;
 
@@ -224,16 +261,16 @@ export default function StudentPlayPage() {
     : null;
   const firstCheckTotal = firstCheckCorrect !== null && typeof activeSubmission?.payload.cardCount === "number"
     ? activeSubmission.payload.cardCount
-    : 6;
+    : 8;
   const ranking = [...classmates].sort((a, b) => b.session_score - a.session_score || a.joined_at.localeCompare(b.joined_at));
   const ownRank = ranking.findIndex((item) => item.id === student.id) + 1;
-  const studentNav = <Navbar studentContext={{ sessionTitle: session.title, week: session.selected_week, studentName: student.nickname, studentNumber: student.student_number, score: student.session_score, onLeave: () => { localStorage.removeItem(`system-lab:${pin}:student`); router.push("/"); } }} />;
+  const studentNav = <Navbar studentContext={{ sessionTitle: session.title, week: session.selected_week, studentName: student.nickname, studentNumber: student.student_number, score: student.session_score, onLeave: () => { localStorage.removeItem(`system-lab:${pin}:${student.id}:result-review`); localStorage.removeItem(`system-lab:${pin}:student`); router.push("/"); } }} />;
 
   if (feedbackOpen && activeSubmission) return <>{studentNav}<main className="container page student-submission-wait-page">
     <section className="student-submission-wait panel"><ModuleFeedbackSurvey key={activeModuleKey} moduleId={session.current_module} onSubmit={sendFeedback} onSkip={closeFeedback} /></section>
   </main></>;
 
-  if (!session.is_active) return <>{studentNav}<main className="container page"><div className="student-result-card panel"><Trophy size={58} color="var(--amber)" /><span className="eyebrow">Oturum tamamlandı</span><h1>Harika iş çıkardın!</h1><p className="lead">Genel toplam puanın <strong className="score-pop">{profile?.total_score ?? student.score}</strong></p><Button onClick={() => router.push("/")}>Ana sayfaya dön</Button></div></main></>;
+  if (!session.is_active && !showingModuleReview) return <>{studentNav}<main className="container page"><div className="student-result-card panel"><Trophy size={58} color="var(--amber)" /><span className="eyebrow">Oturum tamamlandı</span><h1>Harika iş çıkardın!</h1><p className="lead">Genel toplam puanın <strong className="score-pop">{profile?.total_score ?? student.score}</strong></p><Button onClick={() => router.push("/")}>Ana sayfaya dön</Button></div></main></>;
 
   const isSupportedModule = session.selected_week === 1
     || (session.selected_week === 3 && (session.current_module === 1 || session.current_module === 2 || session.current_module === 3))
@@ -242,7 +279,7 @@ export default function StudentPlayPage() {
 
   if (resultsRevealed && !activeSubmission) return <>{studentNav}<main className="container page"><section className="student-waiting-card panel"><span className="waiting-illustration">⏳</span><span className="eyebrow">Sonuç hazırlanıyor</span><h1>Puanın hesaplanıyor…</h1><div className="waiting-pulse"><i /> Sonuç kaydı alınıyor</div></section></main></>;
 
-  if (resultsRevealed) return <>{studentNav}<main className="container page student-result-page">
+  if (resultsRevealed && !showingModuleReview) return <>{studentNav}<main className="container page student-result-page">
     <section className="student-result-card panel">
       <div className="result-spark"><Sparkles size={30} /></div>
       <span className="result-trophy">🏆</span>
@@ -261,7 +298,7 @@ export default function StudentPlayPage() {
     </section>
   </main></>;
 
-  if (activeSubmission) return <>{studentNav}<main className="container page student-submission-wait-page">
+  if (activeSubmission && !showingModuleReview) return <>{studentNav}<main className="container page student-submission-wait-page">
     <section className="student-submission-wait panel">
       <>
         <span className="submission-check" aria-hidden="true">✓</span>
@@ -276,7 +313,7 @@ export default function StudentPlayPage() {
     </section>
   </main></>;
 
-  if (!session.is_module_started) return <>{studentNav}<main className="container page"><section className="student-waiting-card panel"><span className="waiting-illustration">⏳</span><span className="eyebrow">Hafta {session.selected_week} · Modül {session.current_module}</span><h1>Öğretmen modülü başlatmak üzere…</h1><p>Lütfen bekleyin! Etkinlik başladığında ekranınız otomatik olarak açılacak.</p><div className="waiting-pulse"><i /> Canlı bağlantı açık</div></section></main></>;
+  if (!session.is_module_started && !showingModuleReview) return <>{studentNav}<main className="container page"><section className="student-waiting-card panel"><span className="waiting-illustration">⏳</span><span className="eyebrow">Hafta {session.selected_week} · Modül {session.current_module}</span><h1>Öğretmen modülü başlatmak üzere…</h1><p>Lütfen bekleyin! Etkinlik başladığında ekranınız otomatik olarak açılacak.</p><div className="waiting-pulse"><i /> Canlı bağlantı açık</div></section></main></>;
 
   const countdownTimeLeft = getRemainingCountdown(session.module_started_at);
   if (!activeSubmission && session.module_started_at && countdownTimeLeft > 0 && readyModuleKey !== activeModuleKey) return <>{studentNav}<ModuleStartCountdown key={`${activeModuleKey}:${session.module_started_at}`} weekId={session.selected_week} moduleId={session.current_module} startedAt={session.module_started_at} onComplete={() => setReadyModuleKey(activeModuleKey)} /></>;
@@ -295,11 +332,11 @@ export default function StudentPlayPage() {
       : session.selected_week === 3 && session.current_module === 3
         ? <Week3FlowchartSymbols sessionId={session.id} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(3, draft)} onSubmit={(submission) => submit(3, submission)} />
       : session.selected_week === 4 && session.current_module === 1
-        ? <Week4FactoryTransform seedKey={`${session.id}:${student.id}:4:1`} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(1, draft)} onSubmit={(submission) => submit(1, submission)} />
+        ? <Week4FactoryTransform seedKey={`${session.id}:${student.id}:4:1`} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} reviewMode={showingModuleReview} onReviewComplete={completeResultReview} onDraft={(draft) => saveDraft(1, draft)} onSubmit={(submission) => submit(1, submission)} />
       : session.selected_week === 4 && session.current_module === 2
         ? <Week4BossApproach seedKey={`${session.id}:${student.id}:4:2`} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(2, draft)} onSubmit={(submission) => submit(2, submission)} />
       : session.selected_week === 4 && session.current_module === 3
-        ? <Week4SystemProcess seedKey={`${session.id}:${student.id}:4:3`} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(3, draft)} onSubmit={(submission) => submit(3, submission)} />
+        ? <Week4SystemProcess seedKey={`${session.id}:${student.id}:4:3`} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} reviewMode={showingModuleReview} onReviewComplete={completeResultReview} onDraft={(draft) => saveDraft(3, draft)} onSubmit={(submission) => submit(3, submission)} />
       : modules[session.current_module];
 
   return <>{studentNav}<main className="container student-module-page stack">

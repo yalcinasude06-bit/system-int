@@ -1,14 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Boxes, Check, Cog, Gauge, LockKeyhole, Radio, RotateCcw, Sparkles, Users, X } from "lucide-react";
+import { useReducedMotion } from "framer-motion";
+import { AlertTriangle, Boxes, Check, Cog, LockKeyhole, Radio, RotateCcw, Sparkles, Users, X } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { useI18n } from "@/lib/i18n/I18nContext";
 import type { LearningModuleProps, ModuleDraft, ModuleSubmission } from "@/types";
 import {
   buildFactoryRound,
   clampMetric,
-  factoryStageLabels,
   factoryZoneLabels,
   type FactoryEffectType,
   type FactoryMetrics,
@@ -70,7 +70,7 @@ const copy = {
     participation: "Çalışan Katılımı",
     representative: "temsili gösterge",
     factoryEvent: "Fabrikada ne oluyor?",
-    inspectHint: "Karar vermeden önce Makine, Sensör ve Çalışanlar alanlarına dokunarak ipucu toplayabilirsin.",
+    inspectHint: "Fabrikadaki işaretlere dokun, sorunu araştır.",
     choose: "Kararın",
     correct: "Doğru sistem kararı!",
     wrong: "Bu karar fabrikada bir sorun zinciri başlattı.",
@@ -99,6 +99,14 @@ const copy = {
     saving: "Yanıt kaydediliyor…",
     saveError: "Yanıt kaydedilemedi. İlerlemen korundu.",
     retry: "Kaydı tekrar dene",
+    totalScore: "Toplam puan",
+    correctCount: "Doğru",
+    incorrectCount: "Yanlış",
+    answerReview: "Kararların ve açıklamaları",
+    yourAnswer: "İlk kararın",
+    correctAnswer: "Doğru karar",
+    notAnswered: "Yanıtlanmadı",
+    continueFeedback: "Geri bildirime geç",
   },
   en: {
     title: "Week 4 · Module 1: Transform the Factory",
@@ -111,7 +119,7 @@ const copy = {
     participation: "Employee Participation",
     representative: "illustrative metric",
     factoryEvent: "What is happening in the factory?",
-    inspectHint: "Before deciding, tap Machine, Sensor, and Workers to collect contextual clues.",
+    inspectHint: "Tap the factory markers and investigate the problem.",
     choose: "Your decision",
     correct: "Correct systems decision!",
     wrong: "This decision started a chain of problems in the factory.",
@@ -140,6 +148,14 @@ const copy = {
     saving: "Saving your answer…",
     saveError: "The answer could not be saved. Your progress is preserved.",
     retry: "Try saving again",
+    totalScore: "Total score",
+    correctCount: "Correct",
+    incorrectCount: "Incorrect",
+    answerReview: "Your decisions and explanations",
+    yourAnswer: "Your first decision",
+    correctAnswer: "Correct decision",
+    notAnswered: "Not answered",
+    continueFeedback: "Continue to feedback",
   },
 } as const;
 
@@ -151,14 +167,18 @@ function isEffect(value: unknown): value is FactoryEffectType {
   return ["organized", "overdrive", "jam", "feedback", "blind", "shortage", "cooperate", "conflict", "pollution", "recover"].includes(String(value));
 }
 
-function answersFromDraft(draft: ModuleDraft | null | undefined): FactoryAnswer[] {
-  const value = (draft?.payload as DraftPayload | undefined)?.answers;
+function answersFromPayload(payload: DraftPayload | undefined): FactoryAnswer[] {
+  const value = payload?.answers;
   if (!Array.isArray(value)) return [];
   return value.filter((item): item is FactoryAnswer => {
     if (!item || typeof item !== "object") return false;
     const answer = item as Partial<FactoryAnswer>;
     return typeof answer.scenarioId === "string" && typeof answer.firstOptionId === "string" && typeof answer.points === "number";
   });
+}
+
+function answersFromDraft(draft: ModuleDraft | null | undefined) {
+  return answersFromPayload(draft?.payload as DraftPayload | undefined);
 }
 
 function metricsFromDraft(draft: ModuleDraft | null | undefined): FactoryMetrics {
@@ -212,22 +232,18 @@ function FactoryScene({
     <div className="factory-smoke" aria-hidden="true"><i /><i /><i /></div>
     <div className="factory-conveyor" aria-hidden="true"><div className="factory-belt"><i /><i /><i /><i /></div><span className="factory-package p1"><Boxes size={22} /></span><span className="factory-package p2"><Boxes size={22} /></span><span className="factory-package p3"><Boxes size={22} /></span></div>
     <button type="button" className={`factory-zone machine ${repairTarget === "machine" ? "repair-target" : ""} ${inspectedZone === "machine" ? "inspected" : ""}`} onClick={() => onZone("machine")} aria-label={factoryZoneLabels.machine[locale]}>
-      <span className="factory-machine"><Cog className="gear main" /><Cog className="gear small" /><i className="machine-light" /></span><b><Cog size={15} /> {factoryZoneLabels.machine[locale]}</b>
+      <span className="factory-machine"><Cog className="gear main" /><Cog className="gear small" /><i className="machine-light" /></span><i className="factory-zone-ping" /><b><Cog size={15} /> {factoryZoneLabels.machine[locale]}</b>
     </button>
     <button type="button" className={`factory-zone sensor ${repairTarget === "sensor" ? "repair-target" : ""} ${inspectedZone === "sensor" ? "inspected" : ""}`} onClick={() => onZone("sensor")} aria-label={factoryZoneLabels.sensor[locale]}>
-      <span className="factory-sensor"><Radio /><i /><i /><i /></span><b><Radio size={15} /> {factoryZoneLabels.sensor[locale]}</b>
+      <span className="factory-sensor"><Radio /><i /><i /><i /></span><i className="factory-zone-ping" /><b><Radio size={15} /> {factoryZoneLabels.sensor[locale]}</b>
     </button>
     <button type="button" className={`factory-zone workers ${repairTarget === "workers" ? "repair-target" : ""} ${inspectedZone === "workers" ? "inspected" : ""}`} onClick={() => onZone("workers")} aria-label={factoryZoneLabels.workers[locale]}>
-      <span className="factory-workers"><i /><i /><i /></span><b><Users size={15} /> {factoryZoneLabels.workers[locale]}</b>
+      <span className="factory-workers"><i /><i /><i /></span><i className="factory-zone-ping" /><b><Users size={15} /> {factoryZoneLabels.workers[locale]}</b>
     </button>
     <div className="factory-stock" aria-hidden="true"><Boxes /><Boxes /><Boxes /></div>
     <div className="factory-feedback-line" aria-hidden="true"><span>•••••</span></div>
     <div className="factory-fault" aria-hidden="true"><AlertTriangle /></div>
   </div>;
-}
-
-function MetricCard({ label, value, tone }: { label: string; value: number; tone: string }) {
-  return <div className={`factory-metric ${tone}`}><span><Gauge size={16} />{label}</span><strong>{value}</strong><div><i style={{ width: `${value}%` }} /></div></div>;
 }
 
 export function Week4FactoryTransform({
@@ -236,6 +252,8 @@ export function Week4FactoryTransform({
   existingSubmission,
   existingDraft,
   forceSubmit,
+  reviewMode,
+  onReviewComplete,
   seedKey,
 }: LearningModuleProps & { seedKey: string }) {
   const { locale } = useI18n();
@@ -269,10 +287,9 @@ export function Week4FactoryTransform({
   const deadlinePerf = useRef<number | null>(null);
   const activeDeadlineEpoch = useRef<number | null>(null);
   const timeoutResolver = useRef<() => void>(() => undefined);
+  const advanceTimer = useRef<number | null>(null);
+  const reduceMotion = useReducedMotion();
   const current = scenarios[index]!;
-  const currentStageIndex = ["mechanical", "biological", "sociocultural"].indexOf(current.stage);
-  const decisionInStage = index % 3;
-  const score = answers.reduce((total, answer) => total + answer.points, 0);
 
   const submissionFor = useCallback((
     nextAnswers: FactoryAnswer[],
@@ -331,6 +348,7 @@ export function Week4FactoryTransform({
     if (submissionStarted.current || existingSubmission) return;
     submissionStarted.current = true;
     actionLocked.current = true;
+    if (advanceTimer.current !== null) window.clearTimeout(advanceTimer.current);
     const submission = submissionFor(nextAnswers, nextMetrics, completionReason, index, "outcome", null, null, activeEffect, notification);
     answersRef.current = nextAnswers;
     setAnswers(nextAnswers);
@@ -404,6 +422,7 @@ export function Week4FactoryTransform({
 
   useEffect(() => {
     if (!forceSubmit || completed || existingSubmission || submissionStarted.current) return;
+    if (advanceTimer.current !== null) window.clearTimeout(advanceTimer.current);
     let finalAnswers = answersRef.current;
     const progress = inProgressRef.current;
     if (progress && !finalAnswers.some((answer) => answer.scenarioId === progress.scenarioId)) {
@@ -565,41 +584,88 @@ export function Week4FactoryTransform({
     saveDraft(answersRef.current, metricsRef.current, nextIndex, "decision", null, null, null, "");
   }, [completed, existingSubmission, finalize, forceSubmit, index, saveDraft, scenarios.length]);
 
-  if (existingSubmission && !completed) {
+  useEffect(() => {
+    if (phase !== "outcome" || completed || existingSubmission || forceSubmit) return;
+    const outcome = answersRef.current.find((answer) => answer.scenarioId === current.id);
+    const delay = reduceMotion ? 80 : outcome?.points ? 900 : 1100;
+    advanceTimer.current = window.setTimeout(advance, delay);
+    return () => {
+      if (advanceTimer.current !== null) window.clearTimeout(advanceTimer.current);
+      advanceTimer.current = null;
+    };
+  }, [advance, completed, current.id, existingSubmission, forceSubmit, phase, reduceMotion]);
+
+  if (existingSubmission && !completed && !reviewMode) {
     return <section className="panel module-shell factory-transform-shell"><div className="module-title-chip">{t.title}</div><div className="module-complete-card"><LockKeyhole size={42} /><h2>{t.locked}</h2><p>{t.lockedDetail}</p></div></section>;
   }
 
-  if (completed) {
-    const resultAnswers = answers;
+  if (completed || (reviewMode && existingSubmission)) {
+    const resultAnswers = completed ? answers : answersFromPayload(existingSubmission?.payload as DraftPayload | undefined);
     const firstCorrect = resultAnswers.filter((answer) => answer.firstCorrect).length;
     const recovered = resultAnswers.filter((answer) => answer.recoveryOutcome === "recovered").length;
     const unrecovered = resultAnswers.filter((answer) => answer.recoveryOutcome === "second-wrong" || answer.recoveryOutcome === "timeout").length;
-    return <section className="panel module-shell factory-transform-shell"><div className="module-title-chip">{t.title}</div><div className="module-complete-card factory-complete"><Sparkles size={42} /><h2>{resultAnswers.length === scenarios.length ? t.completed : t.partial}</h2><p>{resultAnswers.length === scenarios.length ? t.completedDetail : t.partialDetail}</p><strong className="factory-final-score">{resultAnswers.reduce((total, answer) => total + answer.points, 0)} / 90</strong><div className="factory-result-stats"><span>{t.firstCorrect}<b>{firstCorrect}</b></span><span>{t.recovered}<b>{recovered}</b></span><span>{t.unrecovered}<b>{unrecovered}</b></span></div><p className="factory-model-summary">{t.modelSummary}</p>{submitting && <div className="notice">{t.saving}</div>}{submitFailed && finalSubmission && <><div className="notice error">{t.saveError}</div><Button loading={submitting} icon={<RotateCcw size={17} />} onClick={() => void submitResult(finalSubmission)}>{t.retry}</Button></>}</div></section>;
+    const successful = resultAnswers.filter((answer) => answer.points > 0).length;
+    const endedByTeacher = (finalSubmission?.payload.completionReason ?? existingSubmission?.payload.completionReason) === "teacher-ended";
+    return <section className="panel module-shell factory-transform-shell">
+      <div className="module-title-chip">{t.title}</div>
+      <div className="module-complete-card factory-complete">
+        <Sparkles size={42} />
+        <h2>{endedByTeacher ? t.partial : t.completed}</h2>
+        <p>{endedByTeacher ? t.partialDetail : t.completedDetail}</p>
+        <strong className="factory-final-score">{t.totalScore}: {resultAnswers.reduce((total, answer) => total + answer.points, 0)} / 90</strong>
+        <div className="factory-result-stats">
+          <span><Check size={18} />{t.correctCount}<b>{successful}</b></span>
+          <span><X size={18} />{t.incorrectCount}<b>{scenarios.length - successful}</b></span>
+          <span>{t.firstCorrect}<b>{firstCorrect}</b></span>
+          <span>{t.recovered}<b>{recovered}</b></span>
+          <span>{t.unrecovered}<b>{unrecovered}</b></span>
+        </div>
+        <p className="factory-model-summary">{t.modelSummary}</p>
+        <section className="factory-answer-review">
+          <h3>{t.answerReview}</h3>
+          {scenarios.map((scenario) => {
+            const answer = resultAnswers.find((item) => item.scenarioId === scenario.id);
+            const chosen = scenario.options.find((option) => option.id === answer?.firstOptionId);
+            const correct = scenario.options.find((option) => option.isCorrect);
+            const succeeded = Boolean(answer && answer.points > 0);
+            return <details key={scenario.id} className={succeeded ? "correct" : "incorrect"}>
+              <summary><span aria-hidden="true">{succeeded ? "✓" : "✕"}</span><span data-i18n-skip>{scenario.question[locale]}</span><small>{succeeded ? t.correctCount : t.incorrectCount}</small></summary>
+              <div><p><b>{t.yourAnswer}:</b> <span data-i18n-skip>{chosen?.text[locale] ?? t.notAnswered}</span></p><p><b>{t.correctAnswer}:</b> <span data-i18n-skip>{correct?.text[locale]}</span></p><p data-i18n-skip>{correct?.explanation[locale] ?? scenario.learning[locale]}</p></div>
+            </details>;
+          })}
+        </section>
+        {submitting && <div className="notice">{t.saving}</div>}
+        {submitFailed && finalSubmission && <><div className="notice error">{t.saveError}</div><Button loading={submitting} icon={<RotateCcw size={17} />} onClick={() => void submitResult(finalSubmission)}>{t.retry}</Button></>}
+        {reviewMode && onReviewComplete && <Button onClick={onReviewComplete}>{t.continueFeedback}</Button>}
+      </div>
+    </section>;
   }
 
   const progress = inProgress;
-  const selectedOption = current.options.find((option) => option.id === selectedOptionId);
   const outcomeAnswer = answers.find((answer) => answer.scenarioId === current.id);
-  const timelineEffect = outcomeAnswer?.effectType ?? activeEffect;
-  const timelineOption = timelineEffect === "recover" ? null : current.options.find((option) => option.effectType === timelineEffect);
   const repairTarget = phase === "recovery-repair" ? current.repairZone : null;
+  const outcomeSucceeded = Boolean(outcomeAnswer && outcomeAnswer.points > 0);
+  const notificationTone = phase.startsWith("recovery")
+    ? "urgent"
+    : phase === "outcome"
+      ? outcomeSucceeded ? "success" : "fault"
+      : activeEffect && !["organized", "feedback", "cooperate", "recover"].includes(activeEffect) ? "fault" : "neutral";
+  const notificationTitle = phase === "recovery-choice"
+    ? t.recoveryChoice
+    : phase === "recovery-repair"
+      ? t.recoveryRepair
+      : phase === "outcome"
+        ? outcomeAnswer?.firstCorrect ? t.correct : outcomeAnswer?.recoveryOutcome === "recovered" ? t.repaired : outcomeAnswer?.recoveryOutcome === "timeout" ? t.timeout : t.secondWrong
+        : t.factoryEvent;
 
   return <section className="panel module-shell factory-transform-shell">
-    <div className="factory-hud">
-      <div><div className="module-title-chip">{t.title}</div><strong>{t.stage} {currentStageIndex + 1}/3 · {factoryStageLabels[current.stage][locale]} · {t.decision} {decisionInStage + 1}/3</strong></div>
-      <span>{t.score}: <b>{score}</b>/90</span>
-    </div>
-    <div className="factory-stage-progress" aria-label={`${t.stage} ${currentStageIndex + 1} / 3`}>{[0, 1, 2].map((stage) => <span key={stage} className={stage < currentStageIndex ? "done" : stage === currentStageIndex ? "active" : ""}><i />{stage + 1}</span>)}</div>
+    <div className="module-title-chip">{t.title}</div>
+    <div className="factory-decision-progress" aria-label={`${t.decision} ${index + 1} / ${scenarios.length}`}>{scenarios.map((scenario, itemIndex) => <i key={scenario.id} className={itemIndex < index ? "done" : itemIndex === index ? "active" : ""} />)}</div>
     <p className="factory-instruction">{t.inspect}</p>
-    <div className="factory-metrics" aria-label={t.representative}>
-      <MetricCard label={t.production} value={metrics.production} tone="production" />
-      <MetricCard label={t.adaptation} value={metrics.adaptation} tone="adaptation" />
-      <MetricCard label={t.participation} value={metrics.participation} tone="participation" />
-    </div>
     <FactoryScene effect={activeEffect} repairTarget={repairTarget} inspectedZone={inspectedZone} onZone={handleZone} locale={locale} />
-    <div className={`factory-notification ${phase.startsWith("recovery") ? "urgent" : ""}`} aria-live="polite">
-      <span>{phase.startsWith("recovery") ? <AlertTriangle size={18} /> : <Radio size={18} />}</span>
-      <div><strong>{phase === "recovery-choice" ? t.recoveryChoice : phase === "recovery-repair" ? t.recoveryRepair : t.factoryEvent}</strong><p data-i18n-skip>{notification || current.event[locale]}</p></div>
+    <div className={`factory-notification ${notificationTone}`} aria-live="polite">
+      <span>{notificationTone === "success" ? <Check size={18} /> : notificationTone === "urgent" || notificationTone === "fault" ? <AlertTriangle size={18} /> : <Radio size={18} />}</span>
+      <div><strong>{notificationTitle}</strong><p data-i18n-skip>{notification || current.event[locale]}</p></div>
       {phase.startsWith("recovery") && <div className="factory-recovery-timer"><b>{(remainingMs / 1000).toFixed(1)}</b><small>{t.recoveryTime}</small><i style={{ width: `${Math.max(0, Math.min(100, remainingMs / recoveryWindowMs * 100))}%` }} /></div>}
     </div>
     {phase === "decision" && <p className="factory-inspect-hint">{t.inspectHint}</p>}
@@ -619,11 +685,5 @@ export function Week4FactoryTransform({
         })}
       </div>
     </div>
-    {phase === "outcome" && outcomeAnswer && <div className={`factory-outcome ${outcomeAnswer.points > 0 ? "success" : "failure"}`} aria-live="polite">
-      <div><strong>{outcomeAnswer.firstCorrect ? t.correct : outcomeAnswer.recoveryOutcome === "recovered" ? t.repaired : outcomeAnswer.recoveryOutcome === "timeout" ? t.timeout : t.secondWrong}</strong><p data-i18n-skip>{selectedOption?.explanation[locale] ?? current.learning[locale]}</p></div>
-      <div className="factory-timeline"><span>{t.effectFlow}</span><ol>{(timelineOption?.timeline ?? [{ tr: "Arıza bulundu", en: "Fault located" }, { tr: "Doğru bölge onarıldı", en: "Correct zone repaired" }, { tr: "Akış yeniden başladı", en: "Flow resumed" }]).map((step, stepIndex) => <li key={stepIndex} data-i18n-skip>{step[locale]}</li>)}</ol></div>
-      <p className="factory-learning"><b>{t.learning}:</b> <span data-i18n-skip>{current.learning[locale]}</span></p>
-      <Button onClick={advance}>{index === scenarios.length - 1 ? t.results : t.next}</Button>
-    </div>}
   </section>;
 }

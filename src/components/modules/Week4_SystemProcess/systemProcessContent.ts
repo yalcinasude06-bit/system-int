@@ -46,7 +46,7 @@ export const systemProcessPool: SystemProcessCard[] = [
   card("nosys07", "isNot", "Yalnızca sonuca bakılır", "Only the outcome is considered", "Sonuçla birlikte süreç ve nedenler de incelenir.", "The process and causes are studied with the outcome.", [4, 39]),
   card("nosys08", "isNot", "Bütünün hiçbir önemi yoktur", "The whole has no importance", "Bütünün davranışı parçaların tekil davranışından farklı olabilir.", "The whole can behave differently from individual parts.", [43, 46]),
   card("nosys09", "isNot", "İlişkiler tamamen önemsizdir", "Relationships are completely irrelevant", "Sistem davranışını ilişkiler ve etkileşimler biçimlendirir.", "Relationships and interactions shape system behavior.", [2, 7]),
-  card("nosys10", "isNot", "Süreci incelemeye gerek yoktur", "There is no need to study the process", "Süreç, sonucun nasıl oluştuğunu gösterir.", "The process shows how an outcome develops.", [39]),
+  card("nosys10", "isNot", "Süreci incelemeye gerek yoktur", "The process need not be studied", "Süreç, sonucun nasıl oluştuğunu gösterir.", "The process shows how an outcome develops.", [39]),
   card("nosys11", "isNot", "Her sorunun tek nedeni vardır", "Every problem has one cause", "Karmaşık sorunlarda birden çok etkileşimli neden olabilir.", "Complex problems can have multiple interacting causes.", [2, 44]),
   card("nosys12", "isNot", "Parçaları bilmek her zaman yeterlidir", "Knowing the parts is always enough", "Parçaların ilişkilerini ve bütünün işleyişini de görmek gerekir.", "We must also see relationships and how the whole works.", [2, 43, 46]),
 ];
@@ -82,7 +82,7 @@ function shuffle<T>(items: readonly T[], random: () => number) {
 
 export function buildSystemProcessRound(seedKey: string): PresentedSystemProcessCard[] {
   const random = seededRandom(hashSeed(`week-4-module-3:${seedKey}`));
-  const isCards = shuffle(systemProcessPool.filter((item) => item.target === "is"), random).slice(0, 3);
-  const isNotCards = shuffle(systemProcessPool.filter((item) => item.target === "isNot"), random).slice(0, 3);
+  const isCards = shuffle(systemProcessPool.filter((item) => item.target === "is"), random).slice(0, 4);
+  const isNotCards = shuffle(systemProcessPool.filter((item) => item.target === "isNot"), random).slice(0, 4);
   return shuffle([...isCards, ...isNotCards], random).map((item, order) => ({ ...item, order }));
 }

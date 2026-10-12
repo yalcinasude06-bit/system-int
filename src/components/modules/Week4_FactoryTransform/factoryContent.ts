@@ -121,7 +121,7 @@ export const factoryScenarioPool: FactoryScenario[] = [
     repairZone: "machine",
     learning: text("Mekanik düzen, önleyici bakım ve standart çalışma ister.", "Mechanical order depends on preventive maintenance and standard work."),
     options: [
-      option("M03-A", "Planlı bakım için hattı güvenle durdur", "Stop the line safely for planned maintenance", true, "organized", metric(5, 6, 3), "Kısa planlı duruş büyük arızayı önledi.", "A short planned stop prevented a major failure.", "Bakım tamamlandı; dişli düzenli dönüyor.", "Maintenance is complete; the gear turns smoothly."),
+      option("M03-A", "Planlı bakım yap", "Perform planned maintenance", true, "organized", metric(5, 6, 3), "Kısa planlı duruş büyük arızayı önledi.", "A short planned stop prevented a major failure.", "Bakım tamamlandı; dişli düzenli dönüyor.", "Maintenance is complete; the gear turns smoothly."),
       option("M03-B", "Sesi bastırıp üretime devam et", "Mask the noise and keep producing", false, "jam", metric(-15, -7, -6), "Belirtiyi gizlemek arızayı büyüttü.", "Masking the symptom made the fault worse.", "Dişli kilitlendi; hat aniden durdu!", "The gear locked; the line stopped suddenly!"),
       option("M03-C", "Makineyi daha yüksek devirde çalıştır", "Run the machine at higher speed", false, "overdrive", metric(-16, -8, -5), "Aşırı devir ısıyı ve hasarı artırdı.", "Overdrive increased heat and damage.", "Makine aşırı ısındı ve güvenlik duruşu verdi.", "The machine overheated and triggered a safety stop."),
     ],
@@ -134,7 +134,7 @@ export const factoryScenarioPool: FactoryScenario[] = [
     repairZone: "machine",
     learning: text("Standartlaştırma, tekrarlanabilir mekanik düzenin temelidir.", "Standardization is the foundation of repeatable mechanical order."),
     options: [
-      option("M04-A", "Ortak iş standardı ve kontrol listesi oluştur", "Create a shared work standard and checklist", true, "organized", metric(9, 4, 4), "Ortak standart değişkenliği azalttı.", "A shared standard reduced variation.", "Vardiyalar aynı güvenli sırayı izliyor.", "Shifts now follow the same safe sequence."),
+      option("M04-A", "Ortak iş standardı oluştur", "Create one shared work standard", true, "organized", metric(9, 4, 4), "Ortak standart değişkenliği azalttı.", "A shared standard reduced variation.", "Vardiyalar aynı güvenli sırayı izliyor.", "Shifts now follow the same safe sequence."),
       option("M04-B", "En hızlı vardiyanın hızını herkese uygula", "Impose the fastest shift's speed on everyone", false, "overdrive", metric(-9, -3, -9), "Bağlamı görmeden hız dayatmak hata üretti.", "Imposing speed without context created errors.", "Hız arttı; kalite ve katılım düştü.", "Speed rose; quality and participation fell."),
       option("M04-C", "Farklılıkları kayıt altına alma", "Do not record the differences", false, "blind", metric(-7, -8, -6), "Ölçüm olmayınca kök neden görünmez kaldı.", "Without measurement, the root cause stayed hidden.", "Kalite farkı görünmez kaldı ve büyüdü.", "Quality variation stayed hidden and grew."),
     ],
@@ -147,7 +147,7 @@ export const factoryScenarioPool: FactoryScenario[] = [
     repairZone: "machine",
     learning: text("Görsel düzen ve doğru yerleşim, sistemde gereksiz hareketi azaltır.", "Visual organization and correct placement reduce unnecessary movement in a system."),
     options: [
-      option("M05-A", "Renk kodlu sabit malzeme alanları kur", "Create color-coded fixed material zones", true, "organized", metric(10, 4, 5), "Görsel yerleşim doğru parçayı doğru noktaya bağladı.", "Visual layout connected each part to the right point.", "Malzeme akışı sadeleşti; bekleme azaldı.", "Material flow is clearer and waiting decreased."),
+      option("M05-A", "Renk kodlu malzeme alanları kur", "Create color-coded material zones", true, "organized", metric(10, 4, 5), "Görsel yerleşim doğru parçayı doğru noktaya bağladı.", "Visual layout connected each part to the right point.", "Malzeme akışı sadeleşti; bekleme azaldı.", "Material flow is clearer and waiting decreased."),
       option("M05-B", "Kutuları koridora yığ", "Stack the boxes in the corridor", false, "jam", metric(-10, -4, -7), "Düzensiz stok ulaşımı ve güvenliği bozdu.", "Disorganized stock hurt access and safety.", "Koridor kapandı; hat beslenemiyor.", "The corridor is blocked; the line cannot be supplied."),
       option("M05-C", "Makine hızını artırarak zamanı telafi et", "Compensate by increasing machine speed", false, "overdrive", metric(-8, -4, -5), "Hız, yanlış malzeme akışını düzeltmedi.", "Speed did not fix the incorrect material flow.", "Yanlış parça daha hızlı işlendi.", "The wrong parts were processed faster."),
     ],
@@ -160,7 +160,7 @@ export const factoryScenarioPool: FactoryScenario[] = [
     repairZone: "machine",
     learning: text("Kontrolün akışa yerleşmesi, mekanik sürecin güvenilirliğini artırır.", "Embedding control in the flow increases the reliability of a mechanical process."),
     options: [
-      option("M06-A", "Kontrolü zorunlu bir süreç adımı yap", "Make inspection a mandatory process step", true, "organized", metric(7, 5, 4), "Kontrol noktası akışın doğal parçası oldu.", "Inspection became a natural part of the flow.", "Hatalı paketler hatta ilerlemeden ayrılıyor.", "Faulty packages are removed before advancing."),
+      option("M06-A", "Kontrolü zorunlu süreç adımı yap", "Make inspection a required step", true, "organized", metric(7, 5, 4), "Kontrol noktası akışın doğal parçası oldu.", "Inspection became a natural part of the flow.", "Hatalı paketler hatta ilerlemeden ayrılıyor.", "Faulty packages are removed before advancing."),
       option("M06-B", "Kontrolü yalnızca şikâyet gelince yap", "Inspect only after a complaint", false, "blind", metric(-8, -9, -4), "Geç geri bildirim hatalı ürünleri durduramadı.", "Late feedback could not stop faulty products.", "Hatalar müşteriye kadar ulaştı.", "Defects reached the customer."),
       option("M06-C", "Kontrol süresini sıfıra yaklaştır", "Reduce inspection time almost to zero", false, "overdrive", metric(-7, -5, -5), "Aşırı hız kontrolün amacını ortadan kaldırdı.", "Excessive speed defeated the purpose of inspection.", "Kontrol var görünüyor ama hatalar geçiyor.", "Inspection exists on paper, but defects pass through."),
     ],
@@ -173,7 +173,7 @@ export const factoryScenarioPool: FactoryScenario[] = [
     repairZone: "sensor",
     learning: text("Biyolojik model, çevreden gelen geri bildirimle uyum sağlar.", "The biological model adapts through feedback from its environment."),
     options: [
-      option("B01-A", "Talep verisini plana bağlayıp üretimi ayarla", "Connect demand data to planning and adjust production", true, "feedback", metric(7, 14, 5), "Geri bildirim üretim planını çevreye uyarladı.", "Feedback aligned the production plan with the environment.", "Yeni talep okundu; üretim uyumlandı.", "New demand was read; production adapted."),
+      option("B01-A", "Talebe göre üretimi ayarla", "Adjust production to demand", true, "feedback", metric(7, 14, 5), "Geri bildirim üretim planını çevreye uyarladı.", "Feedback aligned the production plan with the environment.", "Yeni talep okundu; üretim uyumlandı.", "New demand was read; production adapted."),
       option("B01-B", "Eski plana aynen devam et", "Continue with the old plan", false, "blind", metric(-10, -15, -4), "Çevre sinyali görmezden gelindiği için stok şişti.", "Stock grew because the environmental signal was ignored.", "Eski ürün stoku büyüyor!", "Stock of the old product is growing!"),
       option("B01-C", "Sensörü kapat; plan değişmesin", "Disable the sensor so the plan does not change", false, "shortage", metric(-12, -16, -6), "Geri bildirimi kapatmak sistemi çevresine körleştirdi.", "Disabling feedback blinded the system to its environment.", "Fabrika talebi göremiyor ve yanlış üretim yapıyor.", "The factory cannot see demand and produces the wrong output."),
     ],
@@ -186,7 +186,7 @@ export const factoryScenarioPool: FactoryScenario[] = [
     repairZone: "sensor",
     learning: text("Canlı sistemler kıtlık sinyalini okuyup kaynak kullanımını uyarlar.", "Living systems read shortage signals and adapt resource use."),
     options: [
-      option("B02-A", "Stok sinyaline göre planı azaltıp alternatifi doğrula", "Reduce the plan from stock feedback and validate the alternative", true, "feedback", metric(3, 13, 6), "Kaynak kullanımı gerçek koşula uyarlandı.", "Resource use adapted to real conditions.", "Plan güncellendi; alternatif malzeme kontrollü kullanılıyor.", "The plan was updated; alternative material is used carefully."),
+      option("B02-A", "Planı azalt, alternatifi doğrula", "Reduce output and validate the alternative", true, "feedback", metric(3, 13, 6), "Kaynak kullanımı gerçek koşula uyarlandı.", "Resource use adapted to real conditions.", "Plan güncellendi; alternatif malzeme kontrollü kullanılıyor.", "The plan was updated; alternative material is used carefully."),
       option("B02-B", "Aynı hızla üretmeye devam et", "Keep producing at the same speed", false, "shortage", metric(-13, -11, -5), "Kıtlık sinyali yok sayılınca hat malzemesiz kaldı.", "Ignoring the shortage signal left the line without material.", "Hazne boşaldı; istasyon durdu.", "The hopper emptied; the station stopped."),
       option("B02-C", "Stok sensörünün uyarısını sustur", "Mute the stock sensor alert", false, "blind", metric(-9, -14, -5), "Uyarıyı susturmak kaynağı artırmadı.", "Muting the alert did not increase the resource.", "Kıtlık görünmez oldu ama büyümeye devam etti.", "The shortage became invisible but kept growing."),
     ],
@@ -199,7 +199,7 @@ export const factoryScenarioPool: FactoryScenario[] = [
     repairZone: "sensor",
     learning: text("Denge, değişkenlerin izlenmesi ve geri besleme ile korunur.", "Balance is maintained by monitoring variables and using feedback."),
     options: [
-      option("B03-A", "Sıcaklık geri bildirimine göre hız ve soğutmayı ayarla", "Adjust speed and cooling from temperature feedback", true, "feedback", metric(5, 12, 5), "Sistem koşula göre yeni bir denge kurdu.", "The system formed a new balance for the conditions.", "Sıcaklık düştü; kalite yeniden dengeli.", "Temperature fell; quality is stable again."),
+      option("B03-A", "Hız ve soğutmayı sıcaklığa göre ayarla", "Adjust speed and cooling to temperature", true, "feedback", metric(5, 12, 5), "Sistem koşula göre yeni bir denge kurdu.", "The system formed a new balance for the conditions.", "Sıcaklık düştü; kalite yeniden dengeli.", "Temperature fell; quality is stable again."),
       option("B03-B", "Kalite alarmını geçici olarak kapat", "Temporarily disable the quality alarm", false, "blind", metric(-10, -13, -4), "Alarm kapanınca neden değil yalnızca görünürlük kayboldu.", "Disabling the alarm removed visibility, not the cause.", "Hata sinyali yok; hatalı ürünler birikiyor.", "There is no error signal; defective products are accumulating."),
       option("B03-C", "Hızı artırıp kaybı telafi et", "Increase speed to compensate for losses", false, "overdrive", metric(-14, -10, -6), "Ek hız ısıyı ve kalite kaybını artırdı.", "Extra speed increased heat and quality loss.", "Hat aşırı ısındı; kayıp büyüdü.", "The line overheated; losses grew."),
     ],
@@ -212,7 +212,7 @@ export const factoryScenarioPool: FactoryScenario[] = [
     repairZone: "sensor",
     learning: text("Uyum yalnızca çıktı miktarını değil, gecikmeli kalite geri bildirimini de izlemeyi gerektirir.", "Adaptation requires tracking delayed quality feedback, not only output volume."),
     options: [
-      option("B04-A", "İade verisini parti ve ayar kayıtlarıyla eşleştir", "Connect return data with batch and setting records", true, "feedback", metric(6, 12, 6), "Gecikmeli sinyal kök ayar sapmasını görünür kıldı.", "The delayed signal exposed the root setting drift.", "Sapma bulundu; sonraki partiler uyumlandı.", "The drift was found; following batches adapted."),
+      option("B04-A", "İadeleri üretim kayıtlarıyla eşleştir", "Match returns with production records", true, "feedback", metric(6, 12, 6), "Gecikmeli sinyal kök ayar sapmasını görünür kıldı.", "The delayed signal exposed the root setting drift.", "Sapma bulundu; sonraki partiler uyumlandı.", "The drift was found; following batches adapted."),
       option("B04-B", "Hedef tuttuğu için değişiklik yapma", "Make no change because the target was met", false, "blind", metric(-9, -11, -5), "Tek metrik, sistemdeki kalite kaybını sakladı.", "A single metric hid quality loss in the system.", "Üretim sürüyor; iadeler artıyor.", "Production continues; returns are rising."),
       option("B04-C", "İadeleri stoktan yenileriyle değiştir", "Replace returns with new items from stock", false, "shortage", metric(-7, -8, -4), "Belirti karşılandı ama üretim nedeni düzelmedi.", "The symptom was handled, but the production cause remained.", "Stok azalıyor; hata aynı kalıyor.", "Stock is shrinking; the fault remains."),
     ],
@@ -225,7 +225,7 @@ export const factoryScenarioPool: FactoryScenario[] = [
     repairZone: "sensor",
     learning: text("Çevreye uyum, bütün akıştan gelen geri bildirimi kullanır.", "Adapting to the environment uses feedback from the whole flow."),
     options: [
-      option("B05-A", "Toplam teslimat akışını ölçüp beklemeleri azalt", "Measure the full delivery flow and reduce waiting", true, "feedback", metric(8, 13, 6), "Bütün akıştan gelen veri gerçek gecikmeyi gösterdi.", "Data from the whole flow revealed the real delay.", "Beklemeler azaldı; teslimat hızlandı.", "Waiting decreased; delivery became faster."),
+      option("B05-A", "Teslimat akışını ölç, beklemeyi azalt", "Measure delivery flow and cut waiting", true, "feedback", metric(8, 13, 6), "Bütün akıştan gelen veri gerçek gecikmeyi gösterdi.", "Data from the whole flow revealed the real delay.", "Beklemeler azaldı; teslimat hızlandı.", "Waiting decreased; delivery became faster."),
       option("B05-B", "Yalnızca makine hızını artır", "Increase only machine speed", false, "overdrive", metric(-5, -6, -5), "Makine süresi kısaldı ama onay beklemeleri kaldı.", "Machine time fell, but approval waits remained.", "Stok hızlı büyüyor; teslimat değişmedi.", "Stock grows faster; delivery did not change."),
       option("B05-C", "Rakip verisini izlemeyi bırak", "Stop tracking competitor data", false, "blind", metric(-7, -12, -4), "Çevresel değişimi görmemek uyumu engelledi.", "Ignoring environmental change prevented adaptation.", "Pazar sinyali kayboldu; siparişler azalıyor.", "The market signal disappeared; orders are falling."),
     ],
@@ -251,7 +251,7 @@ export const factoryScenarioPool: FactoryScenario[] = [
     repairZone: "workers",
     learning: text("Sosyo-kültürel model, amaçları ve anlamları katılımla uzlaştırır.", "The socio-cultural model reconciles goals and meanings through participation."),
     options: [
-      option("S01-A", "Çalışanlarla güvenli üretim hedefini birlikte belirle", "Set a safe output target together with workers", true, "cooperate", metric(8, 7, 14), "Katılımcı karar, üretim ve güvenliği ortak amaçta buluşturdu.", "Participatory decision-making aligned output and safety around a shared purpose.", "Ekip ortak hedefte anlaştı; güvenli akış başladı.", "The team agreed on a shared target; safe flow began."),
+      option("S01-A", "Güvenli hedefi çalışanlarla belirle", "Set a safe target with workers", true, "cooperate", metric(8, 7, 14), "Katılımcı karar, üretim ve güvenliği ortak amaçta buluşturdu.", "Participatory decision-making aligned output and safety around a shared purpose.", "Ekip ortak hedefte anlaştı; güvenli akış başladı.", "The team agreed on a shared target; safe flow began."),
       option("S01-B", "Şikâyetleri dikkate alma", "Ignore the complaints", false, "conflict", metric(-9, -6, -16), "Çalışan bilgisini dışlamak gerilim ve hata yarattı.", "Excluding worker knowledge created tension and errors.", "Gerilim yükseldi; ekip akışı yavaşlattı.", "Tension rose; team flow slowed."),
       option("S01-C", "Hedefi hemen yüzde yirmi artır", "Immediately raise the target by twenty percent", false, "overdrive", metric(-12, -6, -14), "Ortak karar olmadan artırılan hedef güveni ve güvenliği bozdu.", "Raising the target without shared decision-making damaged trust and safety.", "Hat hızlandı; güvenlik duruşları arttı!", "The line sped up; safety stops increased!"),
     ],
@@ -264,7 +264,7 @@ export const factoryScenarioPool: FactoryScenario[] = [
     repairZone: "workers",
     learning: text("İnsanların yaşam bağlamı, sosyo-kültürel sistemin çalışma biçimini etkiler.", "People's life context shapes how a socio-cultural system works."),
     options: [
-      option("S02-A", "Ekip önerileriyle esnek vardiya düzeni kur", "Build a flexible shift plan with team input", true, "cooperate", metric(6, 8, 13), "Ortak düzen hem işi hem yaşam koşullarını gözetti.", "The shared arrangement respected both work and life conditions.", "Vardiyalar sahiplenildi; başlangıçlar düzenli.", "The shifts gained ownership; starts are consistent."),
+      option("S02-A", "Esnek vardiyayı ekiple planla", "Plan flexible shifts with the team", true, "cooperate", metric(6, 8, 13), "Ortak düzen hem işi hem yaşam koşullarını gözetti.", "The shared arrangement respected both work and life conditions.", "Vardiyalar sahiplenildi; başlangıçlar düzenli.", "The shifts gained ownership; starts are consistent."),
       option("S02-B", "Geç kalan herkesi cezalandır", "Punish everyone who arrives late", false, "conflict", metric(-7, -5, -15), "Koşulları anlamadan ceza uygulamak güveni azalttı.", "Punishment without understanding conditions reduced trust.", "Gerilim arttı; devamsızlık büyüyor.", "Tension rose; absence is increasing."),
       option("S02-C", "Makineyi operatör olmadan çalıştır", "Run the machine without an operator", false, "overdrive", metric(-12, -5, -10), "İnsan rolünü yok saymak güvenlik riski yarattı.", "Ignoring the human role created a safety risk.", "Kontrolsüz hat güvenlik duruşuna geçti.", "The unattended line entered a safety stop."),
     ],
@@ -277,7 +277,7 @@ export const factoryScenarioPool: FactoryScenario[] = [
     repairZone: "workers",
     learning: text("Sosyo-kültürel sistemlerde bilgi, ilişki ve ortak pratikle yaşar.", "In socio-cultural systems, knowledge lives through relationships and shared practice."),
     options: [
-      option("S03-A", "Usta-yeni çalışan eşleşmesi ve ortak öğrenme saati kur", "Create veteran-newcomer pairs and shared learning time", true, "cooperate", metric(7, 8, 14), "Bilgi ilişki içinde görünür ve ortak hale geldi.", "Knowledge became visible and shared through relationships.", "Ekip birlikte öğreniyor; kalite dengeleniyor.", "The team is learning together; quality is stabilizing."),
+      option("S03-A", "Usta-çırak eşleşmeleri kur", "Create veteran-newcomer learning pairs", true, "cooperate", metric(7, 8, 14), "Bilgi ilişki içinde görünür ve ortak hale geldi.", "Knowledge became visible and shared through relationships.", "Ekip birlikte öğreniyor; kalite dengeleniyor.", "The team is learning together; quality is stabilizing."),
       option("S03-B", "Bilgiyi paylaşmayanları ekipten dışla", "Exclude those who do not share knowledge", false, "conflict", metric(-6, -5, -15), "Dışlama bilgi akışını daha da kapattı.", "Exclusion closed knowledge flow even further.", "Gruplar ayrıştı; işbirliği durdu.", "Groups split apart; cooperation stopped."),
       option("S03-C", "Yeni çalışanlardan daha hızlı olmalarını iste", "Ask newcomers to work faster", false, "overdrive", metric(-9, -5, -12), "Öğrenme olmadan hız baskısı hatayı artırdı.", "Speed pressure without learning increased errors.", "Hız baskısı arttı; hatalar çoğaldı.", "Speed pressure rose; errors multiplied."),
     ],
@@ -290,7 +290,7 @@ export const factoryScenarioPool: FactoryScenario[] = [
     repairZone: "workers",
     learning: text("Sosyo-kültürel sistem, paydaşların değerlerini ve ortak yaşamı hesaba katar.", "A socio-cultural system accounts for stakeholder values and shared life."),
     options: [
-      option("S04-A", "Çalışanlar ve mahalleyle atık azaltma planı oluştur", "Create a waste-reduction plan with workers and residents", true, "cooperate", metric(4, 10, 13), "Paydaş katılımı uygulanabilir ortak çözüm üretti.", "Stakeholder participation produced a workable shared solution.", "Atık planı başladı; güven yeniden kuruluyor.", "The waste plan began; trust is rebuilding."),
+      option("S04-A", "Ortak atık azaltma planı yap", "Plan shared waste cuts", true, "cooperate", metric(4, 10, 13), "Paydaş katılımı uygulanabilir ortak çözüm üretti.", "Stakeholder participation produced a workable shared solution.", "Atık planı başladı; güven yeniden kuruluyor.", "The waste plan began; trust is rebuilding."),
       option("S04-B", "Kokuyla ilgili şikâyetleri reddet", "Dismiss the odor complaints", false, "pollution", metric(-7, -12, -15), "Toplum sinyalini yok saymak çevresel ve sosyal zararı büyüttü.", "Ignoring the community signal increased environmental and social harm.", "Duman arttı; mahalleyle bağ koptu.", "Smoke increased; the community relationship broke down."),
       option("S04-C", "Üretim hedefini yükselt", "Raise the production target", false, "overdrive", metric(-9, -10, -13), "Daha fazla çıktı atık ve çatışmayı artırdı.", "More output increased waste and conflict.", "Üretim hızlandı; atık ve tepki büyüdü.", "Production sped up; waste and opposition grew."),
     ],
@@ -303,7 +303,7 @@ export const factoryScenarioPool: FactoryScenario[] = [
     repairZone: "workers",
     learning: text("Teknolojik değişim, anlam, güven ve katılım boyutlarıyla birlikte yönetilir.", "Technological change must be managed together with meaning, trust, and participation."),
     options: [
-      option("S05-A", "Amacı açıkla; çalışanlarla eğitim ve geçiş planı yap", "Explain the purpose and plan training and transition with workers", true, "cooperate", metric(6, 10, 14), "Açıklık ve katılım değişimin sahiplenilmesini sağladı.", "Clarity and participation built ownership of the change.", "Ekip yeni sistemi güvenle öğreniyor.", "The team is learning the new system with confidence."),
+      option("S05-A", "Eğitim ve geçişi çalışanlarla planla", "Plan training and transition together", true, "cooperate", metric(6, 10, 14), "Açıklık ve katılım değişimin sahiplenilmesini sağladı.", "Clarity and participation built ownership of the change.", "Ekip yeni sistemi güvenle öğreniyor.", "The team is learning the new system with confidence."),
       option("S05-B", "Soruları yasakla ve sistemi bir gecede değiştir", "Ban questions and switch systems overnight", false, "conflict", metric(-10, -9, -16), "Anlamsız ve katılımsız değişim direnç doğurdu.", "Change without meaning or participation created resistance.", "Belirsizlik çatışmaya dönüştü; akış aksıyor.", "Uncertainty became conflict; flow is disrupted."),
       option("S05-C", "Eğitim olmadan hedefi artır", "Raise targets without training", false, "overdrive", metric(-11, -8, -14), "Öğrenme süresi olmadan hız baskısı hata üretti.", "Speed pressure without learning time produced errors.", "Yeni arayüzde hatalar ve stres arttı.", "Errors and stress rose with the new interface."),
     ],
@@ -316,7 +316,7 @@ export const factoryScenarioPool: FactoryScenario[] = [
     repairZone: "workers",
     learning: text("Ortak amaç ve birlikte tasarlanan ölçütler, alt gruplar arasındaki çatışmayı azaltır.", "A shared purpose and jointly designed measures reduce conflict between subgroups."),
     options: [
-      option("S06-A", "Ekiplerle ortak teslimat amacı ve devir kuralı belirle", "Define a shared delivery goal and handoff rule with both teams", true, "cooperate", metric(8, 8, 13), "Ortak ölçüt yerel hedefleri bütünün amacıyla birleştirdi.", "A shared measure aligned local goals with the whole system's purpose.", "Ekipler aynı hedefe çalışıyor; devir hızlandı.", "Teams now work toward one goal; handoffs are faster."),
+      option("S06-A", "Ortak teslimat ve devir kuralı belirle", "Align delivery goals and handoffs", true, "cooperate", metric(8, 8, 13), "Ortak ölçüt yerel hedefleri bütünün amacıyla birleştirdi.", "A shared measure aligned local goals with the whole system's purpose.", "Ekipler aynı hedefe çalışıyor; devir hızlandı.", "Teams now work toward one goal; handoffs are faster."),
       option("S06-B", "Bir ekibi herkesin önünde suçla", "Blame one team publicly", false, "conflict", metric(-8, -6, -16), "Suçlama savunmayı artırdı ve bilgi paylaşımını azalttı.", "Blame increased defensiveness and reduced information sharing.", "Çatışma büyüdü; devir tamamen durdu.", "Conflict grew; the handoff stopped completely."),
       option("S06-C", "Her iki ekibin hedefini ayrı ayrı yükselt", "Raise both teams' targets separately", false, "overdrive", metric(-7, -5, -13), "Yerel baskı ortak akışı daha da parçaladı.", "Local pressure fragmented the shared flow further.", "Ekipler hızlandı ama aradaki kuyruk büyüdü.", "Teams sped up, but the queue between them grew."),
     ],

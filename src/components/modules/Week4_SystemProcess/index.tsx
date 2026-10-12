@@ -25,21 +25,21 @@ const copy = {
     interactionHint: "Kartı sürükle veya seç; sonra doğru hedefe dokun.",
     pool: "Kartlar",
     poolHint: "Kartları doğru alana sürükle.",
-    is: "SİSTEMDİR",
+    is: "SİSTEM YAKLAŞIMINA UYGUN",
     isNot: "UYGUN DEĞİL",
     empty: "Kartı buraya bırak",
     selected: "seçildi",
     return: "Kartı havuza geri al",
     placed: "kart yerleştirildi",
     check: "Kontrol Et",
-    checkHint: "Kontrol etmek için tüm 6 kartı yerleştir.",
+    checkHint: "Kontrol etmek için tüm 8 kartı yerleştir.",
     checking: "İlk yerleşimlerin kontrol ediliyor…",
     corrected: "Yanlış kartlar doğru alanlarına taşındı.",
     allCorrect: "Tüm kartlar ilk kontrolde doğru yerdeydi.",
     firstCheck: "İlk kontrolde doğru",
-    review: "Kontrol sonrası kısa açıklamalar",
-    completed: "Kart sınıflandırman kaydedildi",
-    completedDetail: "Puanın yalnızca ilk kontroldeki doğru yerleşimlerden hesaplandı. Öğretmen sonuçları açıklayana kadar puanın gizli kalır.",
+    review: "Kartların ve kısa açıklamaları",
+    completed: "Kart sınıflandırman tamamlandı",
+    completedDetail: "Puanın ilk kontroldeki doğru yerleşimlerinden hesaplandı. Aşağıda bütün kartları inceleyebilirsin.",
     partial: "Kısmi yerleşimin kaydedildi",
     partialDetail: "Öğretmen modülü sonlandırdığı için yerleştirdiğin kartlar kaydedildi.",
     locked: "Bu modül tamamlandı",
@@ -47,6 +47,13 @@ const copy = {
     saving: "Yanıt kaydediliyor…",
     saveError: "Yanıt kaydedilemedi. İlerlemen korundu.",
     retry: "Kaydı tekrar dene",
+    points: "Toplam puan",
+    correct: "Doğru",
+    incorrect: "Yanlış",
+    yourPlacement: "Senin yerleştirmen",
+    correctTarget: "Doğru hedef",
+    notPlaced: "Yerleştirilmedi",
+    continueFeedback: "Geri bildirime geç",
   },
   en: {
     title: "Week 4 · Module 3: What Is and Is Not a System?",
@@ -54,21 +61,21 @@ const copy = {
     interactionHint: "Drag or select a card, then tap the correct target.",
     pool: "Cards",
     poolHint: "Drag the cards to the correct area.",
-    is: "SYSTEM",
+    is: "ALIGNS WITH SYSTEMS THINKING",
     isNot: "NOT SUITABLE",
     empty: "Drop a card here",
     selected: "selected",
     return: "Return card to the pool",
     placed: "cards placed",
     check: "Check",
-    checkHint: "Place all 6 cards before checking.",
+    checkHint: "Place all 8 cards before checking.",
     checking: "Checking your first placements…",
     corrected: "Incorrect cards moved to their correct areas.",
     allCorrect: "Every card was in the correct area on the first check.",
     firstCheck: "Correct on the first check",
-    review: "Brief explanations after checking",
-    completed: "Your card classification was saved",
-    completedDetail: "Your score is calculated only from correct first placements. Your score stays hidden until the teacher reveals the results.",
+    review: "Your cards and brief explanations",
+    completed: "Your card classification is complete",
+    completedDetail: "Your score was calculated from correct first placements. You can review every card below.",
     partial: "Your partial placement was saved",
     partialDetail: "The cards you placed were saved because the teacher ended the module.",
     locked: "This module is complete",
@@ -76,6 +83,13 @@ const copy = {
     saving: "Saving your answer…",
     saveError: "The answer could not be saved. Your progress is preserved.",
     retry: "Try saving again",
+    points: "Total score",
+    correct: "Correct",
+    incorrect: "Incorrect",
+    yourPlacement: "Your placement",
+    correctTarget: "Correct target",
+    notPlaced: "Not placed",
+    continueFeedback: "Continue to feedback",
   },
 } as const;
 
@@ -83,9 +97,9 @@ function emptyPlacements(cards: PresentedSystemProcessCard[]): Placements {
   return Object.fromEntries(cards.map((card) => [card.id, "pool"]));
 }
 
-function placementsFromDraft(cards: PresentedSystemProcessCard[], draft: ModuleDraft | null | undefined): Placements {
+function placementsFromPayload(cards: PresentedSystemProcessCard[], payload: DraftPayload | undefined): Placements {
   const fallback = emptyPlacements(cards);
-  const candidate = (draft?.payload as DraftPayload | undefined)?.placements;
+  const candidate = payload?.placements;
   if (!candidate || typeof candidate !== "object") return fallback;
   for (const card of cards) {
     const value = (candidate as Record<string, unknown>)[card.id];
@@ -94,8 +108,7 @@ function placementsFromDraft(cards: PresentedSystemProcessCard[], draft: ModuleD
   return fallback;
 }
 
-function submittedPlacementsFromDraft(cards: PresentedSystemProcessCard[], draft: ModuleDraft | null | undefined): Placements | null {
-  const payload = draft?.payload as DraftPayload | undefined;
+function submittedPlacementsFromPayload(cards: PresentedSystemProcessCard[], payload: DraftPayload | undefined): Placements | null {
   if (payload?.isChecked !== true) return null;
   const candidate = payload.submittedPlacements ?? payload.evaluatedPlacements;
   if (!candidate || typeof candidate !== "object") return null;
@@ -108,6 +121,14 @@ function submittedPlacementsFromDraft(cards: PresentedSystemProcessCard[], draft
   return snapshot;
 }
 
+function placementsFromDraft(cards: PresentedSystemProcessCard[], draft: ModuleDraft | null | undefined) {
+  return placementsFromPayload(cards, draft?.payload as DraftPayload | undefined);
+}
+
+function submittedPlacementsFromDraft(cards: PresentedSystemProcessCard[], draft: ModuleDraft | null | undefined) {
+  return submittedPlacementsFromPayload(cards, draft?.payload as DraftPayload | undefined);
+}
+
 function placedCount(placements: Placements) {
   return Object.values(placements).filter((placement) => placement !== "pool").length;
 }
@@ -118,6 +139,8 @@ export function Week4SystemProcess({
   existingSubmission,
   existingDraft,
   forceSubmit,
+  reviewMode,
+  onReviewComplete,
   seedKey,
 }: LearningModuleProps & { seedKey: string }) {
   const { locale } = useI18n();
@@ -418,16 +441,18 @@ export function Week4SystemProcess({
     timerIds.current.push(flashTimer);
   }, [cards, completed, currentPlacedCount, finalize, finishCorrection, measureFlyers, onDraft, reduceMotion, submissionFor, text.allCorrect, text.checking]);
 
-  if (existingSubmission && !completed) {
+  if (existingSubmission && !completed && !reviewMode) {
     return <section className="panel module-shell system-process-shell"><div className="module-title-chip">{text.title}</div><div className="module-complete-card"><LockKeyhole size={42} /><h2>{text.locked}</h2><p>{text.lockedDetail}</p></div></section>;
   }
 
-  if (completed) {
-    const snapshot = evaluationSnapshot ?? placements;
+  if (completed || (reviewMode && existingSubmission)) {
+    const storedPayload = existingSubmission?.payload as DraftPayload | undefined;
+    const storedPlacements = placementsFromPayload(cards, storedPayload);
+    const storedSnapshot = submittedPlacementsFromPayload(cards, storedPayload);
+    const snapshot = completed ? evaluationSnapshot ?? placements : storedSnapshot ?? storedPlacements;
     const score = cards.filter((card) => snapshot[card.id] === card.target).length;
-    const incorrectCards = evaluationSnapshot ? cards.filter((card) => evaluationSnapshot[card.id] !== card.target) : [];
-    const endedByTeacher = finalSubmission?.payload.completionReason === "teacher-ended";
-    return <section className="panel module-shell system-process-shell"><div className="module-title-chip">{text.title}</div><div className="module-complete-card"><Sparkles size={42} /><h2>{endedByTeacher ? text.partial : text.completed}</h2><p>{endedByTeacher ? text.partialDetail : text.completedDetail}</p>{evaluationSnapshot && <strong>{text.firstCheck}: {score}/{cards.length}</strong>}{incorrectCards.length > 0 && <section className="system-process-review"><h3>{text.review}</h3>{incorrectCards.map((card) => <details key={card.id}><summary data-i18n-skip>{card.text[locale]}</summary><p data-i18n-skip>{card.explanation[locale]}</p></details>)}</section>}{submitting && <div className="notice">{text.saving}</div>}{submitFailed && finalSubmission && <><div className="notice error">{text.saveError}</div><Button loading={submitting} icon={<RotateCcw size={17} />} onClick={() => void submitResult(finalSubmission)}>{text.retry}</Button></>}</div></section>;
+    const endedByTeacher = (finalSubmission?.payload.completionReason ?? existingSubmission?.payload.completionReason) === "teacher-ended";
+    return <section className="panel module-shell system-process-shell"><div className="module-title-chip">{text.title}</div><div className="module-complete-card system-process-result"><Sparkles size={42} /><h2>{endedByTeacher ? text.partial : text.completed}</h2><p>{endedByTeacher ? text.partialDetail : text.completedDetail}</p><strong className="system-process-final-score">{text.points}: {score * pointsPerCard} / {cards.length * pointsPerCard}</strong><div className="system-process-result-stats"><span><Check size={18} />{text.correct}<b>{score}</b></span><span><X size={18} />{text.incorrect}<b>{cards.length - score}</b></span></div><section className="system-process-review"><h3>{text.review}</h3>{cards.map((card) => { const chosen = snapshot[card.id]; const isCorrect = chosen === card.target; return <details key={card.id} className={isCorrect ? "correct" : "incorrect"}><summary><span aria-hidden="true">{isCorrect ? "✓" : "✕"}</span><span data-i18n-skip>{card.text[locale]}</span><small>{isCorrect ? text.correct : text.incorrect}</small></summary><div className="system-review-detail"><p><b>{text.yourPlacement}:</b> {chosen === "pool" ? text.notPlaced : text[chosen]}</p><p><b>{text.correctTarget}:</b> {text[card.target]}</p><p data-i18n-skip>{card.explanation[locale]}</p></div></details>; })}</section>{submitting && <div className="notice">{text.saving}</div>}{submitFailed && finalSubmission && <><div className="notice error">{text.saveError}</div><Button loading={submitting} icon={<RotateCcw size={17} />} onClick={() => void submitResult(finalSubmission)}>{text.retry}</Button></>}{reviewMode && onReviewComplete && <Button onClick={onReviewComplete}>{text.continueFeedback}</Button>}</div></section>;
   }
 
   const cardsFor = (target: Placement) => cards.filter((card) => placements[card.id] === target);
