@@ -91,7 +91,7 @@ export default function TeacherSessionPage() {
   }
 
   async function startModule(currentModule: ModuleId) {
-    if (!session || (session.selected_week !== 1 && !(session.selected_week === 3 && currentModule <= 3) && !(session.selected_week === 4 && currentModule <= 2))) return;
+    if (!session || (session.selected_week !== 1 && !(session.selected_week === 3 && currentModule <= 3) && !(session.selected_week === 4 && currentModule <= 3))) return;
     setBusy(true); setError(""); setResultsViewOpen(false);
     try {
       setSession(await runTeacherModuleAction(session.id, "start", currentModule));

@@ -22,7 +22,7 @@ const feedbackDuration = 1050;
 
 const copy = {
   tr: {
-    title: "Hafta 4 · Modül 1: Patronun Yaklaşımını Bul",
+    title: "Hafta 4 · Modül 2: Patronun Yaklaşımını Bul",
     instruction: "Patronun sözünü oku ve kullandığı yaklaşımı seç.",
     question: "Soru",
     score: "Puan",
@@ -38,7 +38,7 @@ const copy = {
     retry: "Kaydı tekrar dene",
   },
   en: {
-    title: "Week 4 · Module 1: Find the Boss’s Approach",
+    title: "Week 4 · Module 2: Find the Boss’s Approach",
     instruction: "Read the boss’s statement and choose the approach being used.",
     question: "Question",
     score: "Score",

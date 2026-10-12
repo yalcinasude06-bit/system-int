@@ -1,4 +1,4 @@
-import { Boxes, CheckCircle2, Layers3, ListChecks, Network, Play, ScanSearch, Shapes, Square, Target, UsersRound, Workflow } from "lucide-react";
+import { Boxes, CheckCircle2, Factory, Layers3, ListChecks, Network, Play, ScanSearch, Shapes, Square, Target, UsersRound, Workflow } from "lucide-react";
 import type { ComponentType } from "react";
 import type { ModuleId } from "@/types";
 
@@ -25,8 +25,9 @@ const weekThreeModules: typeof weekOneModules = [
 ];
 
 const weekFourModules: typeof weekOneModules = [
-  { id: 1, title: "Patronun Yaklaşımını Bul", subtitle: "10 farklı yönetici sözü", description: "Yöneticinin kullandığı sistem yaklaşımını dört seçenek arasından belirle.", Icon: UsersRound },
-  { id: 2, title: "Sistem Nedir, Ne Değildir?", subtitle: "6 kartlık sınıflandırma", description: "Sistem düşüncesine uygun ifadeleri Sistemdir veya Uygun değil alanına yerleştir.", Icon: ListChecks },
+  { id: 1, title: "Fabrikayı Dönüştür", subtitle: "3 aşama · 9 sistem kararı", description: "Fabrikayı incele, üç sistem modeline göre karar ver ve gerektiğinde 5 saniyede kurtar.", Icon: Factory },
+  { id: 2, title: "Patronun Yaklaşımını Bul", subtitle: "10 farklı yönetici sözü", description: "Yöneticinin kullandığı sistem yaklaşımını dört seçenek arasından belirle.", Icon: UsersRound },
+  { id: 3, title: "Sistem Nedir, Ne Değildir?", subtitle: "6 kartlık sınıflandırma", description: "Sistem düşüncesine uygun ifadeleri Sistemdir veya Uygun değil alanına yerleştir.", Icon: ListChecks },
 ];
 
 export function WeekSelector({ activeWeek, onChange, disabled }: { activeWeek: number; onChange: (week: number) => void; disabled?: boolean }) {

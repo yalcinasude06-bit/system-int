@@ -20,7 +20,7 @@ const targets: SystemProcessTarget[] = ["is", "isNot"];
 
 const copy = {
   tr: {
-    title: "Hafta 4 · Modül 2: Sistem Nedir, Ne Değildir?",
+    title: "Hafta 4 · Modül 3: Sistem Nedir, Ne Değildir?",
     instruction: "Sistem düşüncesine uygun ifadeleri ayır.",
     interactionHint: "Kartı sürükle veya seç; sonra doğru hedefe dokun.",
     pool: "Kartlar",
@@ -49,7 +49,7 @@ const copy = {
     retry: "Kaydı tekrar dene",
   },
   en: {
-    title: "Week 4 · Module 2: What Is and Is Not a System?",
+    title: "Week 4 · Module 3: What Is and Is Not a System?",
     instruction: "Separate the statements that align with systems thinking.",
     interactionHint: "Drag or select a card, then tap the correct target.",
     pool: "Cards",

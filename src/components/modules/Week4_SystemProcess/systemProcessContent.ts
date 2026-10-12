@@ -81,7 +81,7 @@ function shuffle<T>(items: readonly T[], random: () => number) {
 }
 
 export function buildSystemProcessRound(seedKey: string): PresentedSystemProcessCard[] {
-  const random = seededRandom(hashSeed(`week-4-module-2:${seedKey}`));
+  const random = seededRandom(hashSeed(`week-4-module-3:${seedKey}`));
   const isCards = shuffle(systemProcessPool.filter((item) => item.target === "is"), random).slice(0, 3);
   const isNotCards = shuffle(systemProcessPool.filter((item) => item.target === "isNot"), random).slice(0, 3);
   return shuffle([...isCards, ...isNotCards], random).map((item, order) => ({ ...item, order }));

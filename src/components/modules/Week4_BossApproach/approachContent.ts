@@ -50,6 +50,8 @@ const question = (
 ): BossApproachQuestion => ({ id, difficulty, speech: text(tr, en), approachId, optionIds, explanation: explanations[approachId], sourcePage });
 
 export const bossApproachPool: BossApproachQuestion[] = [
+  // These IDs intentionally remain stable so drafts created before the module
+  // moved from Week 4 Module 1 to Module 2 can resume without losing answers.
   question("W4M1-01", "easy", "Sorunun kaynağını bulmak için sistemi en küçük temel parçalarına kadar ayıralım.", "To find the source of the problem, let’s break the system down into its smallest basic parts.", "indirgemeci", ["surec", "indirgemeci", "yararci", "genislemeci"], 33),
   question("W4M1-02", "easy", "Önce üretim hattını bölümlere ayıralım, her bölümü inceleyip sonra birlikte nasıl çalıştıklarını açıklayalım.", "First, let’s divide the production line into sections, examine each one, and then explain how they work together.", "analitik", ["deneysel", "mekanik", "analitik", "yararci"], 34),
   question("W4M1-03", "easy", "Makinenin durmasının belirli bir nedeni var. Neden ile sonucu açıklayan doğrudan bağlantıyı bulalım.", "The machine stopped for a specific reason. Let’s find the direct link that explains the cause and the outcome.", "neden_sonuc", ["neden_sonuc", "surec", "genislemeci", "yararci"], 35),
@@ -106,7 +108,7 @@ function shuffle<T>(items: readonly T[], random: () => number) {
 }
 
 export function buildBossApproachRound(seedKey: string): PresentedBossApproachQuestion[] {
-  const random = seededRandom(hashSeed(`week-4-module-1:${seedKey}`));
+  const random = seededRandom(hashSeed(`week-4-module-2:${seedKey}`));
   const approachIds = Object.keys(approachLabels) as ApproachId[];
   const selected = approachIds.map((approachId) => shuffle(bossApproachPool.filter((question) => question.approachId === approachId), random)[0]!);
   const selectedIds = new Set(selected.map((question) => question.id));

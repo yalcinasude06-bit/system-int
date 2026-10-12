@@ -78,26 +78,39 @@ const weekThreeModuleThreeBrief: Record<"tr" | "en", ModuleBrief> = {
 
 const weekFourModuleOneBrief: Record<"tr" | "en", ModuleBrief> = {
   tr: {
-    icon: "💬",
-    title: "Modül 1: Patronun Yaklaşımını Bul",
-    description: "Patronun söylediğini oku, yaklaşımını seç!",
+    icon: "🏭",
+    title: "Modül 1: Fabrikayı Dönüştür",
+    description: "Fabrikayı incele, karar ver; gerekirse 5 saniyede kurtar!",
   },
   en: {
-    icon: "💬",
-    title: "Module 1: Find the Boss’s Approach",
-    description: "Read the boss's statement and choose the approach!",
+    icon: "🏭",
+    title: "Module 1: Transform the Factory",
+    description: "Inspect the factory, decide, and rescue it in 5 seconds if needed!",
   },
 };
 
 const weekFourModuleTwoBrief: Record<"tr" | "en", ModuleBrief> = {
   tr: {
+    icon: "💬",
+    title: "Modül 2: Patronun Yaklaşımını Bul",
+    description: "Patronun söylediğini oku, yaklaşımını seç!",
+  },
+  en: {
+    icon: "💬",
+    title: "Module 2: Find the Boss’s Approach",
+    description: "Read the boss's statement and choose the approach!",
+  },
+};
+
+const weekFourModuleThreeBrief: Record<"tr" | "en", ModuleBrief> = {
+  tr: {
     icon: "↔️",
-    title: "Modül 2: Sistem Nedir, Ne Değildir?",
+    title: "Modül 3: Sistem Nedir, Ne Değildir?",
     description: "Kartları doğru alana sürükle.",
   },
   en: {
     icon: "↔️",
-    title: "Module 2: What Is and Is Not a System?",
+    title: "Module 3: What Is and Is Not a System?",
     description: "Drag the cards to the correct area.",
   },
 };
@@ -125,6 +138,8 @@ export function ModuleStartCountdown({ weekId = 1, moduleId, startedAt, onComple
         ? weekFourModuleOneBrief[locale]
       : weekId === 4 && moduleId === 2
         ? weekFourModuleTwoBrief[locale]
+      : weekId === 4 && moduleId === 3
+        ? weekFourModuleThreeBrief[locale]
       : moduleBriefs[moduleId];
 
   useEffect(() => {

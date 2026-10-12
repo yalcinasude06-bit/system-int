@@ -3,12 +3,32 @@ import { readFile } from "node:fs/promises";
 
 const { approachLabels, bossApproachPool, buildBossApproachRound } = await import("../src/components/modules/Week4_BossApproach/approachContent.ts");
 const { buildSystemProcessRound, systemProcessPool } = await import("../src/components/modules/Week4_SystemProcess/systemProcessContent.ts");
+const { buildFactoryRound, factoryScenarioPool } = await import("../src/components/modules/Week4_FactoryTransform/factoryContent.ts");
 
-assert.equal(bossApproachPool.length, 24, "Week 4 Module 1 must have 24 questions");
-assert.equal(new Set(bossApproachPool.map((question) => question.id)).size, 24, "Week 4 Module 1 question IDs must be unique");
+assert.equal(factoryScenarioPool.length, 18, "Week 4 Module 1 must have 18 factory scenarios");
+assert.equal(new Set(factoryScenarioPool.map((scenario) => scenario.id)).size, 18, "Factory scenario IDs must be unique");
+for (const stage of ["mechanical", "biological", "sociocultural"]) {
+  assert.equal(factoryScenarioPool.filter((scenario) => scenario.stage === stage).length, 6, `${stage} must have six scenarios`);
+}
+factoryScenarioPool.forEach((scenario) => {
+  assert.equal(scenario.options.length, 3, `${scenario.id} must offer three decisions`);
+  assert.equal(scenario.options.filter((option) => option.isCorrect).length, 1, `${scenario.id} must have one correct decision`);
+  assert.equal(Object.keys(scenario.hints).length, 3, `${scenario.id} must support all inspection zones`);
+  scenario.options.forEach((option) => assert.equal(option.timeline.length, 3, `${option.id} must expose a three-step visual timeline`));
+});
+const factoryRound = buildFactoryRound("content-validation");
+assert.equal(factoryRound.length, 9, "A factory round must contain nine decisions");
+assert.deepEqual(factoryRound.map((scenario) => scenario.stage), ["mechanical", "mechanical", "mechanical", "biological", "biological", "biological", "sociocultural", "sociocultural", "sociocultural"], "Factory stages must contain three decisions each");
+assert.equal(factoryRound[0].id, "W4M1-M01", "The core mechanical scenario must always be present");
+assert.equal(factoryRound[3].id, "W4M1-B01", "The core biological scenario must always be present");
+assert.equal(factoryRound[6].id, "W4M1-S01", "The core socio-cultural scenario must always be present");
+assert.deepEqual(buildFactoryRound("content-validation"), factoryRound, "Factory selection and option order must be deterministic");
+
+assert.equal(bossApproachPool.length, 24, "Week 4 Module 2 must have 24 questions");
+assert.equal(new Set(bossApproachPool.map((question) => question.id)).size, 24, "Week 4 Module 2 question IDs must be unique");
 const expectedApproaches = ["indirgemeci", "analitik", "neden_sonuc", "deneysel", "mekanik", "yararci", "surec", "genislemeci"];
 bossApproachPool.forEach((question, index) => {
-  assert.equal(question.id, `W4M1-${String(index + 1).padStart(2, "0")}`, "Module 1 IDs must be complete and ordered");
+  assert.equal(question.id, `W4M1-${String(index + 1).padStart(2, "0")}`, "Legacy boss IDs must stay complete and ordered for migrated drafts");
   assert.equal(question.approachId, expectedApproaches[index % expectedApproaches.length], `${question.id} has the wrong answer key`);
 });
 assert.deepEqual(
@@ -17,53 +37,64 @@ assert.deepEqual(
   "The pool must cover all eight approaches",
 );
 const bossRound = buildBossApproachRound("content-validation");
-assert.equal(bossRound.length, 10, "A Module 1 round must contain 10 questions");
-assert.equal(new Set(bossRound.map((question) => question.id)).size, 10, "A Module 1 round must not repeat questions");
-assert.equal(new Set(bossRound.map((question) => question.approachId)).size, 8, "A Module 1 round must include all eight approaches");
+assert.equal(bossRound.length, 10, "A Module 2 round must contain 10 questions");
+assert.equal(new Set(bossRound.map((question) => question.id)).size, 10, "A Module 2 round must not repeat questions");
+assert.equal(new Set(bossRound.map((question) => question.approachId)).size, 8, "A Module 2 round must include all eight approaches");
 bossRound.forEach((question) => {
   assert.equal(question.options.length, 4, `${question.id} must render four options`);
   assert.equal(question.options.filter((option) => option === question.approachId).length, 1, `${question.id} must include exactly one correct option`);
 });
-assert.deepEqual(buildBossApproachRound("content-validation"), bossRound, "Module 1 selection must be deterministic");
+assert.deepEqual(buildBossApproachRound("content-validation"), bossRound, "Module 2 selection must be deterministic");
 
-assert.equal(systemProcessPool.length, 24, "Week 4 Module 2 must have 24 cards");
-assert.equal(systemProcessPool.filter((card) => card.target === "is").length, 12, "Module 2 must have 12 systems-thinking cards");
-assert.equal(systemProcessPool.filter((card) => card.target === "isNot").length, 12, "Module 2 must have 12 unsuitable cards");
-assert.equal(new Set(systemProcessPool.map((card) => card.id)).size, 24, "Week 4 Module 2 card IDs must be unique");
+assert.equal(systemProcessPool.length, 24, "Week 4 Module 3 must have 24 cards");
+assert.equal(systemProcessPool.filter((card) => card.target === "is").length, 12, "Module 3 must have 12 systems-thinking cards");
+assert.equal(systemProcessPool.filter((card) => card.target === "isNot").length, 12, "Module 3 must have 12 unsuitable cards");
+assert.equal(new Set(systemProcessPool.map((card) => card.id)).size, 24, "Week 4 Module 3 card IDs must be unique");
 systemProcessPool.forEach((card, index) => {
   const expectedId = index < 12 ? `sys${String(index + 1).padStart(2, "0")}` : `nosys${String(index - 11).padStart(2, "0")}`;
-  assert.equal(card.id, expectedId, "Module 2 IDs must be complete and ordered");
+  assert.equal(card.id, expectedId, "Module 3 IDs must be complete and ordered");
   assert.ok(card.sourcePages.length > 0, `${card.id} must retain its source pages`);
   assert.ok(card.text.tr.trim().split(/\s+/).length <= 7, `${card.id} must remain short enough for the card UI`);
 });
 const systemRound = buildSystemProcessRound("content-validation");
-assert.equal(systemRound.length, 6, "A Module 2 round must contain six cards");
-assert.equal(systemRound.filter((card) => card.target === "is").length, 3, "A Module 2 round must contain three systems-thinking cards");
-assert.equal(systemRound.filter((card) => card.target === "isNot").length, 3, "A Module 2 round must contain three unsuitable cards");
-assert.equal(new Set(systemRound.map((card) => card.id)).size, 6, "A Module 2 round must not repeat cards");
-assert.deepEqual(buildSystemProcessRound("content-validation"), systemRound, "Module 2 selection must be deterministic");
+assert.equal(systemRound.length, 6, "A Module 3 round must contain six cards");
+assert.equal(systemRound.filter((card) => card.target === "is").length, 3, "A Module 3 round must contain three systems-thinking cards");
+assert.equal(systemRound.filter((card) => card.target === "isNot").length, 3, "A Module 3 round must contain three unsuitable cards");
+assert.equal(new Set(systemRound.map((card) => card.id)).size, 6, "A Module 3 round must not repeat cards");
+assert.deepEqual(buildSystemProcessRound("content-validation"), systemRound, "Module 3 selection must be deterministic");
 
 const bossSource = await readFile(new URL("../src/components/modules/Week4_BossApproach/index.tsx", import.meta.url), "utf8");
 const portraitSource = await readFile(new URL("../src/components/modules/Week4_BossApproach/BossPortrait.tsx", import.meta.url), "utf8");
 const systemSource = await readFile(new URL("../src/components/modules/Week4_SystemProcess/index.tsx", import.meta.url), "utf8");
+const factorySource = await readFile(new URL("../src/components/modules/Week4_FactoryTransform/index.tsx", import.meta.url), "utf8");
 const demoSource = await readFile(new URL("../src/components/common/ModuleGameplayDemo.tsx", import.meta.url), "utf8");
 const studentSource = await readFile(new URL("../src/app/student/play/[pin]/page.tsx", import.meta.url), "utf8");
 const globalStyles = await readFile(new URL("../src/app/globals.css", import.meta.url), "utf8");
-assert.doesNotMatch(bossSource, /boss-next-button|Sonraki patron|Next boss/, "Module 1 must advance without a next button");
-assert.doesNotMatch(bossSource, /current\.sourcePage|Kaynak sayfa|Source page/, "Module 1 must not expose source-page metadata");
-assert.match(bossSource, /feedbackDuration = 1050/, "Module 1 feedback must auto-advance after about one second");
-assert.doesNotMatch(bossSource, /🧑|👩|👨/, "Module 1 must not use emoji bosses");
-assert.match(portraitSource, /const profiles = \[/, "Module 1 must use local illustrated boss profiles");
-assert.equal((portraitSource.match(/\{ skin:/g) ?? []).length, 8, "Module 1 must provide eight distinct boss illustrations");
-assert.match(systemSource, /onPointerMove/, "Module 2 must provide pointer dragging for mouse and touch");
-assert.match(systemSource, /onZoneKeyDown/, "Module 2 must retain a keyboard placement path");
-assert.match(systemSource, /system-trash-lid/, "Module 2 must render an animated trash lid");
-assert.match(systemSource, /submittedPlacements/, "Module 2 must preserve the first-check scoring snapshot");
+assert.match(factorySource, /recoveryWindowMs = 5000/, "Module 1 recovery must use an exact five-second window");
+assert.match(factorySource, /performance\.now\(\)/, "Module 1 recovery must use a monotonic in-page deadline");
+assert.match(factorySource, /deadlineEpoch/, "Module 1 recovery deadline must survive draft reloads");
+assert.match(factorySource, /clickedRepairZones/, "Module 1 must record every repair-zone attempt");
+assert.match(factorySource, /points: 10/, "Module 1 must award ten points for a first-correct answer");
+assert.match(factorySource, /points: 4/, "Module 1 must award four points for a successful recovery");
+assert.match(factorySource, /Sonraki Karar/, "Module 1 must use an explicit next-decision action");
+assert.doesNotMatch(bossSource, /boss-next-button|Sonraki patron|Next boss/, "Module 2 must advance without a next button");
+assert.doesNotMatch(bossSource, /current\.sourcePage|Kaynak sayfa|Source page/, "Module 2 must not expose source-page metadata");
+assert.match(bossSource, /feedbackDuration = 1050/, "Module 2 feedback must auto-advance after about one second");
+assert.doesNotMatch(bossSource, /🧑|👩|👨/, "Module 2 must not use emoji bosses");
+assert.match(portraitSource, /const profiles = \[/, "Module 2 must use local illustrated boss profiles");
+assert.equal((portraitSource.match(/\{ skin:/g) ?? []).length, 8, "Module 2 must provide eight distinct boss illustrations");
+assert.match(systemSource, /onPointerMove/, "Module 3 must provide pointer dragging for mouse and touch");
+assert.match(systemSource, /onZoneKeyDown/, "Module 3 must retain a keyboard placement path");
+assert.match(systemSource, /system-trash-lid/, "Module 3 must render an animated trash lid");
+assert.match(systemSource, /submittedPlacements/, "Module 3 must preserve the first-check scoring snapshot");
 assert.doesNotMatch(studentSource, /firstCheckCorrect\}\/12/, "The result screen must not retain the old 12-card denominator");
 assert.match(studentSource, /payload\.cardCount/, "The result denominator must come from the submitted round");
 assert.match(demoSource, /Parçalar ilişkilidir/, "The onboarding demo must use the specified positive example");
 assert.match(demoSource, /Çevre önemsizdir/, "The onboarding demo must use the specified unsuitable example");
 assert.match(demoSource, /week-four-demo-trash-lid/, "The onboarding demo must animate a real trash lid element");
+assert.match(demoSource, /Fabrikayı incele, karar ver; gerekirse 5 saniyede kurtar!/, "Factory onboarding must include the required instruction");
+assert.match(globalStyles, /\.factory-zone\.repair-target/, "The repair target must receive a visible factory-scene highlight");
+assert.match(globalStyles, /@media \(max-width: 700px\)[\s\S]*?\.factory-scene/, "The factory must provide a narrow-screen layout");
 assert.match(globalStyles, /\.system-process-zones \{[^}]*grid-template:[^}]*repeat\(2/s, "Desktop targets must remain side by side");
 assert.match(globalStyles, /@media \(max-width: 600px\)[\s\S]*?\.system-process-zones \{ grid-template-columns: 1fr;/, "The target layout must stack safely on narrow screens");
 assert.match(globalStyles, /@media \(prefers-reduced-motion: reduce\)/, "Week 4 interactions must honor reduced-motion preferences");

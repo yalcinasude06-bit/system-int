@@ -16,6 +16,7 @@ import { Module5RelationBalloons } from "@/components/modules/Module5_RelationBa
 import { Week3ProcessHierarchy } from "@/components/modules/Week3_ProcessHierarchy";
 import { Week3MissingProcess } from "@/components/modules/Week3_MissingProcess";
 import { Week3FlowchartSymbols } from "@/components/modules/Week3_FlowchartSymbols";
+import { Week4FactoryTransform } from "@/components/modules/Week4_FactoryTransform";
 import { Week4BossApproach } from "@/components/modules/Week4_BossApproach";
 import { Week4SystemProcess } from "@/components/modules/Week4_SystemProcess";
 import { getRemainingCountdown } from "@/lib/moduleCountdown";
@@ -216,7 +217,7 @@ export default function StudentPlayPage() {
 
   const scoreEarned = (activeSubmission?.score ?? 0) + (activeSubmission?.speed_bonus ?? 0);
   const firstCheckCorrect = session.selected_week === 4
-    && session.current_module === 2
+    && session.current_module === 3
     && activeSubmission?.payload.isChecked === true
     && typeof activeSubmission.payload.correctCount === "number"
     ? activeSubmission.payload.correctCount
@@ -236,7 +237,7 @@ export default function StudentPlayPage() {
 
   const isSupportedModule = session.selected_week === 1
     || (session.selected_week === 3 && (session.current_module === 1 || session.current_module === 2 || session.current_module === 3))
-    || (session.selected_week === 4 && (session.current_module === 1 || session.current_module === 2));
+    || (session.selected_week === 4 && (session.current_module === 1 || session.current_module === 2 || session.current_module === 3));
   if (!isSupportedModule) return <>{studentNav}<main className="container page"><div className="student-waiting-card panel"><span className="waiting-illustration">🚧</span><span className="eyebrow">Hafta {session.selected_week}</span><h1>Yeni içerikler hazırlanıyor</h1><p>Bu haftanın modülleri ve interaktif içerikleri yakında eklenecektir.</p><div className="waiting-pulse"><i /> Öğretmenin yönlendirmesini bekleyin</div></div></main></>;
 
   if (resultsRevealed && !activeSubmission) return <>{studentNav}<main className="container page"><section className="student-waiting-card panel"><span className="waiting-illustration">⏳</span><span className="eyebrow">Sonuç hazırlanıyor</span><h1>Puanın hesaplanıyor…</h1><div className="waiting-pulse"><i /> Sonuç kaydı alınıyor</div></section></main></>;
@@ -294,9 +295,11 @@ export default function StudentPlayPage() {
       : session.selected_week === 3 && session.current_module === 3
         ? <Week3FlowchartSymbols sessionId={session.id} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(3, draft)} onSubmit={(submission) => submit(3, submission)} />
       : session.selected_week === 4 && session.current_module === 1
-        ? <Week4BossApproach seedKey={`${session.id}:${student.id}:4:1`} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(1, draft)} onSubmit={(submission) => submit(1, submission)} />
+        ? <Week4FactoryTransform seedKey={`${session.id}:${student.id}:4:1`} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(1, draft)} onSubmit={(submission) => submit(1, submission)} />
       : session.selected_week === 4 && session.current_module === 2
-        ? <Week4SystemProcess seedKey={`${session.id}:${student.id}:4:2`} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(2, draft)} onSubmit={(submission) => submit(2, submission)} />
+        ? <Week4BossApproach seedKey={`${session.id}:${student.id}:4:2`} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(2, draft)} onSubmit={(submission) => submit(2, submission)} />
+      : session.selected_week === 4 && session.current_module === 3
+        ? <Week4SystemProcess seedKey={`${session.id}:${student.id}:4:3`} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(3, draft)} onSubmit={(submission) => submit(3, submission)} />
       : modules[session.current_module];
 
   return <>{studentNav}<main className="container student-module-page stack">

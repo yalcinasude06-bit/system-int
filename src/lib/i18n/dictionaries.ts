@@ -668,6 +668,9 @@ Object.assign(dictionaries.en, {
   "6 kartlık sınıflandırma": "6-card classification",
   "Sistem düşüncesine uygun ifadeleri Sistemdir veya Uygun değil alanına yerleştir.": "Place statements that align with systems thinking in the System or Not suitable area.",
   "İlk kontrolde doğru:": "Correct on the first check:",
+  "Fabrikayı Dönüştür": "Transform the Factory",
+  "3 aşama · 9 sistem kararı": "3 stages · 9 systems decisions",
+  "Fabrikayı incele, üç sistem modeline göre karar ver ve gerektiğinde 5 saniyede kurtar.": "Inspect the factory, decide through three system models, and rescue it in 5 seconds when needed.",
 });
 
 const dynamicTranslations: Array<[RegExp, (match: RegExpMatchArray) => string]> = [
