@@ -6,6 +6,7 @@ export interface Session {
   title: string;
   selected_week: number;
   current_module: ModuleId;
+  current_run_number: number;
   module_stage: number;
   is_module_started: boolean;
   module_started_at: string | null;
@@ -43,6 +44,7 @@ export interface Submission {
   student_number: string;
   week_id: number;
   module_id: ModuleId;
+  run_number: number;
   stage: number;
   payload: Record<string, unknown>;
   score: number;
@@ -78,6 +80,7 @@ export interface ModuleDraft {
   student_id?: string;
   week_id?: number;
   module_id?: ModuleId;
+  run_number?: number;
   stage?: number;
   payload: Record<string, unknown>;
   score: number;

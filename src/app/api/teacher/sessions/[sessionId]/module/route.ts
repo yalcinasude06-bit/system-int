@@ -16,7 +16,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
   if (!isSupabaseAdminConfigured) return errorResponse(503, "Güvenli veritabanı bağlantısı yapılandırılmamış.");
 
   const { sessionId } = await context.params;
-  const body = await request.json().catch(() => null) as { action?: unknown; moduleId?: unknown } | null;
+  const body = await request.json().catch(() => null) as { action?: unknown; moduleId?: unknown; expectedRunNumber?: unknown } | null;
   const action = body?.action;
   if (action !== "start" && action !== "cancel" && action !== "finish") {
     return errorResponse(400, "Geçerli bir modül işlemi gerekli.");
@@ -41,15 +41,23 @@ export async function POST(request: NextRequest, context: RouteContext) {
         target_module_id: moduleId,
       }));
     } else if (action === "cancel") {
-      ({ data, error } = await client.rpc("cancel_session_module_start", { target_session_id: sessionId }));
+      const expectedRunNumber = typeof body?.expectedRunNumber === "number" ? body.expectedRunNumber : Number(body?.expectedRunNumber);
+      if (!Number.isSafeInteger(expectedRunNumber) || expectedRunNumber < 0) return errorResponse(400, "Geçerli bir tur numarası gerekli.");
+      ({ data, error } = await client.rpc("cancel_session_module_start", { target_session_id: sessionId, expected_run_number: expectedRunNumber }));
     } else {
-      ({ data, error } = await client.rpc("finish_session_module", { target_session_id: sessionId }));
+      const expectedRunNumber = typeof body?.expectedRunNumber === "number" ? body.expectedRunNumber : Number(body?.expectedRunNumber);
+      if (!Number.isSafeInteger(expectedRunNumber) || expectedRunNumber < 0) return errorResponse(400, "Geçerli bir tur numarası gerekli.");
+      ({ data, error } = await client.rpc("finish_session_module", { target_session_id: sessionId, expected_run_number: expectedRunNumber }));
     }
 
     if (error) throw error;
     return NextResponse.json({ session: data });
   } catch (error) {
     console.error("Teacher module action failed", error);
+    const message = typeof error === "object" && error !== null && "message" in error ? String(error.message) : "";
+    if (/already active|stale module round|countdown is no longer active|module is not open/i.test(message)) {
+      return errorResponse(409, "Oturum durumu değişti. Güncel turu yenileyip tekrar deneyin.");
+    }
     return errorResponse(500, "Modül işlemi tamamlanamadı.");
   }
 }

@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 type RouteContext = { params: Promise<{ sessionId: string }> };
 
 const allowedFields = new Set([
-  "selected_week", "current_module", "module_stage", "is_module_started", "module_started_at", "fault_injected", "is_active",
+  "selected_week", "current_module", "module_stage", "fault_injected", "is_active",
 ]);
 
 function errorResponse(status: number, error: string) {

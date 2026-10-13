@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     if (!pin) {
       const { data, error } = await client
         .from("sessions")
-        .select("id, pin_code, title, is_active, created_at, selected_week, current_module, module_stage, is_module_started")
+        .select("id, pin_code, title, is_active, created_at, selected_week, current_module, current_run_number, module_stage, is_module_started")
         .eq("teacher_username", teacherUsername)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -38,15 +38,52 @@ export async function GET(request: NextRequest) {
     if (!found.session) return NextResponse.json({ error: "Oturum bulunamadı." }, { status: 404 });
     if (!found.owned) return NextResponse.json({ error: "Bu oturum başka bir öğretmene ait." }, { status: 403 });
 
-    const [{ data: students, error: studentsError }, { data: profiles, error: profilesError }, { data: submissions, error: submissionsError }] = await Promise.all([
-      client.from("students").select("*").eq("session_id", found.session.id).order("session_score", { ascending: false }),
-      client.from("student_profiles").select("*").eq("teacher_username", teacherUsername).order("total_score", { ascending: false }),
-      client.from("submissions").select("*").eq("session_id", found.session.id).eq("is_submitted", true),
+    const includeDetails = request.nextUrl.searchParams.get("details") === "1";
+    const [{ data: students, error: studentsError }, submissionCount] = await Promise.all([
+      client.from("students")
+        .select("id, session_id, student_number, nickname, avatar, score, session_score, joined_at, last_active")
+        .eq("session_id", found.session.id)
+        .order("session_score", { ascending: false }),
+      client.from("submissions")
+        .select("id", { count: "exact", head: true })
+        .eq("session_id", found.session.id)
+        .eq("week_id", found.session.selected_week)
+        .eq("module_id", found.session.current_module)
+        .eq("run_number", found.session.current_run_number)
+        .eq("is_submitted", true),
     ]);
     if (studentsError) throw studentsError;
-    if (profilesError) throw profilesError;
-    if (submissionsError) throw submissionsError;
-    return NextResponse.json({ session: found.session, students: students || [], profiles: profiles || [], submissions: submissions || [] }, { headers: { "Cache-Control": "no-store" } });
+    if (submissionCount.error) throw submissionCount.error;
+
+    let profiles: unknown[] = [];
+    let submissions: unknown[] = [];
+    if (includeDetails) {
+      const [profileResult, submissionResult] = await Promise.all([
+        client.from("student_profiles")
+          .select("teacher_username, student_number, full_name, total_score, created_at, last_seen")
+          .eq("teacher_username", teacherUsername)
+          .order("total_score", { ascending: false }),
+        client.from("submissions")
+          .select("id, session_id, student_id, student_number, week_id, module_id, run_number, stage, payload, score, speed_bonus, is_submitted, completion_status, updated_at, submitted_at")
+          .eq("session_id", found.session.id)
+          .eq("week_id", found.session.selected_week)
+          .eq("module_id", found.session.current_module)
+          .eq("run_number", found.session.current_run_number)
+          .eq("is_submitted", true),
+      ]);
+      if (profileResult.error) throw profileResult.error;
+      if (submissionResult.error) throw submissionResult.error;
+      profiles = profileResult.data || [];
+      submissions = submissionResult.data || [];
+    }
+
+    return NextResponse.json({
+      session: found.session,
+      students: students || [],
+      profiles,
+      submissions,
+      submittedCount: submissionCount.count ?? 0,
+    }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("Teacher session load failed", error);
     return NextResponse.json({ error: "Oturum yüklenemedi." }, { status: 500 });

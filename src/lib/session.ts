@@ -25,6 +25,7 @@ function readableDatabaseError(error: unknown, fallback: string) {
   const message = databaseFailure(error).message || (error instanceof Error ? error.message : "");
   if (/session (?:is not active|was not found)/i.test(message)) return new Error("Oturum bulunamadı veya sona erdi.");
   if (/student does not belong/i.test(message)) return new Error("Katılımcı kaydı bulunamadı. Lütfen yeniden katılın.");
+  if (/stale module round|not open for this run|module-closed-or-stale/i.test(message)) return new Error("Bu tur sona erdi. Güncel tur yükleniyor.");
   if (databaseFailure(error).code === "23505") return new Error("Benzersiz PIN üretilemedi. Lütfen tekrar deneyin.");
   if (isTransientDatabaseFailure(error)) return new Error("Veritabanı şu anda yoğun. Lütfen birkaç saniye sonra tekrar deneyin.");
   return new Error(message || fallback);
@@ -75,6 +76,11 @@ export interface StudentGameState {
   draft?: ModuleDraft | null;
 }
 
+export interface StudentSessionStatus {
+  session: Session;
+  student: Pick<Student, "id" | "score" | "session_score" | "last_active">;
+}
+
 export async function getStudentGameState(pin: string, studentId: string): Promise<StudentGameState> {
   const client = requireSupabase();
   let lastError: unknown;
@@ -98,12 +104,24 @@ export async function getStudentGameState(pin: string, studentId: string): Promi
   throw readableDatabaseError(lastError, "Oturum yüklenemedi.");
 }
 
+export async function getStudentSessionStatus(pin: string, studentId: string): Promise<StudentSessionStatus> {
+  const client = requireSupabase();
+  const { data, error } = await client.rpc("get_student_session_status", {
+    target_pin: pin,
+    target_student_id: studentId,
+  });
+  if (error) throw readableDatabaseError(error, "Oturum durumu yüklenemedi.");
+  if (!data) throw new Error("Oturum durumu yüklenemedi.");
+  return data as StudentSessionStatus;
+}
+
 export async function saveSubmission(input: {
   sessionId: string;
   studentId: string;
   studentNumber: string;
   weekId: number;
   moduleId: ModuleId;
+  expectedRunNumber: number;
   stage: number;
   payload: Record<string, unknown>;
   score: number;
@@ -115,11 +133,12 @@ export async function saveSubmission(input: {
       target_student_id: input.studentId,
       target_week_id: input.weekId,
       target_module_id: input.moduleId,
+      expected_run_number: input.expectedRunNumber,
       target_stage: input.stage,
       new_payload: input.payload,
       new_score: input.score,
     });
-  if (error) throw error;
+  if (error) throw readableDatabaseError(error, "Gönderim kaydedilemedi.");
   const result = data as { submission: Submission; was_new: boolean };
   return { submission: result.submission, wasNew: result.was_new };
 }
@@ -129,6 +148,7 @@ export async function saveModuleDraft(input: {
   studentId: string;
   weekId: number;
   moduleId: ModuleId;
+  expectedRunNumber: number;
   stage: number;
   payload: Record<string, unknown>;
   score: number;
@@ -144,6 +164,7 @@ export async function saveModuleDraft(input: {
         target_student_id: input.studentId,
         target_week_id: input.weekId,
         target_module_id: input.moduleId,
+        expected_run_number: input.expectedRunNumber,
         target_stage: input.stage,
         new_payload: input.payload,
         new_score: input.score,
@@ -166,6 +187,7 @@ export async function submitModuleFeedback(input: {
   studentId: string;
   weekId: number;
   moduleId: ModuleId;
+  expectedRunNumber: number;
   funRating: number;
   difficultyRating: number;
   comment: string;
@@ -176,6 +198,7 @@ export async function submitModuleFeedback(input: {
     target_student_id: input.studentId,
     target_week_id: input.weekId,
     target_module_id: input.moduleId,
+    expected_run_number: input.expectedRunNumber,
     target_fun_rating: input.funRating,
     target_difficulty_rating: input.difficultyRating,
     target_comment: input.comment.trim().slice(0, 500),

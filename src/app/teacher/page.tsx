@@ -70,8 +70,8 @@ export default function TeacherPage() {
     setLoading(true);
     setError("");
     try {
-      if (session.is_module_started) await runTeacherModuleAction(session.id, "finish");
-      await patchTeacherSession(session.id, { is_active: false, is_module_started: false, module_started_at: null, module_stage: 3 });
+      if (session.is_module_started) await runTeacherModuleAction(session.id, "finish", undefined, session.current_run_number);
+      await patchTeacherSession(session.id, { is_active: false, module_stage: 3 });
       await loadSessions();
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Oturum bitirilemedi.");

@@ -25,11 +25,11 @@ for (const locale of ["tr", "en"]) {
   assert.ok(correctIsStrictlyLongest <= 6, `Factory correct choices must not be systematically longest in ${locale}`);
 }
 const factoryRound = buildFactoryRound("content-validation");
-assert.equal(factoryRound.length, 9, "A factory round must contain nine decisions");
-assert.deepEqual(factoryRound.map((scenario) => scenario.stage), ["mechanical", "mechanical", "mechanical", "biological", "biological", "biological", "sociocultural", "sociocultural", "sociocultural"], "Factory stages must contain three decisions each");
+assert.equal(factoryRound.length, 5, "A factory round must contain five decisions");
+assert.deepEqual(factoryRound.map((scenario) => scenario.stage), ["mechanical", "mechanical", "biological", "sociocultural", "sociocultural"], "Factory stages must contain two mechanical, one biological, and two sociocultural decisions");
 assert.equal(factoryRound[0].id, "W4M1-M01", "The core mechanical scenario must always be present");
-assert.equal(factoryRound[3].id, "W4M1-B01", "The core biological scenario must always be present");
-assert.equal(factoryRound[6].id, "W4M1-S01", "The core socio-cultural scenario must always be present");
+assert.equal(factoryRound[2].id, "W4M1-B01", "The core biological scenario must always be present");
+assert.equal(factoryRound[3].id, "W4M1-S01", "The core socio-cultural scenario must always be present");
 assert.deepEqual(buildFactoryRound("content-validation"), factoryRound, "Factory selection and option order must be deterministic");
 
 assert.equal(bossApproachPool.length, 24, "Week 4 Module 2 must have 24 questions");
@@ -86,6 +86,8 @@ assert.match(factorySource, /deadlineEpoch/, "Module 1 recovery deadline must su
 assert.match(factorySource, /clickedRepairZones/, "Module 1 must retain its legacy repair-zone payload for draft compatibility");
 assert.match(factorySource, /points: 10/, "Module 1 must award ten points for a first-correct answer");
 assert.match(factorySource, /points: 4/, "Module 1 must award four points for a successful recovery");
+assert.match(factorySource, /maxBaseScore: 50/, "Module 1 must report the five-decision 50-point base cap");
+assert.doesNotMatch(factorySource, /Math\.floor\(nextIndex \/ 3\)|index % 3|maxBaseScore: 90/, "Module 1 must not retain nine-decision stage arithmetic");
 assert.doesNotMatch(factorySource, /<Button onClick=\{advance\}/, "Module 1 must advance without an explicit next-decision action");
 assert.match(factorySource, /window\.setTimeout\(advance, delay\)/, "Module 1 must auto-advance after visual feedback");
 assert.doesNotMatch(factorySource, /className="factory-hud"|className="factory-metrics"/, "Module 1 gameplay must not expose live score or metric panels");

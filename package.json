@@ -11,7 +11,9 @@
     "i18n:check": "node scripts/i18n-audit.mjs",
     "test:answer-review": "node --no-warnings --experimental-strip-types scripts/validate-answer-review.mjs",
     "test:flowchart-responsive": "node --no-warnings --experimental-strip-types scripts/validate-flowchart-responsive.mjs",
-    "test:week4-content": "node --no-warnings --experimental-strip-types scripts/validate-week4-content.mjs"
+    "test:week4-content": "node --no-warnings --experimental-strip-types scripts/validate-week4-content.mjs",
+    "test:run-replay": "node --no-warnings --experimental-strip-types scripts/validate-run-replay.mjs",
+    "test:run-load": "node scripts/report-run-load.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "latest",

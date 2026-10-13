@@ -57,6 +57,14 @@ type DraftPayload = {
 
 const initialMetrics: FactoryMetrics = { production: 50, adaptation: 50, participation: 50 };
 const recoveryWindowMs = 5000;
+const factoryStageNumber: Record<FactoryStageId, number> = { mechanical: 1, biological: 2, sociocultural: 3 };
+
+function roundNumberFor(scenarios: ReturnType<typeof buildFactoryRound>, targetIndex: number) {
+  const normalizedIndex = Math.min(Math.max(targetIndex, 0), scenarios.length - 1);
+  const target = scenarios[normalizedIndex];
+  if (!target) return 1;
+  return scenarios.slice(0, normalizedIndex + 1).filter((scenario) => scenario.stage === target.stage).length;
+}
 
 const copy = {
   tr: {
@@ -243,7 +251,7 @@ export function Week4FactoryTransform({
     nextEffect: FactoryEffectType | null,
     nextNotification: string,
   ): ModuleSubmission => ({
-    stage: Math.min(3, Math.floor(nextIndex / 3) + 1),
+    stage: factoryStageNumber[scenarios[Math.min(nextIndex, scenarios.length - 1)]?.stage ?? "mechanical"],
     score: nextAnswers.reduce((total, answer) => total + answer.points, 0),
     payload: {
       mode: "factory-transformation",
@@ -254,7 +262,7 @@ export function Week4FactoryTransform({
       currentIndex: nextIndex,
       currentScenarioId: scenarios[nextIndex]?.id ?? null,
       currentStageId: scenarios[nextIndex]?.stage ?? null,
-      currentRoundId: nextIndex % 3 + 1,
+      currentRoundId: roundNumberFor(scenarios, nextIndex),
       metrics: nextMetrics,
       phase: nextPhase,
       inProgress: nextProgress,
@@ -266,7 +274,7 @@ export function Week4FactoryTransform({
       unrecoveredCount: nextAnswers.filter((answer) => answer.recoveryOutcome === "second-wrong" || answer.recoveryOutcome === "timeout").length,
       answeredCount: nextAnswers.length,
       decisionCount: scenarios.length,
-      maxBaseScore: 90,
+      maxBaseScore: 50,
       recoveryWindowMs,
       completionReason,
       completionStatus: completionReason === "completed" ? "completed" : completionReason === "teacher-ended" ? "incomplete" : "draft",
@@ -353,7 +361,7 @@ export function Week4FactoryTransform({
       commitResolvedAnswer({
         scenarioId: current.id,
         stageId: current.stage,
-        roundId: index % 3 + 1,
+        roundId: roundNumberFor(scenarios, index),
         offeredOptionIds: current.options.map((option) => option.id),
         firstOptionId: progress.firstOptionId,
         firstCorrect: false,
@@ -371,7 +379,7 @@ export function Week4FactoryTransform({
     commitResolvedAnswer({
       scenarioId: current.id,
       stageId: current.stage,
-      roundId: index % 3 + 1,
+      roundId: roundNumberFor(scenarios, index),
       offeredOptionIds: current.options.map((option) => option.id),
       firstOptionId: progress.firstOptionId,
       firstCorrect: false,
@@ -383,7 +391,7 @@ export function Week4FactoryTransform({
       points: 0,
       effectType: first.effectType,
     }, metricsRef.current, first.effectType, recovery ? t.secondWrong : t.timeout);
-  }, [commitResolvedAnswer, completed, current, existingSubmission, forceSubmit, index, legacyRepairDraft, saveDraft, t.repaired, t.secondWrong, t.timeout]);
+  }, [commitResolvedAnswer, completed, current, existingSubmission, forceSubmit, index, legacyRepairDraft, saveDraft, scenarios, t.repaired, t.secondWrong, t.timeout]);
 
   const resolveTimeout = useCallback(() => {
     if (phaseRef.current !== "recovery-choice") return;
@@ -394,7 +402,7 @@ export function Week4FactoryTransform({
     commitResolvedAnswer({
       scenarioId: current.id,
       stageId: current.stage,
-      roundId: index % 3 + 1,
+      roundId: roundNumberFor(scenarios, index),
       offeredOptionIds: current.options.map((option) => option.id),
       firstOptionId: progress.firstOptionId,
       firstCorrect: false,
@@ -406,7 +414,7 @@ export function Week4FactoryTransform({
       points: 0,
       effectType: first.effectType,
     }, metricsRef.current, first.effectType, t.timeout);
-  }, [commitResolvedAnswer, current, index, t.timeout]);
+  }, [commitResolvedAnswer, current, index, scenarios, t.timeout]);
 
   useEffect(() => {
     timeoutResolver.current = resolveTimeout;
@@ -440,7 +448,7 @@ export function Week4FactoryTransform({
       if (scenario && first) finalAnswers = [...finalAnswers, {
         scenarioId: scenario.id,
         stageId: scenario.stage,
-        roundId: scenarios.indexOf(scenario) % 3 + 1,
+        roundId: roundNumberFor(scenarios, scenarios.indexOf(scenario)),
         offeredOptionIds: scenario.options.map((option) => option.id),
         firstOptionId: progress.firstOptionId,
         firstCorrect: false,
@@ -470,7 +478,7 @@ export function Week4FactoryTransform({
         commitResolvedAnswer({
           scenarioId: current.id,
           stageId: current.stage,
-          roundId: index % 3 + 1,
+          roundId: roundNumberFor(scenarios, index),
           offeredOptionIds: current.options.map((item) => item.id),
           firstOptionId: option.id,
           firstCorrect: true,
@@ -514,7 +522,7 @@ export function Week4FactoryTransform({
       commitResolvedAnswer({
         scenarioId: current.id,
         stageId: current.stage,
-        roundId: index % 3 + 1,
+        roundId: roundNumberFor(scenarios, index),
         offeredOptionIds: current.options.map((item) => item.id),
         firstOptionId: progress.firstOptionId,
         firstCorrect: false,
@@ -534,7 +542,7 @@ export function Week4FactoryTransform({
     commitResolvedAnswer({
       scenarioId: current.id,
       stageId: current.stage,
-      roundId: index % 3 + 1,
+      roundId: roundNumberFor(scenarios, index),
       offeredOptionIds: current.options.map((item) => item.id),
       firstOptionId: progress.firstOptionId,
       firstCorrect: false,
@@ -547,7 +555,7 @@ export function Week4FactoryTransform({
       effectType: option.effectType,
     }, nextMetrics, option.effectType, t.secondWrong);
     actionLocked.current = false;
-  }, [commitResolvedAnswer, completed, current, existingSubmission, forceSubmit, index, locale, resolveTimeout, saveDraft, t.repaired, t.secondWrong]);
+  }, [commitResolvedAnswer, completed, current, existingSubmission, forceSubmit, index, locale, resolveTimeout, saveDraft, scenarios, t.repaired, t.secondWrong]);
 
   const handleZone = useCallback((zone: FactoryZone) => {
     if (completed || existingSubmission || forceSubmit) return;

@@ -20,7 +20,7 @@ import { Week4FactoryTransform } from "@/components/modules/Week4_FactoryTransfo
 import { Week4BossApproach } from "@/components/modules/Week4_BossApproach";
 import { Week4SystemProcess } from "@/components/modules/Week4_SystemProcess";
 import { getRemainingCountdown } from "@/lib/moduleCountdown";
-import { getStudentGameState, saveModuleDraft, saveSubmission, submitModuleFeedback } from "@/lib/session";
+import { getStudentGameState, getStudentSessionStatus, saveModuleDraft, saveSubmission, submitModuleFeedback } from "@/lib/session";
 import type { ModuleDraft, ModuleId, ModuleSubmission, Session, Student, StudentProfile, Submission } from "@/types";
 
 export default function StudentPlayPage() {
@@ -43,36 +43,95 @@ export default function StudentPlayPage() {
   const celebratedModuleKey = useRef("");
   const draftRevision = useRef(0);
   const draftWrites = useRef(new Set<Promise<void>>());
+  const sessionSnapshot = useRef<Session | null>(null);
+  const fullLoadInFlight = useRef<Promise<void> | null>(null);
+  const statusLoadInFlight = useRef<Promise<void> | null>(null);
 
   useEffect(() => {
     // Yenilenen sekmenin revision aralığını önceki tarayıcı örneğinin ilerisine taşı.
     draftRevision.current = Date.now() * 1000;
   }, []);
 
-  const load = useCallback(async () => {
-    try {
+  const load = useCallback(() => {
+    if (fullLoadInFlight.current) return fullLoadInFlight.current;
+    const task = (async () => {
+      try {
+        const studentId = localStorage.getItem(`system-lab:${pin}:student`);
+        if (!studentId) { router.replace(`/student?pin=${pin}`); return; }
+        const gameState = await getStudentGameState(pin, studentId);
+        const previous = sessionSnapshot.current;
+        if (previous && (previous.selected_week !== gameState.session.selected_week || previous.current_module !== gameState.session.current_module || previous.current_run_number !== gameState.session.current_run_number)) {
+          setReadyModuleKey("");
+          setFeedbackOpen(false);
+          setFeedbackDismissedKey("");
+          celebratedModuleKey.current = "";
+          draftRevision.current = Date.now() * 1000;
+        }
+        sessionSnapshot.current = gameState.session;
+        setSession(gameState.session);
+        setStudent(gameState.student);
+        setSubmissions(gameState.submissions);
+        setDraft(gameState.draft || null);
+        setClassmates(gameState.classmates);
+        setProfile(gameState.profile);
+        setFeedbackKeys(gameState.feedback_keys || []);
+        setError("");
+      } catch (caught) {
+        const message = caught instanceof Error ? caught.message : "Oturum yüklenemedi.";
+        if (message.startsWith("Katılımcı kaydı bulunamadı")) {
+          localStorage.removeItem(`system-lab:${pin}:student`);
+          router.replace(`/student?pin=${pin}`);
+          return;
+        }
+        setError(message);
+      } finally {
+        setLoading(false);
+      }
+    })();
+    fullLoadInFlight.current = task;
+    void task.finally(() => {
+      if (fullLoadInFlight.current === task) fullLoadInFlight.current = null;
+    });
+    return task;
+  }, [pin, router]);
+
+  const loadStatus = useCallback(() => {
+    if (statusLoadInFlight.current) return statusLoadInFlight.current;
+    const task = (async () => {
       const studentId = localStorage.getItem(`system-lab:${pin}:student`);
       if (!studentId) { router.replace(`/student?pin=${pin}`); return; }
-      const gameState = await getStudentGameState(pin, studentId);
-      setSession(gameState.session);
-      setStudent(gameState.student);
-      setSubmissions(gameState.submissions);
-      setDraft(gameState.draft || null);
-      setClassmates(gameState.classmates);
-      setProfile(gameState.profile);
-      setFeedbackKeys(gameState.feedback_keys || []);
-    } catch (caught) {
-      const message = caught instanceof Error ? caught.message : "Oturum yüklenemedi.";
-      if (message.startsWith("Katılımcı kaydı bulunamadı")) {
-        localStorage.removeItem(`system-lab:${pin}:student`);
-        router.replace(`/student?pin=${pin}`);
-        return;
+      try {
+        const status = await getStudentSessionStatus(pin, studentId);
+        const previous = sessionSnapshot.current;
+        const roundChanged = !previous
+          || previous.selected_week !== status.session.selected_week
+          || previous.current_module !== status.session.current_module
+          || previous.current_run_number !== status.session.current_run_number
+          || previous.is_module_started !== status.session.is_module_started
+          || previous.module_stage !== status.session.module_stage
+          || previous.module_started_at !== status.session.module_started_at
+          || previous.is_active !== status.session.is_active;
+        if (previous && (previous.selected_week !== status.session.selected_week || previous.current_module !== status.session.current_module || previous.current_run_number !== status.session.current_run_number)) {
+          setReadyModuleKey("");
+          setFeedbackOpen(false);
+          setFeedbackDismissedKey("");
+          celebratedModuleKey.current = "";
+          draftRevision.current = Date.now() * 1000;
+        }
+        sessionSnapshot.current = status.session;
+        setSession(status.session);
+        setStudent((current) => current ? { ...current, ...status.student } : current);
+        if (roundChanged) await load();
+      } catch (caught) {
+        setError(caught instanceof Error ? caught.message : "Oturum durumu yüklenemedi.");
       }
-      setError(message);
-    } finally {
-      setLoading(false);
-    }
-  }, [pin, router]);
+    })();
+    statusLoadInFlight.current = task;
+    void task.finally(() => {
+      if (statusLoadInFlight.current === task) statusLoadInFlight.current = null;
+    });
+    return task;
+  }, [load, pin, router]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void load(), 0);
@@ -80,24 +139,44 @@ export default function StudentPlayPage() {
   }, [load]);
 
   const activeSubmission = useMemo(
-    () => submissions.find((item) => item.is_submitted && item.week_id === session?.selected_week && item.module_id === session?.current_module) || null,
-    [session?.current_module, session?.selected_week, submissions],
+    () => submissions.find((item) => item.is_submitted && item.week_id === session?.selected_week && item.module_id === session?.current_module && item.run_number === session?.current_run_number) || null,
+    [session?.current_module, session?.current_run_number, session?.selected_week, submissions],
   );
-  const activeDraft = draft && draft.week_id === session?.selected_week && draft.module_id === session?.current_module ? draft : null;
+  const activeDraft = draft && draft.week_id === session?.selected_week && draft.module_id === session?.current_module && draft.run_number === session?.current_run_number ? draft : null;
   const currentWeek = session?.selected_week;
   const currentModule = session?.current_module;
+  const currentRunNumber = session?.current_run_number;
   const isModuleStarted = session?.is_module_started;
   const resultsRevealed = !isModuleStarted && (session?.module_stage ?? 0) >= 3;
-  const activeModuleKey = currentWeek && currentModule ? `${currentWeek}:${currentModule}` : "";
+  const activeModuleKey = session ? `${currentWeek}:${currentModule}:${currentRunNumber}` : "";
   const feedbackAvailable = Boolean(activeSubmission && !feedbackKeys.includes(activeModuleKey) && feedbackDismissedKey !== activeModuleKey);
   const shouldShowFeedback = Boolean(activeSubmission && (feedbackOpen || feedbackAvailable));
   const activeCompletionStatus = activeSubmission?.completion_status
     ?? (activeSubmission?.payload?.completionReason === "teacher-ended" ? "incomplete" : "completed");
 
   useEffect(() => {
-    const interval = window.setInterval(() => void load(), 2500);
-    return () => window.clearInterval(interval);
-  }, [load]);
+    let cancelled = false;
+    let timer: number | null = null;
+    const schedule = () => {
+      if (cancelled) return;
+      const delay = document.hidden ? 20_000 + Math.random() * 10_000 : 5_500 + Math.random() * 2_500;
+      timer = window.setTimeout(async () => {
+        if (cancelled) return;
+        await loadStatus();
+        schedule();
+      }, delay);
+    };
+    const refreshNow = () => { if (!document.hidden) void loadStatus(); };
+    document.addEventListener("visibilitychange", refreshNow);
+    window.addEventListener("focus", refreshNow);
+    schedule();
+    return () => {
+      cancelled = true;
+      if (timer !== null) window.clearTimeout(timer);
+      document.removeEventListener("visibilitychange", refreshNow);
+      window.removeEventListener("focus", refreshNow);
+    };
+  }, [loadStatus]);
 
   useEffect(() => {
     if (isModuleStarted) return;
@@ -107,14 +186,14 @@ export default function StudentPlayPage() {
 
   useEffect(() => {
     if (!resultsRevealed || !activeSubmission || !currentWeek || !currentModule || activeCompletionStatus === "incomplete") return;
-    const moduleKey = `${currentWeek}:${currentModule}`;
+    const moduleKey = `${currentWeek}:${currentModule}:${currentRunNumber}`;
     if (celebratedModuleKey.current === moduleKey) return;
     celebratedModuleKey.current = moduleKey;
     const timer = window.setTimeout(() => {
       confetti({ particleCount: 130, spread: 82, origin: { y: .72 }, colors: ["#10b981", "#6366f1", "#f59e0b", "#f472b6"] });
     }, 120);
     return () => window.clearTimeout(timer);
-  }, [activeCompletionStatus, activeSubmission, currentModule, currentWeek, resultsRevealed]);
+  }, [activeCompletionStatus, activeSubmission, currentModule, currentRunNumber, currentWeek, resultsRevealed]);
 
   useEffect(() => {
     if (!resultsRevealed || activeSubmission) return;
@@ -128,7 +207,7 @@ export default function StudentPlayPage() {
     setError("");
     try {
       await Promise.allSettled([...draftWrites.current]);
-      const saved = await saveSubmission({ sessionId: session.id, studentId: student.id, studentNumber: student.student_number, weekId: session.selected_week, moduleId, stage: submission.stage || 1, payload: submission.payload, score: submission.score });
+      const saved = await saveSubmission({ sessionId: session.id, studentId: student.id, studentNumber: student.student_number, weekId: session.selected_week, moduleId, expectedRunNumber: session.current_run_number, stage: submission.stage || 1, payload: submission.payload, score: submission.score });
       setSubmissions((current) => [...current.filter((item) => item.id !== saved.submission.id), saved.submission]);
       setFeedbackOpen(true);
       setFeedbackDismissedKey("");
@@ -158,6 +237,7 @@ export default function StudentPlayPage() {
       student_id: student.id,
       week_id: session.selected_week,
       module_id: moduleId,
+      run_number: session.current_run_number,
       stage: submission.stage || 1,
       payload: submission.payload,
       score: submission.score,
@@ -168,6 +248,7 @@ export default function StudentPlayPage() {
         studentId: student.id,
         weekId: session.selected_week,
         moduleId,
+        expectedRunNumber: session.current_run_number,
         stage: submission.stage || 1,
         payload: submission.payload,
         score: submission.score,
@@ -184,17 +265,18 @@ export default function StudentPlayPage() {
   }
 
   function existingSubmissionFor(moduleId: ModuleId) {
-    return submissions.some((item) => item.is_submitted && item.week_id === session?.selected_week && item.module_id === moduleId);
+    return submissions.some((item) => item.is_submitted && item.week_id === session?.selected_week && item.module_id === moduleId && item.run_number === session?.current_run_number);
   }
 
   async function sendFeedback(input: { funRating: number; difficultyRating: number; comment: string }) {
     if (!session || !student) throw new Error("Oturum bilgisi bulunamadı.");
-    const feedbackKey = `${session.selected_week}:${session.current_module}`;
+    const feedbackKey = `${session.selected_week}:${session.current_module}:${session.current_run_number}`;
     await submitModuleFeedback({
       sessionId: session.id,
       studentId: student.id,
       weekId: session.selected_week,
       moduleId: session.current_module,
+      expectedRunNumber: session.current_run_number,
       funRating: input.funRating,
       difficultyRating: input.difficultyRating,
       comment: input.comment,
@@ -263,7 +345,7 @@ export default function StudentPlayPage() {
         <span className="submission-check" aria-hidden="true">✓</span>
         <span className="eyebrow">Yanıt Alındı</span>
         <h1>Yanıtınız Kaydedildi!</h1>
-        <p>Öğretmen modülü bitirip sonuçları açıklayana kadar lütfen bekleyin…</p>
+        <p>Öğretmen turu bitirene kadar bekleyin. Hız bonusunuz tur kapanınca kesinleşecektir.</p>
         {message && <div className="notice success">{message}</div>}
         {error && <div className="notice error">{error}</div>}
         {!feedbackKeys.includes(activeModuleKey) && feedbackDismissedKey !== activeModuleKey && <button type="button" className="feedback-reopen" onClick={() => setFeedbackOpen(true)}><MessageCircleHeart size={18} /> Geri bildirim ver</button>}
@@ -278,24 +360,24 @@ export default function StudentPlayPage() {
   if (!activeSubmission && session.module_started_at && countdownTimeLeft > 0 && readyModuleKey !== activeModuleKey) return <>{studentNav}<ModuleStartCountdown key={`${activeModuleKey}:${session.module_started_at}`} weekId={session.selected_week} moduleId={session.current_module} startedAt={session.module_started_at} onComplete={() => setReadyModuleKey(activeModuleKey)} /></>;
 
   const modules = {
-    1: <Module1SystemBuild existingSubmission={activeSubmission} existingDraft={activeDraft} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(1, draft)} onSubmit={(submission) => submit(1, submission)} />,
-    2: <Module2Relations existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(2, draft)} onSubmit={(submission) => submit(2, submission)} />,
-    3: <Module3Boundary existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(3, draft)} onSubmit={(submission) => submit(3, submission)} />,
-    4: <Module4CompleteSystem existingSubmission={activeSubmission} existingDraft={activeDraft} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(4, draft)} onSubmit={(submission) => submit(4, submission)} />,
-    5: <Module5RelationBalloons existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(5, draft)} onSubmit={(submission) => submit(5, submission)} />,
+    1: <Module1SystemBuild key={activeModuleKey} existingSubmission={activeSubmission} existingDraft={activeDraft} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(1, draft)} onSubmit={(submission) => submit(1, submission)} />,
+    2: <Module2Relations key={activeModuleKey} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(2, draft)} onSubmit={(submission) => submit(2, submission)} />,
+    3: <Module3Boundary key={activeModuleKey} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(3, draft)} onSubmit={(submission) => submit(3, submission)} />,
+    4: <Module4CompleteSystem key={activeModuleKey} existingSubmission={activeSubmission} existingDraft={activeDraft} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(4, draft)} onSubmit={(submission) => submit(4, submission)} />,
+    5: <Module5RelationBalloons key={activeModuleKey} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(5, draft)} onSubmit={(submission) => submit(5, submission)} />,
   };
   const activeModule = session.selected_week === 3 && session.current_module === 1
-    ? <Week3ProcessHierarchy sessionId={session.id} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(1, draft)} onSubmit={(submission) => submit(1, submission)} />
+    ? <Week3ProcessHierarchy key={activeModuleKey} sessionId={`${session.id}:${session.current_run_number}`} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(1, draft)} onSubmit={(submission) => submit(1, submission)} />
     : session.selected_week === 3 && session.current_module === 2
-      ? <Week3MissingProcess sessionId={session.id} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(2, draft)} onSubmit={(submission) => submit(2, submission)} />
+      ? <Week3MissingProcess key={activeModuleKey} sessionId={`${session.id}:${session.current_run_number}`} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(2, draft)} onSubmit={(submission) => submit(2, submission)} />
       : session.selected_week === 3 && session.current_module === 3
-        ? <Week3FlowchartSymbols sessionId={session.id} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(3, draft)} onSubmit={(submission) => submit(3, submission)} />
+        ? <Week3FlowchartSymbols key={activeModuleKey} sessionId={`${session.id}:${session.current_run_number}`} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(3, draft)} onSubmit={(submission) => submit(3, submission)} />
       : session.selected_week === 4 && session.current_module === 1
-        ? <Week4FactoryTransform seedKey={`${session.id}:${student.id}:4:1`} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(1, draft)} onSubmit={(submission) => submit(1, submission)} />
+        ? <Week4FactoryTransform key={activeModuleKey} seedKey={`${session.id}:${student.id}:4:1:${session.current_run_number}`} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(1, draft)} onSubmit={(submission) => submit(1, submission)} />
       : session.selected_week === 4 && session.current_module === 2
-        ? <Week4BossApproach seedKey={`${session.id}:${student.id}:4:2`} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(2, draft)} onSubmit={(submission) => submit(2, submission)} />
+        ? <Week4BossApproach key={activeModuleKey} seedKey={`${session.id}:${student.id}:4:2:${session.current_run_number}`} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(2, draft)} onSubmit={(submission) => submit(2, submission)} />
       : session.selected_week === 4 && session.current_module === 3
-        ? <Week4SystemProcess seedKey={`${session.id}:${student.id}:4:3`} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(3, draft)} onSubmit={(submission) => submit(3, submission)} />
+        ? <Week4SystemProcess key={activeModuleKey} seedKey={`${session.id}:${student.id}:4:3:${session.current_run_number}`} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(3, draft)} onSubmit={(submission) => submit(3, submission)} />
       : modules[session.current_module];
 
   return <>{studentNav}<main className="container student-module-page stack">

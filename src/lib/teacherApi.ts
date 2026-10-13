@@ -5,7 +5,7 @@ import { clearTeacherAuth, getTeacherToken } from "@/lib/useTeacherAuth";
 
 export type TeacherSessionSummary = Pick<
   Session,
-  "id" | "pin_code" | "title" | "is_active" | "created_at" | "selected_week" | "current_module" | "module_stage" | "is_module_started"
+  "id" | "pin_code" | "title" | "is_active" | "created_at" | "selected_week" | "current_module" | "current_run_number" | "module_stage" | "is_module_started"
 >;
 
 export type TeacherSessionDetails = {
@@ -13,6 +13,7 @@ export type TeacherSessionDetails = {
   students: Student[];
   profiles: StudentProfile[];
   submissions: Submission[];
+  submittedCount: number;
 };
 
 async function teacherRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -37,8 +38,8 @@ export async function listTeacherSessions() {
   return (await teacherRequest<{ sessions: TeacherSessionSummary[] }>("/api/teacher/sessions")).sessions;
 }
 
-export async function getTeacherSession(pin: string) {
-  return teacherRequest<TeacherSessionDetails>(`/api/teacher/sessions?pin=${encodeURIComponent(pin)}`);
+export async function getTeacherSession(pin: string, details = false) {
+  return teacherRequest<TeacherSessionDetails>(`/api/teacher/sessions?pin=${encodeURIComponent(pin)}${details ? "&details=1" : ""}`);
 }
 
 export async function createTeacherSession(title?: string) {
@@ -55,9 +56,9 @@ export async function patchTeacherSession(sessionId: string, patch: Record<strin
   })).session;
 }
 
-export async function runTeacherModuleAction(sessionId: string, action: "start" | "cancel" | "finish", moduleId?: number) {
+export async function runTeacherModuleAction(sessionId: string, action: "start" | "cancel" | "finish", moduleId?: number, expectedRunNumber?: number) {
   return (await teacherRequest<{ session: Session }>(`/api/teacher/sessions/${sessionId}/module`, {
     method: "POST",
-    body: JSON.stringify({ action, moduleId }),
+    body: JSON.stringify({ action, moduleId, expectedRunNumber }),
   })).session;
 }

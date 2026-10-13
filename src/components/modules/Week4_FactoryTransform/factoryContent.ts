@@ -354,11 +354,11 @@ function shuffle<T>(items: readonly T[], random: () => number) {
 
 export function buildFactoryRound(seedKey: string): PresentedFactoryScenario[] {
   const random = seededRandom(hashSeed(`week-4-module-1-factory:${seedKey}`));
-  const stageOrder: FactoryStageId[] = ["mechanical", "biological", "sociocultural"];
-  return stageOrder.flatMap((stage) => {
+  const stageCounts: Array<[FactoryStageId, number]> = [["mechanical", 2], ["biological", 1], ["sociocultural", 2]];
+  return stageCounts.flatMap(([stage, count]) => {
     const stageScenarios = factoryScenarioPool.filter((scenario) => scenario.stage === stage);
     const mandatory = stageScenarios[0]!;
-    const selected = [mandatory, ...shuffle(stageScenarios.slice(1), random).slice(0, 2)];
+    const selected = [mandatory, ...shuffle(stageScenarios.slice(1), random).slice(0, count - 1)];
     return selected.map((scenario) => ({ ...scenario, options: shuffle(scenario.options, random) }));
   });
 }
