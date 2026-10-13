@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "framer-motion";
-import { AlertTriangle, Boxes, Check, Cog, LockKeyhole, Radio, RotateCcw, Users, X } from "lucide-react";
+import { AlertTriangle, Boxes, Check, Cog, LockKeyhole, MousePointerClick, Radio, RotateCcw, Users, X } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { useI18n } from "@/lib/i18n/I18nContext";
 import type { LearningModuleProps, ModuleDraft, ModuleSubmission } from "@/types";
@@ -17,7 +17,7 @@ import {
   type FactoryZone,
 } from "./factoryContent";
 
-type Phase = "decision" | "outcome" | "recovery-choice" | "recovery-repair";
+type Phase = "decision" | "outcome" | "recovery-choice";
 type RecoveryOutcome = "not-needed" | "recovered" | "second-wrong" | "timeout" | "teacher-ended";
 
 type FactoryAnswer = {
@@ -63,19 +63,14 @@ const copy = {
     title: "Hafta 4 · Modül 1: Fabrikayı Dönüştür",
     inspect: "Fabrikayı incele, karar ver; gerekirse 5 saniyede kurtar!",
     decision: "Karar",
-    factoryEvent: "Fabrikada ne oluyor?",
     inspectHint: "Fabrikadaki işaretlere dokun, sorunu araştır.",
     choose: "Kararın",
-    correct: "Doğru sistem kararı!",
-    wrong: "Bu karar fabrikada bir sorun zinciri başlattı.",
     recoveryChoice: "Kurtarma modu: Kalan iki karardan doğru olanı seç.",
-    recoveryRepair: "Şimdi sarı yanıp sönen onarım bölgesine dokun.",
     recoveryTime: "Kurtarma süresi",
     eliminated: "elendi",
     repaired: "Fabrikayı zamanında kurtardın! +4 puan",
     secondWrong: "İkinci karar da sorunu çözemedi.",
     timeout: "Kurtarma süresi doldu.",
-    wrongZone: "Bu bölge arızanın kaynağı değil; doğru onarım bölgesini bul.",
     locked: "Bu modül tamamlandı",
     lockedDetail: "Kararların kilitlendi. Öğretmen sonuçları açıklayana kadar bekleyin.",
     saving: "Yanıt kaydediliyor…",
@@ -86,19 +81,14 @@ const copy = {
     title: "Week 4 · Module 1: Transform the Factory",
     inspect: "Inspect the factory, decide, and rescue it in 5 seconds if needed!",
     decision: "Decision",
-    factoryEvent: "What is happening in the factory?",
     inspectHint: "Tap the factory markers and investigate the problem.",
     choose: "Your decision",
-    correct: "Correct systems decision!",
-    wrong: "This decision started a chain of problems in the factory.",
     recoveryChoice: "Rescue mode: choose the correct one of the two remaining decisions.",
-    recoveryRepair: "Now tap the yellow flashing repair zone.",
     recoveryTime: "Rescue time",
     eliminated: "eliminated",
     repaired: "You rescued the factory in time! +4 points",
     secondWrong: "The second decision did not solve the problem either.",
     timeout: "The rescue window expired.",
-    wrongZone: "This zone is not the source of the fault; find the correct repair zone.",
     locked: "This module is complete",
     lockedDetail: "Your decisions are locked. Wait until the teacher reveals the results.",
     saving: "Saving your answer…",
@@ -163,14 +153,12 @@ function applyMetrics(current: FactoryMetrics, delta: FactoryMetrics) {
 
 function FactoryScene({
   effect,
-  repairTarget,
   inspectedZone,
   inspectedHint,
   onZone,
   locale,
 }: {
   effect: FactoryEffectType | null;
-  repairTarget: FactoryZone | null;
   inspectedZone: FactoryZone | null;
   inspectedHint: string | null;
   onZone: (zone: FactoryZone) => void;
@@ -181,16 +169,16 @@ function FactoryScene({
     <div className="factory-building"><b>SYS LAB</b><i /><i /><i /></div>
     <div className="factory-smoke" aria-hidden="true"><i /><i /><i /></div>
     <div className="factory-conveyor" aria-hidden="true"><div className="factory-belt"><i /><i /><i /><i /></div><span className="factory-package p1"><Boxes size={22} /></span><span className="factory-package p2"><Boxes size={22} /></span><span className="factory-package p3"><Boxes size={22} /></span></div>
-    <button type="button" className={`factory-zone machine ${repairTarget === "machine" ? "repair-target" : ""} ${inspectedZone === "machine" ? "inspected" : ""}`} onClick={() => onZone("machine")} aria-label={factoryZoneLabels.machine[locale]} aria-expanded={inspectedZone === "machine" && Boolean(inspectedHint)} aria-controls={inspectedZone === "machine" && inspectedHint ? "factory-hint-machine" : undefined}>
-      <span className="factory-machine"><Cog className="gear main" /><Cog className="gear small" /><i className="machine-light" /></span><i className="factory-zone-ping" /><b><Cog size={15} /> {factoryZoneLabels.machine[locale]}</b>
+    <button type="button" className={`factory-zone machine ${inspectedZone === "machine" ? "inspected" : ""}`} onClick={() => onZone("machine")} aria-label={factoryZoneLabels.machine[locale]} aria-expanded={inspectedZone === "machine" && Boolean(inspectedHint)} aria-controls={inspectedZone === "machine" && inspectedHint ? "factory-hint-machine" : undefined}>
+      <span className="factory-machine"><Cog className="gear main" /><Cog className="gear small" /><i className="machine-light" /></span><span className="factory-zone-attention" aria-hidden="true"><MousePointerClick /><i>1</i></span><b><Cog size={15} /> {factoryZoneLabels.machine[locale]}</b>
       {inspectedZone === "machine" && inspectedHint && <span id="factory-hint-machine" className="factory-zone-hint" role="status" data-i18n-skip>{inspectedHint}</span>}
     </button>
-    <button type="button" className={`factory-zone sensor ${repairTarget === "sensor" ? "repair-target" : ""} ${inspectedZone === "sensor" ? "inspected" : ""}`} onClick={() => onZone("sensor")} aria-label={factoryZoneLabels.sensor[locale]} aria-expanded={inspectedZone === "sensor" && Boolean(inspectedHint)} aria-controls={inspectedZone === "sensor" && inspectedHint ? "factory-hint-sensor" : undefined}>
-      <span className="factory-sensor"><Radio /><i /><i /><i /></span><i className="factory-zone-ping" /><b><Radio size={15} /> {factoryZoneLabels.sensor[locale]}</b>
+    <button type="button" className={`factory-zone sensor ${inspectedZone === "sensor" ? "inspected" : ""}`} onClick={() => onZone("sensor")} aria-label={factoryZoneLabels.sensor[locale]} aria-expanded={inspectedZone === "sensor" && Boolean(inspectedHint)} aria-controls={inspectedZone === "sensor" && inspectedHint ? "factory-hint-sensor" : undefined}>
+      <span className="factory-sensor"><Radio /><i /><i /><i /></span><span className="factory-zone-attention" aria-hidden="true"><MousePointerClick /><i>1</i></span><b><Radio size={15} /> {factoryZoneLabels.sensor[locale]}</b>
       {inspectedZone === "sensor" && inspectedHint && <span id="factory-hint-sensor" className="factory-zone-hint" role="status" data-i18n-skip>{inspectedHint}</span>}
     </button>
-    <button type="button" className={`factory-zone workers ${repairTarget === "workers" ? "repair-target" : ""} ${inspectedZone === "workers" ? "inspected" : ""}`} onClick={() => onZone("workers")} aria-label={factoryZoneLabels.workers[locale]} aria-expanded={inspectedZone === "workers" && Boolean(inspectedHint)} aria-controls={inspectedZone === "workers" && inspectedHint ? "factory-hint-workers" : undefined}>
-      <span className="factory-workers"><i /><i /><i /></span><i className="factory-zone-ping" /><b><Users size={15} /> {factoryZoneLabels.workers[locale]}</b>
+    <button type="button" className={`factory-zone workers ${inspectedZone === "workers" ? "inspected" : ""}`} onClick={() => onZone("workers")} aria-label={factoryZoneLabels.workers[locale]} aria-expanded={inspectedZone === "workers" && Boolean(inspectedHint)} aria-controls={inspectedZone === "workers" && inspectedHint ? "factory-hint-workers" : undefined}>
+      <span className="factory-workers"><i /><i /><i /></span><span className="factory-zone-attention" aria-hidden="true"><MousePointerClick /><i>1</i></span><b><Users size={15} /> {factoryZoneLabels.workers[locale]}</b>
       {inspectedZone === "workers" && inspectedHint && <span id="factory-hint-workers" className="factory-zone-hint" role="status" data-i18n-skip>{inspectedHint}</span>}
     </button>
     <div className="factory-stock" aria-hidden="true"><Boxes /><Boxes /><Boxes /></div>
@@ -213,10 +201,11 @@ export function Week4FactoryTransform({
   const draftPayload = existingDraft?.payload as DraftPayload | undefined;
   const hydratedAnswers = useMemo(() => answersFromDraft(existingDraft), [existingDraft]);
   const hydratedProgress = useMemo(() => inProgressFromDraft(existingDraft), [existingDraft]);
+  const legacyRepairDraft = draftPayload?.phase === "recovery-repair" && Boolean(hydratedProgress);
   const initialIndex = typeof draftPayload?.currentIndex === "number" ? Math.max(0, Math.min(scenarios.length - 1, draftPayload.currentIndex)) : Math.min(hydratedAnswers.length, scenarios.length - 1);
-  const initialPhase: Phase = draftPayload?.phase === "outcome" || draftPayload?.phase === "recovery-choice" || draftPayload?.phase === "recovery-repair" ? draftPayload.phase : "decision";
+  const initialPhase: Phase = draftPayload?.phase === "outcome" || draftPayload?.phase === "recovery-choice" ? draftPayload.phase : legacyRepairDraft ? "recovery-choice" : "decision";
   const [index, setIndex] = useState(initialIndex);
-  const [answers, setAnswers] = useState<FactoryAnswer[]>(hydratedAnswers);
+  const [, setAnswers] = useState<FactoryAnswer[]>(hydratedAnswers);
   const [metrics, setMetrics] = useState<FactoryMetrics>(() => metricsFromDraft(existingDraft));
   const [phase, setPhase] = useState<Phase>(initialPhase);
   const [inProgress, setInProgress] = useState<InProgress | null>(hydratedProgress);
@@ -239,6 +228,7 @@ export function Week4FactoryTransform({
   const activeDeadlineEpoch = useRef<number | null>(null);
   const timeoutResolver = useRef<() => void>(() => undefined);
   const advanceTimer = useRef<number | null>(null);
+  const legacyRepairRestored = useRef(false);
   const reduceMotion = useReducedMotion();
   const current = scenarios[index]!;
 
@@ -326,6 +316,74 @@ export function Week4FactoryTransform({
     setRemainingMs(0);
     saveDraft(nextAnswers, nextMetrics, index, "outcome", null, answer.recoveryOptionId ?? answer.firstOptionId, nextEffect, nextNotification);
   }, [index, saveDraft]);
+
+  useEffect(() => {
+    if (!legacyRepairDraft || legacyRepairRestored.current || completed || existingSubmission || forceSubmit) return;
+    legacyRepairRestored.current = true;
+    const progress = inProgressRef.current;
+    if (!progress || progress.scenarioId !== current.id) {
+      phaseRef.current = "decision";
+      inProgressRef.current = null;
+      setPhase("decision");
+      setInProgress(null);
+      setSelectedOptionId(null);
+      setActiveEffect(null);
+      setRemainingMs(recoveryWindowMs);
+      saveDraft(answersRef.current, metricsRef.current, index, "decision", null, null, null, "");
+      return;
+    }
+    const first = current.options.find((option) => option.id === progress.firstOptionId);
+    const recovery = current.options.find((option) => option.id === progress.recoveryOptionId);
+    if (!first) {
+      phaseRef.current = "decision";
+      inProgressRef.current = null;
+      setPhase("decision");
+      setInProgress(null);
+      setSelectedOptionId(null);
+      setActiveEffect(null);
+      setRemainingMs(recoveryWindowMs);
+      saveDraft(answersRef.current, metricsRef.current, index, "decision", null, null, null, "");
+      return;
+    }
+    activeDeadlineEpoch.current = null;
+    deadlinePerf.current = null;
+    setRemainingMs(0);
+    if (recovery?.isCorrect) {
+      const nextMetrics = applyMetrics(metricsRef.current, { production: 6, adaptation: 6, participation: 6 });
+      commitResolvedAnswer({
+        scenarioId: current.id,
+        stageId: current.stage,
+        roundId: index % 3 + 1,
+        offeredOptionIds: current.options.map((option) => option.id),
+        firstOptionId: progress.firstOptionId,
+        firstCorrect: false,
+        recoveryOptionId: recovery.id,
+        recoveryCorrectOption: true,
+        clickedRepairZones: progress.clickedRepairZones,
+        repairZone: current.repairZone,
+        recoveryOutcome: "recovered",
+        points: 4,
+        effectType: "recover",
+      }, nextMetrics, "recover", t.repaired);
+      setSelectedOptionId(recovery.id);
+      return;
+    }
+    commitResolvedAnswer({
+      scenarioId: current.id,
+      stageId: current.stage,
+      roundId: index % 3 + 1,
+      offeredOptionIds: current.options.map((option) => option.id),
+      firstOptionId: progress.firstOptionId,
+      firstCorrect: false,
+      recoveryOptionId: recovery?.id ?? null,
+      recoveryCorrectOption: recovery ? false : null,
+      clickedRepairZones: progress.clickedRepairZones,
+      repairZone: current.repairZone,
+      recoveryOutcome: recovery ? "second-wrong" : "timeout",
+      points: 0,
+      effectType: first.effectType,
+    }, metricsRef.current, first.effectType, recovery ? t.secondWrong : t.timeout);
+  }, [commitResolvedAnswer, completed, current, existingSubmission, forceSubmit, index, legacyRepairDraft, saveDraft, t.repaired, t.secondWrong, t.timeout]);
 
   const resolveTimeout = useCallback(() => {
     if (phaseRef.current !== "recovery-choice") return;
@@ -448,8 +506,11 @@ export function Week4FactoryTransform({
     inProgressRef.current = progress;
     setInProgress(progress);
     setSelectedOptionId(option.id);
-    if (!option.isCorrect) {
-      const nextMetrics = applyMetrics(metricsRef.current, option.metrics);
+    if (option.isCorrect) {
+      activeDeadlineEpoch.current = null;
+      deadlinePerf.current = null;
+      setRemainingMs(0);
+      const nextMetrics = applyMetrics(metricsRef.current, { production: 6, adaptation: 6, participation: 6 });
       commitResolvedAnswer({
         scenarioId: current.id,
         stageId: current.stage,
@@ -458,63 +519,40 @@ export function Week4FactoryTransform({
         firstOptionId: progress.firstOptionId,
         firstCorrect: false,
         recoveryOptionId: option.id,
-        recoveryCorrectOption: false,
+        recoveryCorrectOption: true,
         clickedRepairZones: progress.clickedRepairZones,
         repairZone: current.repairZone,
-        recoveryOutcome: "second-wrong",
-        points: 0,
-        effectType: option.effectType,
-      }, nextMetrics, option.effectType, t.secondWrong);
+        recoveryOutcome: "recovered",
+        points: 4,
+        effectType: "recover",
+      }, nextMetrics, "recover", t.repaired);
+      setInspectedZone(null);
       actionLocked.current = false;
       return;
     }
-    activeDeadlineEpoch.current = null;
-    deadlinePerf.current = null;
-    setRemainingMs(0);
-    phaseRef.current = "recovery-repair";
-    setPhase("recovery-repair");
-    setNotification(t.recoveryRepair);
-    saveDraft(answersRef.current, metricsRef.current, index, "recovery-repair", progress, option.id, activeEffect, t.recoveryRepair);
-    actionLocked.current = false;
-  }, [activeEffect, commitResolvedAnswer, completed, current, existingSubmission, forceSubmit, index, locale, resolveTimeout, saveDraft, t.recoveryRepair, t.secondWrong]);
-
-  const handleZone = useCallback((zone: FactoryZone) => {
-    if (completed || existingSubmission || forceSubmit) return;
-    setInspectedZone(zone);
-    if (phaseRef.current !== "recovery-repair" || !inProgressRef.current) {
-      return;
-    }
-    const zones = [...inProgressRef.current.clickedRepairZones, zone];
-    const progress = { ...inProgressRef.current, clickedRepairZones: zones };
-    inProgressRef.current = progress;
-    setInProgress(progress);
-    if (zone !== current.repairZone) {
-      setNotification(t.wrongZone);
-      saveDraft(answersRef.current, metricsRef.current, index, "recovery-repair", progress, progress.recoveryOptionId, activeEffect, t.wrongZone);
-      return;
-    }
-    const first = current.options.find((option) => option.id === progress.firstOptionId)!;
-    const nextMetrics = applyMetrics(metricsRef.current, { production: 6, adaptation: 6, participation: 6 });
+    const nextMetrics = applyMetrics(metricsRef.current, option.metrics);
     commitResolvedAnswer({
       scenarioId: current.id,
       stageId: current.stage,
       roundId: index % 3 + 1,
-      offeredOptionIds: current.options.map((option) => option.id),
+      offeredOptionIds: current.options.map((item) => item.id),
       firstOptionId: progress.firstOptionId,
       firstCorrect: false,
-      recoveryOptionId: progress.recoveryOptionId,
-      recoveryCorrectOption: true,
-      clickedRepairZones: zones,
+      recoveryOptionId: option.id,
+      recoveryCorrectOption: false,
+      clickedRepairZones: progress.clickedRepairZones,
       repairZone: current.repairZone,
-      recoveryOutcome: "recovered",
-      points: 4,
-      effectType: "recover",
-    }, nextMetrics, "recover", t.repaired);
-    setInspectedZone(current.repairZone);
-    setSelectedOptionId(progress.recoveryOptionId);
-    setNotification(t.repaired);
-    void first;
-  }, [activeEffect, commitResolvedAnswer, completed, current, existingSubmission, forceSubmit, index, saveDraft, t.repaired, t.wrongZone]);
+      recoveryOutcome: "second-wrong",
+      points: 0,
+      effectType: option.effectType,
+    }, nextMetrics, option.effectType, t.secondWrong);
+    actionLocked.current = false;
+  }, [commitResolvedAnswer, completed, current, existingSubmission, forceSubmit, index, locale, resolveTimeout, saveDraft, t.repaired, t.secondWrong]);
+
+  const handleZone = useCallback((zone: FactoryZone) => {
+    if (completed || existingSubmission || forceSubmit) return;
+    setInspectedZone(zone);
+  }, [completed, existingSubmission, forceSubmit]);
 
   const advance = useCallback(() => {
     if (phaseRef.current !== "outcome" || completed || existingSubmission || forceSubmit) return;
@@ -539,7 +577,7 @@ export function Week4FactoryTransform({
   useEffect(() => {
     if (phase !== "outcome" || completed || existingSubmission || forceSubmit) return;
     const outcome = answersRef.current.find((answer) => answer.scenarioId === current.id);
-    const delay = reduceMotion ? 80 : outcome?.points ? 900 : 1100;
+    const delay = reduceMotion ? 80 : outcome?.recoveryOutcome === "recovered" ? 750 : 900;
     advanceTimer.current = window.setTimeout(advance, delay);
     return () => {
       if (advanceTimer.current !== null) window.clearTimeout(advanceTimer.current);
@@ -552,35 +590,16 @@ export function Week4FactoryTransform({
   }
 
   const progress = inProgress;
-  const outcomeAnswer = answers.find((answer) => answer.scenarioId === current.id);
-  const repairTarget = phase === "recovery-repair" ? current.repairZone : null;
-  const inspectedHint = phase === "decision" && inspectedZone ? current.hints[inspectedZone][locale] : null;
-  const outcomeSucceeded = Boolean(outcomeAnswer && outcomeAnswer.points > 0);
-  const notificationTone = phase.startsWith("recovery")
-    ? "urgent"
-    : phase === "outcome"
-      ? outcomeSucceeded ? "success" : "fault"
-      : activeEffect && !["organized", "feedback", "cooperate", "recover"].includes(activeEffect) ? "fault" : "neutral";
-  const notificationTitle = phase === "recovery-choice"
-    ? t.recoveryChoice
-    : phase === "recovery-repair"
-      ? t.recoveryRepair
-      : phase === "outcome"
-        ? outcomeAnswer?.firstCorrect ? t.correct : outcomeAnswer?.recoveryOutcome === "recovered" ? t.repaired : outcomeAnswer?.recoveryOutcome === "timeout" ? t.timeout : t.secondWrong
-        : t.factoryEvent;
+  const inspectedHint = inspectedZone ? current.hints[inspectedZone][locale] : null;
 
   return <section className="panel module-shell factory-transform-shell">
     <div className="module-title-chip">{t.title}</div>
     <div className="factory-decision-progress" aria-label={`${t.decision} ${index + 1} / ${scenarios.length}`}>{scenarios.map((scenario, itemIndex) => <i key={scenario.id} className={itemIndex < index ? "done" : itemIndex === index ? "active" : ""} />)}</div>
     <p className="factory-instruction">{t.inspect}</p>
-    <FactoryScene effect={activeEffect} repairTarget={repairTarget} inspectedZone={inspectedZone} inspectedHint={inspectedHint} onZone={handleZone} locale={locale} />
-    <div className={`factory-notification ${notificationTone}`} aria-live="polite">
-      <span>{notificationTone === "success" ? <Check size={18} /> : notificationTone === "urgent" || notificationTone === "fault" ? <AlertTriangle size={18} /> : <Radio size={18} />}</span>
-      <div><strong>{notificationTitle}</strong><p data-i18n-skip>{notification || current.event[locale]}</p></div>
-      {phase === "recovery-choice" && <div className="factory-recovery-timer"><b>{(remainingMs / 1000).toFixed(1)}</b><small>{t.recoveryTime}</small><i style={{ width: `${Math.max(0, Math.min(100, remainingMs / recoveryWindowMs * 100))}%` }} /></div>}
-    </div>
+    <FactoryScene effect={activeEffect} inspectedZone={inspectedZone} inspectedHint={inspectedHint} onZone={handleZone} locale={locale} />
     {phase === "decision" && <p className="factory-inspect-hint">{t.inspectHint}</p>}
     <div className="factory-decision-panel">
+      {phase === "recovery-choice" && <div className="factory-recovery-inline" role="timer" aria-live="polite"><AlertTriangle size={16} aria-hidden="true" /><span>{t.recoveryChoice}</span><small>{t.recoveryTime}</small><b>{(remainingMs / 1000).toFixed(1)} sn</b><i style={{ width: `${Math.max(0, Math.min(100, remainingMs / recoveryWindowMs * 100))}%` }} /></div>}
       <div><span>{t.choose}</span><h2 data-i18n-skip>{current.question[locale]}</h2></div>
       <div className="factory-options">
         {current.options.map((option) => {
@@ -588,7 +607,7 @@ export function Week4FactoryTransform({
           const selected = selectedOptionId === option.id;
           const reveal = phase === "outcome";
           const correct = option.isCorrect;
-          return <button key={option.id} type="button" disabled={phase === "outcome" || phase === "recovery-repair" || eliminated} className={`${selected ? "selected" : ""} ${eliminated ? "eliminated" : ""} ${reveal && correct ? "correct" : ""} ${reveal && selected && !correct ? "wrong" : ""}`} onClick={() => chooseOption(option)}>
+          return <button key={option.id} type="button" disabled={phase === "outcome" || eliminated} className={`${selected ? "selected" : ""} ${eliminated ? "eliminated" : ""} ${reveal && correct ? "correct" : ""} ${reveal && selected && !correct ? "wrong" : ""}`} onClick={() => chooseOption(option)}>
             <span>{reveal && correct ? <Check size={18} /> : reveal && selected && !correct ? <X size={18} /> : eliminated ? <X size={18} /> : <i />}</span>
             <b data-i18n-skip>{option.text[locale]}</b>
             {eliminated && phase !== "outcome" && <small>{t.eliminated}</small>}
