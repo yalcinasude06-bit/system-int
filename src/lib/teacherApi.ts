@@ -5,7 +5,7 @@ import { clearTeacherAuth, getTeacherToken } from "@/lib/useTeacherAuth";
 
 export type TeacherSessionSummary = Pick<
   Session,
-  "id" | "pin_code" | "title" | "is_active" | "created_at" | "selected_week" | "current_module" | "current_run_number" | "module_stage" | "is_module_started"
+  "id" | "pin_code" | "title" | "is_active" | "created_at" | "selected_week" | "current_module" | "current_run_number" | "current_module_turn" | "module_turn_counters" | "module_stage" | "is_module_started"
 >;
 
 export type TeacherSessionDetails = {

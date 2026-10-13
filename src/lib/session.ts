@@ -3,6 +3,11 @@ import { requireSupabase } from "./supabase";
 
 type DatabaseFailure = { code?: string; message?: string };
 
+export type DraftSaveResult = {
+  saved: boolean;
+  reason?: "already-submitted" | "module-closed-or-stale" | string;
+};
+
 const transientDatabaseCodes = new Set([
   "08000", "08003", "08006", "40001", "40P01", "53300", "55P03", "57014",
   "PGRST000", "PGRST001", "PGRST002",
@@ -10,6 +15,14 @@ const transientDatabaseCodes = new Set([
 
 function databaseFailure(error: unknown): DatabaseFailure {
   return typeof error === "object" && error !== null ? error as DatabaseFailure : {};
+}
+
+function logDatabaseFailure(operation: "submit_module_once" | "save_module_draft", error: unknown) {
+  const failure = databaseFailure(error);
+  console.error(`[database:${operation}]`, {
+    code: failure.code || "unknown",
+    message: failure.message || "Database request failed",
+  });
 }
 
 function isTransientDatabaseFailure(error: unknown) {
@@ -138,7 +151,10 @@ export async function saveSubmission(input: {
       new_payload: input.payload,
       new_score: input.score,
     });
-  if (error) throw readableDatabaseError(error, "Gönderim kaydedilemedi.");
+  if (error) {
+    logDatabaseFailure("submit_module_once", error);
+    throw readableDatabaseError(error, "Gönderim kaydedilemedi.");
+  }
   const result = data as { submission: Submission; was_new: boolean };
   return { submission: result.submission, wasNew: result.was_new };
 }
@@ -154,7 +170,7 @@ export async function saveModuleDraft(input: {
   score: number;
   answeredCount: number;
   revision: number;
-}): Promise<boolean> {
+}): Promise<DraftSaveResult> {
   const client = requireSupabase();
   let lastError: unknown;
   for (let attempt = 0; attempt < 3; attempt += 1) {
@@ -172,13 +188,15 @@ export async function saveModuleDraft(input: {
         new_revision: input.revision,
       });
       if (error) throw error;
-      return Boolean((data as { saved?: boolean } | null)?.saved);
+      const result = data as DraftSaveResult | null;
+      return { saved: Boolean(result?.saved), reason: result?.reason };
     } catch (caught) {
       lastError = caught;
       if (!isTransientDatabaseFailure(caught) || attempt === 2) break;
       await retryDelay(attempt);
     }
   }
+  logDatabaseFailure("save_module_draft", lastError);
   throw readableDatabaseError(lastError, "Taslak ilerleme kaydedilemedi.");
 }
 

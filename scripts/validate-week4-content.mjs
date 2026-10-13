@@ -119,7 +119,8 @@ assert.match(systemSource, /isNot: "Sistem Ne Değildir\?"/, "Module 3 must use 
 assert.doesNotMatch(systemSource, /<div className="system-accept-visual"|system-process-review|continueFeedback/, "Module 3 must not render the repeated accept label or an intermediate result/review screen");
 assert.doesNotMatch(studentSource, /result-review|completeResultReview|showingModuleReview/, "The student route must not retain the removed result-review transition");
 assert.match(studentSource, /feedbackAvailable[\s\S]*shouldShowFeedback/, "The student route must derive the direct feedback transition centrally");
-assert.match(studentSource, /if \(shouldShowFeedback && activeSubmission\)/, "The feedback form must take precedence as soon as a submission is available");
+assert.match(studentSource, /shouldShowFeedback = Boolean\(!isAnswerReviewing/, "Feedback must wait until the five-second Module 3 review ends");
+assert.match(studentSource, /if \(shouldShowFeedback && activeSubmission\)/, "The feedback form must take precedence after review and durable submission");
 assert.doesNotMatch(studentSource, /firstCheckCorrect\}\/12/, "The result screen must not retain the old 12-card denominator");
 assert.match(studentSource, /payload\.cardCount/, "The result denominator must come from the submitted round");
 assert.match(demoSource, /Parçalar ilişkilidir/, "The onboarding demo must use the specified positive example");

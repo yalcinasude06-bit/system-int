@@ -112,7 +112,8 @@ export function Week4SystemProcess({
   existingDraft,
   forceSubmit,
   seedKey,
-}: LearningModuleProps & { seedKey: string }) {
+  onReviewStart,
+}: LearningModuleProps & { seedKey: string; onReviewStart?: (reviewUntil: number) => void }) {
   const { locale } = useI18n();
   const text = copy[locale];
   const cards = useMemo(() => buildSystemProcessRound(seedKey), [seedKey]);
@@ -203,6 +204,23 @@ export function Week4SystemProcess({
     await submitResult(submission);
   }, [cancelReviewClock, clearTimers, existingSubmission, submissionFor, submitResult]);
 
+  const beginCheckedReview = useCallback((snapshot: Placements, startedAt: number, durationMs: number) => {
+    if (submissionStarted.current || existingSubmission) return;
+    const submission = submissionFor(snapshot, "completed", snapshot, { startedAt, durationMs });
+    const draftSubmission = submissionFor(snapshot, "draft", snapshot, { startedAt, durationMs });
+    setFinalSubmission(submission);
+    setPointerFlyer(null);
+    setSwallowFlyer(null);
+    onReviewStart?.(startedAt + durationMs);
+
+    // The durable submission starts immediately. The five-second clock controls
+    // only the visual review, and never delays or queues the final write.
+    submissionStarted.current = true;
+    void submitResult(submission);
+    void onDraft?.(draftSubmission);
+    startReviewClock(durationMs, () => setCompleted(true), remainingReviewTime(startedAt, durationMs));
+  }, [existingSubmission, onDraft, onReviewStart, startReviewClock, submissionFor, submitResult]);
+
   useEffect(() => {
     if (!forceSubmit || completed || existingSubmission) return;
     if (pendingTrashCard.current) {
@@ -222,8 +240,8 @@ export function Week4SystemProcess({
     const payload = existingDraft?.payload as DraftPayload | undefined;
     const duration = typeof payload?.reviewDurationMs === "number" ? payload.reviewDurationMs : ANSWER_REVIEW_TOTAL_MS;
     const startedAt = typeof payload?.reviewStartedAt === "number" ? payload.reviewStartedAt : currentReviewTimestamp();
-    startReviewClock(duration, () => void finalize(initialSnapshot, "completed"), remainingReviewTime(startedAt, duration));
-  }, [completed, existingDraft, existingSubmission, finalize, forceSubmit, initialSnapshot, startReviewClock]);
+    beginCheckedReview(initialSnapshot, startedAt, duration);
+  }, [beginCheckedReview, completed, existingDraft, existingSubmission, forceSubmit, initialSnapshot]);
 
   const saveDraft = useCallback((nextPlacements: Placements, evaluatedSnapshot?: Placements, review?: { startedAt: number; durationMs: number }) => {
     placementsRef.current = nextPlacements;
@@ -355,11 +373,10 @@ export function Week4SystemProcess({
     setChecked(true);
     setSelectedCardId(null);
     const startedAt = currentReviewTimestamp();
-    void onDraft?.(submissionFor(snapshot, "draft", snapshot, { startedAt, durationMs: ANSWER_REVIEW_TOTAL_MS }));
-    startReviewClock(ANSWER_REVIEW_TOTAL_MS, () => void finalize(snapshot, "completed"));
-  }, [cards.length, completed, currentPlacedCount, finalize, onDraft, startReviewClock, submissionFor]);
+    beginCheckedReview(snapshot, startedAt, ANSWER_REVIEW_TOTAL_MS);
+  }, [beginCheckedReview, cards.length, completed, currentPlacedCount]);
 
-  if (existingSubmission && !completed) {
+  if (existingSubmission && !completed && !checked) {
     return <section className="panel module-shell system-process-shell"><div className="module-title-chip">{text.title}</div><div className="module-complete-card"><LockKeyhole size={42} /><h2>{text.locked}</h2><p>{text.lockedDetail}</p></div></section>;
   }
 

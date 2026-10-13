@@ -7,6 +7,8 @@ export interface Session {
   selected_week: number;
   current_module: ModuleId;
   current_run_number: number;
+  current_module_turn: number;
+  module_turn_counters: Record<string, number>;
   module_stage: number;
   is_module_started: boolean;
   module_started_at: string | null;

@@ -42,7 +42,7 @@ assert.doesNotMatch(moduleFourSource, /type-result-explanation|correctedTarget|m
 
 assert.match(weekFourSource, /snapshotRef\.current \?\? snapshot/, "Week 4 Module 3 must score the immutable first snapshot");
 assert.match(weekFourSource, /wasInitiallyWrong/, "Initial mistakes must remain visibly marked throughout review");
-assert.match(weekFourSource, /startReviewClock\(ANSWER_REVIEW_TOTAL_MS/, "Week 4 Module 3 must keep the scene visible for five seconds total");
+assert.match(weekFourSource, /beginCheckedReview\(snapshot, startedAt, ANSWER_REVIEW_TOTAL_MS\)/, "Week 4 Module 3 must keep the scene visible for five seconds total");
 assert.doesNotMatch(weekFourSource, /finishCorrection|measureFlyers|flyers\.map|system-correction-log|corrected-placement/, "Week 4 Module 3 must not move or auto-correct cards after checking");
 
 assert.doesNotMatch(globalStyles, /systemWrongPulse|anatomy-correction-badge|matching-correct-target|system-correction-log/, "Removed correction animations and explanation UI must not remain in the stylesheet");

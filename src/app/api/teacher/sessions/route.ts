@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     if (!pin) {
       const { data, error } = await client
         .from("sessions")
-        .select("id, pin_code, title, is_active, created_at, selected_week, current_module, current_run_number, module_stage, is_module_started")
+        .select("id, pin_code, title, is_active, created_at, selected_week, current_module, current_run_number, current_module_turn, module_turn_counters, module_stage, is_module_started")
         .eq("teacher_username", teacherUsername)
         .order("created_at", { ascending: false });
       if (error) throw error;

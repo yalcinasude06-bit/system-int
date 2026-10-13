@@ -55,7 +55,8 @@ type ModuleSelectorProps = {
   activeModule: ModuleId;
   moduleStage: number;
   isModuleStarted: boolean;
-  currentRunNumber: number;
+  currentModuleTurn: number;
+  moduleTurnCounters: Record<string, number>;
   submittedCount: number;
   totalStudents: number;
   disabled?: boolean;
@@ -64,7 +65,7 @@ type ModuleSelectorProps = {
   onViewResults: () => void;
 };
 
-export function ModuleSelector({ activeWeek, activeModule, moduleStage, isModuleStarted, currentRunNumber, submittedCount, totalStudents, disabled, onStart, onFinish, onViewResults }: ModuleSelectorProps) {
+export function ModuleSelector({ activeWeek, activeModule, moduleStage, isModuleStarted, currentModuleTurn, moduleTurnCounters, submittedCount, totalStudents, disabled, onStart, onFinish, onViewResults }: ModuleSelectorProps) {
   if (activeWeek !== 1 && activeWeek !== 3 && activeWeek !== 4) {
     return (
       <div className="coming-soon-card" role="status">
@@ -82,6 +83,8 @@ export function ModuleSelector({ activeWeek, activeModule, moduleStage, isModule
         const isActive = activeModule === id;
         const isLive = isActive && isModuleStarted;
         const isFinished = isActive && !isModuleStarted && moduleStage >= 3;
+        const moduleTurn = Number(moduleTurnCounters[`${activeWeek}:${id}`] ?? 0);
+        const hasPlayed = moduleTurn > 0;
         const everyoneCompleted = isLive && totalStudents > 0 && submittedCount >= totalStudents;
         return (
           <article className={`dashboard-module-row ${isActive ? "active" : ""} ${isLive ? "live" : ""}`} key={id} role="listitem">
@@ -89,10 +92,11 @@ export function ModuleSelector({ activeWeek, activeModule, moduleStage, isModule
             <span className="dashboard-module-icon"><Icon size={25} /></span>
             <h2>{title}</h2>
             {isLive && <span className={`module-progress-badge ${everyoneCompleted ? "complete" : ""}`} aria-live="polite">
-              {everyoneCompleted ? <><CheckCircle2 size={17} /> Tur {currentRunNumber}: Herkes Tamamladı!</> : <><UsersRound size={17} /> Tur {currentRunNumber}: {submittedCount} / {totalStudents}</>}
+              {everyoneCompleted ? <><CheckCircle2 size={17} /> {currentModuleTurn}. Oynanış: Herkes Tamamladı!</> : <><UsersRound size={17} /> {currentModuleTurn}. Oynanış: {submittedCount} / {totalStudents}</>}
             </span>}
+            {!isLive && hasPlayed && !isFinished && <span className="module-progress-badge complete"><CheckCircle2 size={17} /> {moduleTurn}. Oynanış</span>}
             <div className="dashboard-module-actions">
-              {isLive ? <span className="on-air-badge"><i /> Canlı Yayında</span> : isFinished ? <><span className="results-open-badge"><CheckCircle2 size={18} /> Tur {currentRunNumber} Sonuçları</span><button type="button" className="row-action" disabled={disabled} onClick={onViewResults}><BarChart3 size={18} /> Sonuçları Gör</button><button type="button" className="row-action start" disabled={disabled || isModuleStarted} onClick={() => onStart(id)}><RotateCcw size={18} /> Tekrar Başlat</button></> : <button type="button" className="row-action start" disabled={disabled || isModuleStarted} onClick={() => onStart(id)}><Play size={19} fill="currentColor" /> Başlat</button>}
+              {isLive ? <span className="on-air-badge"><i /> Canlı Yayında</span> : isFinished ? <><span className="results-open-badge"><CheckCircle2 size={18} /> {currentModuleTurn}. Oynanış Sonuçları</span><button type="button" className="row-action" disabled={disabled} onClick={onViewResults}><BarChart3 size={18} /> Sonuçları Gör</button><button type="button" className="row-action start" disabled={disabled || isModuleStarted} onClick={() => onStart(id)}><RotateCcw size={18} /> Tekrar Başlat</button></> : <button type="button" className="row-action start" disabled={disabled || isModuleStarted} onClick={() => onStart(id)}>{hasPlayed ? <RotateCcw size={18} /> : <Play size={19} fill="currentColor" />} {hasPlayed ? "Tekrar Başlat" : "Başlat"}</button>}
               {isLive && <button type="button" className="row-action finish" disabled={disabled} onClick={() => onFinish(id)}><Square size={18} fill="currentColor" /> Bitir &amp; Sonuçları Açıkla</button>}
             </div>
           </article>

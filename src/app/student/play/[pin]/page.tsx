@@ -23,6 +23,8 @@ import { getRemainingCountdown } from "@/lib/moduleCountdown";
 import { getStudentGameState, getStudentSessionStatus, saveModuleDraft, saveSubmission, submitModuleFeedback } from "@/lib/session";
 import type { ModuleDraft, ModuleId, ModuleSubmission, Session, Student, StudentProfile, Submission } from "@/types";
 
+type AnswerReviewState = { key: string; until: number };
+
 export default function StudentPlayPage() {
   const { pin } = useParams<{ pin: string }>();
   const router = useRouter();
@@ -40,9 +42,10 @@ export default function StudentPlayPage() {
   const [feedbackKeys, setFeedbackKeys] = useState<string[]>([]);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackDismissedKey, setFeedbackDismissedKey] = useState("");
+  const [answerReview, setAnswerReview] = useState<AnswerReviewState | null>(null);
   const celebratedModuleKey = useRef("");
   const draftRevision = useRef(0);
-  const draftWrites = useRef(new Set<Promise<void>>());
+  const answerReviewRef = useRef<AnswerReviewState | null>(null);
   const sessionSnapshot = useRef<Session | null>(null);
   const fullLoadInFlight = useRef<Promise<void> | null>(null);
   const statusLoadInFlight = useRef<Promise<void> | null>(null);
@@ -64,6 +67,8 @@ export default function StudentPlayPage() {
           setReadyModuleKey("");
           setFeedbackOpen(false);
           setFeedbackDismissedKey("");
+          answerReviewRef.current = null;
+          setAnswerReview(null);
           celebratedModuleKey.current = "";
           draftRevision.current = Date.now() * 1000;
         }
@@ -115,6 +120,8 @@ export default function StudentPlayPage() {
           setReadyModuleKey("");
           setFeedbackOpen(false);
           setFeedbackDismissedKey("");
+          answerReviewRef.current = null;
+          setAnswerReview(null);
           celebratedModuleKey.current = "";
           draftRevision.current = Date.now() * 1000;
         }
@@ -149,10 +156,40 @@ export default function StudentPlayPage() {
   const isModuleStarted = session?.is_module_started;
   const resultsRevealed = !isModuleStarted && (session?.module_stage ?? 0) >= 3;
   const activeModuleKey = session ? `${currentWeek}:${currentModule}:${currentRunNumber}` : "";
+  const isAnswerReviewing = answerReview?.key === activeModuleKey;
   const feedbackAvailable = Boolean(activeSubmission && !feedbackKeys.includes(activeModuleKey) && feedbackDismissedKey !== activeModuleKey);
-  const shouldShowFeedback = Boolean(activeSubmission && (feedbackOpen || feedbackAvailable));
+  const shouldShowFeedback = Boolean(!isAnswerReviewing && activeSubmission && (feedbackOpen || feedbackAvailable));
   const activeCompletionStatus = activeSubmission?.completion_status
     ?? (activeSubmission?.payload?.completionReason === "teacher-ended" ? "incomplete" : "completed");
+
+  const beginAnswerReview = useCallback((until: number) => {
+    const review = { key: activeModuleKey, until };
+    answerReviewRef.current = review;
+    setAnswerReview(review);
+    setFeedbackOpen(false);
+  }, [activeModuleKey]);
+
+  useEffect(() => {
+    if (!answerReview || answerReview.key !== activeModuleKey) return;
+    let timer: number | null = null;
+    const finishWhenDue = () => {
+      const remaining = answerReview.until - Date.now();
+      if (remaining > 0) {
+        timer = window.setTimeout(finishWhenDue, remaining);
+        return;
+      }
+      if (answerReviewRef.current?.key === answerReview.key) answerReviewRef.current = null;
+      setAnswerReview((current) => current?.key === answerReview.key ? null : current);
+      if (activeSubmission) setFeedbackOpen(true);
+    };
+    timer = window.setTimeout(finishWhenDue, Math.max(0, answerReview.until - Date.now()));
+    const onVisibilityChange = () => { if (!document.hidden) finishWhenDue(); };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      if (timer !== null) window.clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [activeModuleKey, activeSubmission, answerReview]);
 
   useEffect(() => {
     let cancelled = false;
@@ -206,16 +243,23 @@ export default function StudentPlayPage() {
     setSaving(true);
     setError("");
     try {
-      await Promise.allSettled([...draftWrites.current]);
       const saved = await saveSubmission({ sessionId: session.id, studentId: student.id, studentNumber: student.student_number, weekId: session.selected_week, moduleId, expectedRunNumber: session.current_run_number, stage: submission.stage || 1, payload: submission.payload, score: submission.score });
       setSubmissions((current) => [...current.filter((item) => item.id !== saved.submission.id), saved.submission]);
-      setFeedbackOpen(true);
+      const review = answerReviewRef.current;
+      const reviewingThisSubmission = review?.key === `${session.selected_week}:${moduleId}:${session.current_run_number}` && review.until > Date.now();
+      if (!reviewingThisSubmission) setFeedbackOpen(true);
       setFeedbackDismissedKey("");
       setMessage(saved.wasNew ? "Yanıtınız güvenle kaydedildi." : "Bu modül için yanıt hakkını daha önce kullandın.");
       window.setTimeout(() => setMessage(""), 3500);
       return true;
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Gönderim kaydedilemedi.");
+      const failureMessage = caught instanceof Error ? caught.message : "Gönderim kaydedilemedi.";
+      if (failureMessage === "Bu tur sona erdi. Güncel tur yükleniyor.") {
+        setError("Tur kapandı, kayıt doğrulanıyor.");
+        await load();
+      } else {
+        setError(failureMessage);
+      }
       return false;
     } finally {
       setSaving(false);
@@ -255,12 +299,14 @@ export default function StudentPlayPage() {
         answeredCount,
         revision,
       })
-      .then(() => undefined)
+      .then((result) => {
+        if (result.saved || result.reason === "already-submitted") return;
+        console.info("Module draft rejected", { reason: result.reason || "unknown" });
+        if (result.reason === "module-closed-or-stale") void load();
+      })
       .catch((caught) => {
         console.warn("Module draft save failed", caught);
       });
-    draftWrites.current.add(task);
-    void task.finally(() => draftWrites.current.delete(task));
     return task;
   }
 
@@ -311,20 +357,20 @@ export default function StudentPlayPage() {
     <section className="student-submission-wait panel"><ModuleFeedbackSurvey key={activeModuleKey} moduleId={session.current_module} onSubmit={sendFeedback} onSkip={closeFeedback} /></section>
   </main></>;
 
-  if (!session.is_active) return <>{studentNav}<main className="container page"><div className="student-result-card panel"><Trophy size={58} color="var(--amber)" /><span className="eyebrow">Oturum tamamlandı</span><h1>Harika iş çıkardın!</h1><p className="lead">Genel toplam puanın <strong className="score-pop">{profile?.total_score ?? student.score}</strong></p><Button onClick={() => router.push("/")}>Ana sayfaya dön</Button></div></main></>;
+  if (!session.is_active && !isAnswerReviewing) return <>{studentNav}<main className="container page"><div className="student-result-card panel"><Trophy size={58} color="var(--amber)" /><span className="eyebrow">Oturum tamamlandı</span><h1>Harika iş çıkardın!</h1><p className="lead">Genel toplam puanın <strong className="score-pop">{profile?.total_score ?? student.score}</strong></p><Button onClick={() => router.push("/")}>Ana sayfaya dön</Button></div></main></>;
 
   const isSupportedModule = session.selected_week === 1
     || (session.selected_week === 3 && (session.current_module === 1 || session.current_module === 2 || session.current_module === 3))
     || (session.selected_week === 4 && (session.current_module === 1 || session.current_module === 2 || session.current_module === 3));
   if (!isSupportedModule) return <>{studentNav}<main className="container page"><div className="student-waiting-card panel"><span className="waiting-illustration">🚧</span><span className="eyebrow">Hafta {session.selected_week}</span><h1>Yeni içerikler hazırlanıyor</h1><p>Bu haftanın modülleri ve interaktif içerikleri yakında eklenecektir.</p><div className="waiting-pulse"><i /> Öğretmenin yönlendirmesini bekleyin</div></div></main></>;
 
-  if (resultsRevealed && !activeSubmission) return <>{studentNav}<main className="container page"><section className="student-waiting-card panel"><span className="waiting-illustration">⏳</span><span className="eyebrow">Sonuç hazırlanıyor</span><h1>Puanın hesaplanıyor…</h1><div className="waiting-pulse"><i /> Sonuç kaydı alınıyor</div></section></main></>;
+  if (!isAnswerReviewing && resultsRevealed && !activeSubmission) return <>{studentNav}<main className="container page"><section className="student-waiting-card panel"><span className="waiting-illustration">⏳</span><span className="eyebrow">Sonuç hazırlanıyor</span><h1>Puanın hesaplanıyor…</h1><div className="waiting-pulse"><i /> Sonuç kaydı alınıyor</div></section></main></>;
 
-  if (resultsRevealed) return <>{studentNav}<main className="container page student-result-page">
+  if (!isAnswerReviewing && resultsRevealed) return <>{studentNav}<main className="container page student-result-page">
     <section className="student-result-card panel">
       <div className="result-spark"><Sparkles size={30} /></div>
       <span className="result-trophy">🏆</span>
-      <span className="eyebrow">Modül {session.current_module} sonucu</span>
+      <span className="eyebrow">Modül {session.current_module} · {session.current_module_turn}. Oynanış sonucu</span>
       <h1>{activeCompletionStatus === "completed" ? <>Tebrikler, <strong>{scoreEarned} puan</strong> aldın!</> : <>Bu turda <strong>{scoreEarned} puan</strong> topladın.</>}</h1>
       <span className={`student-result-status ${activeCompletionStatus}`}>{activeCompletionStatus === "completed" ? "Modül tamamlandı" : "Modül tamamlanmadı"}</span>
       {firstCheckCorrect !== null && <p className="first-check-result">İlk kontrolde doğru: <strong>{firstCheckCorrect}/{firstCheckTotal}</strong></p>}
@@ -339,7 +385,7 @@ export default function StudentPlayPage() {
     </section>
   </main></>;
 
-  if (activeSubmission) return <>{studentNav}<main className="container page student-submission-wait-page">
+  if (!isAnswerReviewing && activeSubmission) return <>{studentNav}<main className="container page student-submission-wait-page">
     <section className="student-submission-wait panel">
       <>
         <span className="submission-check" aria-hidden="true">✓</span>
@@ -354,10 +400,10 @@ export default function StudentPlayPage() {
     </section>
   </main></>;
 
-  if (!session.is_module_started) return <>{studentNav}<main className="container page"><section className="student-waiting-card panel"><span className="waiting-illustration">⏳</span><span className="eyebrow">Hafta {session.selected_week} · Modül {session.current_module}</span><h1>Öğretmen modülü başlatmak üzere…</h1><p>Lütfen bekleyin! Etkinlik başladığında ekranınız otomatik olarak açılacak.</p><div className="waiting-pulse"><i /> Canlı bağlantı açık</div></section></main></>;
+  if (!isAnswerReviewing && !session.is_module_started) return <>{studentNav}<main className="container page"><section className="student-waiting-card panel"><span className="waiting-illustration">⏳</span><span className="eyebrow">Hafta {session.selected_week} · Modül {session.current_module}{session.current_module_turn > 0 ? ` · ${session.current_module_turn}. Oynanış` : ""}</span><h1>Öğretmen modülü başlatmak üzere…</h1><p>Lütfen bekleyin! Etkinlik başladığında ekranınız otomatik olarak açılacak.</p><div className="waiting-pulse"><i /> Canlı bağlantı açık</div></section></main></>;
 
   const countdownTimeLeft = getRemainingCountdown(session.module_started_at);
-  if (!activeSubmission && session.module_started_at && countdownTimeLeft > 0 && readyModuleKey !== activeModuleKey) return <>{studentNav}<ModuleStartCountdown key={`${activeModuleKey}:${session.module_started_at}`} weekId={session.selected_week} moduleId={session.current_module} startedAt={session.module_started_at} onComplete={() => setReadyModuleKey(activeModuleKey)} /></>;
+  if (!isAnswerReviewing && !activeSubmission && session.module_started_at && countdownTimeLeft > 0 && readyModuleKey !== activeModuleKey) return <>{studentNav}<ModuleStartCountdown key={`${activeModuleKey}:${session.module_started_at}`} weekId={session.selected_week} moduleId={session.current_module} startedAt={session.module_started_at} onComplete={() => setReadyModuleKey(activeModuleKey)} /></>;
 
   const modules = {
     1: <Module1SystemBuild key={activeModuleKey} existingSubmission={activeSubmission} existingDraft={activeDraft} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(1, draft)} onSubmit={(submission) => submit(1, submission)} />,
@@ -377,7 +423,7 @@ export default function StudentPlayPage() {
       : session.selected_week === 4 && session.current_module === 2
         ? <Week4BossApproach key={activeModuleKey} seedKey={`${session.id}:${student.id}:4:2:${session.current_run_number}`} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(2, draft)} onSubmit={(submission) => submit(2, submission)} />
       : session.selected_week === 4 && session.current_module === 3
-        ? <Week4SystemProcess key={activeModuleKey} seedKey={`${session.id}:${student.id}:4:3:${session.current_run_number}`} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(3, draft)} onSubmit={(submission) => submit(3, submission)} />
+        ? <Week4SystemProcess key={activeModuleKey} seedKey={`${session.id}:${student.id}:4:3:${session.current_run_number}`} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onReviewStart={beginAnswerReview} onDraft={(draft) => saveDraft(3, draft)} onSubmit={(submission) => submit(3, submission)} />
       : modules[session.current_module];
 
   return <>{studentNav}<main className="container student-module-page stack">
