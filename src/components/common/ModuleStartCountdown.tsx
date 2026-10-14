@@ -115,6 +115,19 @@ const weekFourModuleThreeBrief: Record<"tr" | "en", ModuleBrief> = {
   },
 };
 
+const weekFiveModuleOneBrief: Record<"tr" | "en", ModuleBrief> = {
+  tr: {
+    icon: "🔀",
+    title: "Modül 1: Zincirleme Kaos",
+    description: "Sensörü izle, kapıyı çevir ve yanlış kararların sisteme nasıl geri döndüğünü yönet.",
+  },
+  en: {
+    icon: "🔀",
+    title: "Module 1: Chain-Reaction Chaos",
+    description: "Watch the sensor, turn the gate, and manage how wrong choices return through the system.",
+  },
+};
+
 type ModuleStartCountdownProps = {
   weekId?: number;
   moduleId: ModuleId;
@@ -140,6 +153,8 @@ export function ModuleStartCountdown({ weekId = 1, moduleId, startedAt, onComple
         ? weekFourModuleTwoBrief[locale]
       : weekId === 4 && moduleId === 3
         ? weekFourModuleThreeBrief[locale]
+      : weekId === 5 && moduleId === 1
+        ? weekFiveModuleOneBrief[locale]
       : moduleBriefs[moduleId];
 
   useEffect(() => {

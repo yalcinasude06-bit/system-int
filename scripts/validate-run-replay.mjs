@@ -48,7 +48,7 @@ assert.match(sessionClient, /expected_run_number: input\.expectedRunNumber/g, "A
 assert.match(studentPage, /item\.run_number === session\?\.current_run_number/, "Existing submissions must be matched to the current round");
 assert.match(studentPage, /draft\.run_number === session\?\.current_run_number/, "Draft hydration must be matched to the current round");
 assert.match(studentPage, /`\$\{currentWeek\}:\$\{currentModule\}:\$\{currentRunNumber\}`/, "React and feedback keys must include run_number");
-assert.equal((studentPage.match(/key=\{activeModuleKey\}/g) ?? []).length - 1, 11, "All eleven modules must remount cleanly for a new round");
+assert.equal((studentPage.match(/key=\{activeModuleKey\}/g) ?? []).length - 1, 12, "All twelve available modules must remount cleanly for a new round");
 assert.equal((studentPage.match(/sessionId=\{`\$\{session\.id\}:\$\{session\.current_run_number\}`\}/g) ?? []).length, 3, "All seeded Week 3 modules must vary by run_number");
 assert.match(studentPage, /getStudentSessionStatus/, "Polling must use the lightweight student status call");
 assert.doesNotMatch(studentPage, /setInterval\([^)]*load|2500/, "Student polling must not retain the 2.5-second full-state loop");

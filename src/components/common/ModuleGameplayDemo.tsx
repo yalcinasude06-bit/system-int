@@ -392,6 +392,34 @@ function WeekFourSystemProcessDemo() {
   </div>;
 }
 
+function WeekFiveChainChaosDemo() {
+  const { locale } = useI18n();
+  const text = locale === "tr" ? {
+    sensor: "Sensör: Hatalı",
+    shipping: "Sevkiyat",
+    recycle: "Geri dönüşüm",
+    complaint: "Şikâyet",
+    returned: "İade → Ek iş yükü",
+  } : {
+    sensor: "Sensor: Defective",
+    shipping: "Shipping",
+    recycle: "Recycling",
+    complaint: "Complaint",
+    returned: "Return → Extra workload",
+  };
+  const transition = { duration: 6.2, repeat: Infinity, ease: "easeInOut" as const, times: [0, .12, .28, .43, .56, .68, .82, 1] };
+  return <div className="module-demo week-five-chain-demo" aria-hidden="true">
+    <div className="week-five-demo-belt"><i /><i /><i /></div>
+    <div className="week-five-demo-sensor">◉<small>{text.sensor}</small></div>
+    <div className="week-five-demo-split">↗</div>
+    <span className="week-five-demo-target shipping">🚚 {text.shipping}</span>
+    <span className="week-five-demo-target recycling">♻ {text.recycle}</span>
+    <motion.span className="week-five-demo-product" animate={{ left: ["4%", "28%", "51%", "73%", "82%", "82%", "17%", "4%"], top: ["45%", "45%", "45%", "27%", "18%", "18%", "75%", "45%"], opacity: [1, 1, 1, 1, 0, 0, 1, 1] }} transition={transition}>📦<b>×</b></motion.span>
+    <motion.span className="week-five-demo-alert" animate={{ opacity: [0, 0, 0, 0, 1, 1, 0, 0], scale: [.8, .8, .8, .8, 1, 1, .8, .8] }} transition={transition}>! {text.complaint}</motion.span>
+    <motion.span className="week-five-demo-return" animate={{ opacity: [0, 0, 0, 0, 0, 1, 1, 0] }} transition={transition}>↩ {text.returned}</motion.span>
+  </div>;
+}
+
 const demos: Record<ModuleId, () => ReactNode> = {
   1: ModuleOneDemo,
   2: ModuleTwoDemo,
@@ -413,6 +441,8 @@ export function ModuleGameplayDemo({ moduleId, weekId = 1 }: { moduleId: ModuleI
         ? WeekFourBossApproachDemo
       : weekId === 4 && moduleId === 3
         ? WeekFourSystemProcessDemo
+      : weekId === 5 && moduleId === 1
+        ? WeekFiveChainChaosDemo
       : demos[moduleId];
   return <MotionConfig reducedMotion="user"><Demo /></MotionConfig>;
 }

@@ -2088,3 +2088,88 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 @media (prefers-reduced-motion: reduce) {
   .factory-zone-attention > i { animation: none; }
 }
+
+/* Week 5 · Module 1: Chain-Reaction Chaos */
+.chain-chaos-shell { overflow: hidden; gap: 14px; background: linear-gradient(145deg,#fbfdfc,#eef6f1); }
+.chain-chaos-hud { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.chain-chaos-hud p { max-width: 760px; margin: 8px 0 0; color: #52645e; font-size: 13px; line-height: 1.45; }
+.chain-section-chip { min-width: 170px; display: grid; gap: 3px; padding: 10px 13px; color: #173c30; background: #e3f1e8; border: 1px solid #9fc9ae; border-radius: 14px; text-align: right; }
+.chain-section-chip span { color: #527f6f; font-size: 10px; font-weight: 950; letter-spacing: .08em; text-transform: uppercase; }
+.chain-section-chip strong { font-size: 13px; }
+.chain-metrics { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 8px; }
+.chain-metrics > div { min-width: 0; display: grid; grid-template-columns: 22px minmax(0,1fr) auto; align-items: center; gap: 3px 7px; padding: 9px 10px; color: #315c4d; background: rgba(255,255,255,.9); border: 1px solid #d6e3db; border-radius: 13px; }
+.chain-metrics svg { grid-row: 1/3; color: #527f6f; }
+.chain-metrics span { overflow: hidden; font-size: 9px; font-weight: 900; letter-spacing: .04em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+.chain-metrics strong { font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.chain-metrics small { grid-column: 2/4; color: #64748b; font-size: 8px; font-weight: 800; }
+.chain-metrics i { grid-column: 2/4; height: 4px; overflow: hidden; background: #e2e8f0; border-radius: 999px; }
+.chain-metrics i b { display: block; height: 100%; background: #5a9477; border-radius: inherit; transition: width .2s linear; }
+.chain-metrics > div:nth-child(2) i b { background: #e05a62; }.chain-metrics > div:nth-child(3) i b { background: #d4a62a; }.chain-metrics > div:nth-child(4) i b { background: #3c73b5; }
+.chain-factory { position: relative; min-height: 320px; overflow: hidden; background: linear-gradient(#dcebe3 0 51%,#b8c9c0 51% 100%); border: 1px solid #a8beb2; border-radius: 20px; isolation: isolate; }
+.chain-factory::before { content: ""; position: absolute; inset: 0; z-index: -1; opacity: .35; background: linear-gradient(90deg,transparent 49%,rgba(255,255,255,.5) 50%,transparent 51%) 0 0/42px 100%; }
+.chain-main-belt { position: absolute; left: 3%; right: 31%; top: 45%; height: 48px; overflow: hidden; background: #53635c; border: 5px solid #34443d; border-radius: 13px; box-shadow: 0 8px 0 #26332e; }
+.chain-main-belt::after,.chain-return-belt::after { content: ""; position: absolute; inset: 5px 0; background: repeating-linear-gradient(90deg,#7e9188 0 22px,#566861 22px 27px); animation: chainBelt .85s infinite linear; }
+.chain-main-belt > i { position: absolute; z-index: 2; bottom: -15px; width: 28px; height: 28px; background: #26332e; border: 5px solid #81928a; border-radius: 50%; }.chain-main-belt > i:nth-child(1) { left: 12%; }.chain-main-belt > i:nth-child(2) { left: 48%; }.chain-main-belt > i:nth-child(3) { left: 82%; }
+.chain-sensor { position: absolute; z-index: 5; left: 31%; top: 28%; display: grid; place-items: center; gap: 3px; color: #20483a; }
+.chain-sensor span,.chain-splitter span { padding: 3px 6px; background: rgba(255,255,255,.9); border: 1px solid #8dad9e; border-radius: 6px; font-size: 8px; font-weight: 950; letter-spacing: .08em; }
+.chain-sensor b { width: 43px; height: 55px; display: grid; place-items: center; color: #36a269; background: #21342c; border: 4px solid #527f6f; border-radius: 11px 11px 3px 3px; box-shadow: 0 0 0 6px rgba(54,162,105,.14); font-size: 22px; animation: chainSensor 1s infinite ease-in-out; }
+.chain-splitter { position: absolute; z-index: 5; left: 64%; top: 27%; display: grid; place-items: center; gap: 3px; }
+.chain-splitter b { width: 52px; height: 52px; display: grid; place-items: center; color: #fff; background: #315c4d; border: 4px solid #f8fafc; border-radius: 50%; box-shadow: 0 5px 14px rgba(30,61,51,.28); font-size: 31px; transition: transform .22s ease; }
+.chain-splitter b.recycling { transform: rotate(90deg); }
+.chain-shipping-branch,.chain-recycling-branch { position: absolute; z-index: 0; left: 67%; width: 24%; height: 17px; background: repeating-linear-gradient(90deg,#52645e 0 17px,#76877f 17px 22px); border: 3px solid #34443d; border-radius: 10px; transform-origin: left center; }
+.chain-shipping-branch { top: 43%; transform: rotate(-21deg); }.chain-recycling-branch { top: 56%; transform: rotate(22deg); }
+.chain-destination { position: absolute; z-index: 4; right: 2.5%; width: 145px; min-height: 71px; display: grid; grid-template-columns: 38px minmax(0,1fr); align-items: center; gap: 2px 7px; padding: 9px; background: rgba(255,255,255,.94); border: 2px solid; border-radius: 14px; box-shadow: 0 8px 18px rgba(30,61,51,.12); }
+.chain-destination.shipping { top: 7%; color: #17643e; border-color: #75bd93; }.chain-destination.recycling { bottom: 7%; color: #7c5a0a; border-color: #d4a62a; }
+.chain-destination svg { grid-row: 1/3; }.chain-destination strong { font-size: 12px; }.chain-destination small { font-size: 8px; font-weight: 800; }
+.chain-return-belt { position: absolute; z-index: 1; left: 5%; right: 35%; bottom: 10%; height: 31px; overflow: hidden; color: #7c2d12; background: #5c4b43; border: 3px solid #3d312c; border-radius: 9px; }
+.chain-return-belt::after { z-index: -1; animation-direction: reverse; }.chain-return-belt > span { position: absolute; z-index: 3; left: 4px; top: -7px; font-size: 28px; }.chain-return-belt > small { position: absolute; z-index: 3; left: 36px; top: 5px; padding: 2px 5px; color: #7c2d12; background: #ffedd5; border-radius: 4px; font-size: 8px; font-weight: 900; }.chain-return-belt > i { position: absolute; z-index: 4; top: 1px; font-size: 20px; font-style: normal; animation: chainReturn 2.4s infinite linear; }
+.chain-product { position: absolute; z-index: 9; top: calc(45% - 26px); width: 58px; height: 54px; display: grid; place-items: center; color: #334155; transform: translateX(-50%); transition: left .05s linear; }
+.chain-product > span { font-size: 33px; filter: drop-shadow(0 3px 2px rgba(30,41,59,.25)); }.chain-product > b { position: absolute; right: 4px; top: 0; width: 19px; height: 19px; display: grid; place-items: center; color: #fff; background: #64748b; border: 2px solid #fff; border-radius: 50%; font-size: 11px; }.chain-product > small { position: absolute; top: 47px; min-width: 72px; padding: 2px 4px; color: #334155; background: rgba(255,255,255,.93); border-radius: 4px; font-size: 7px; font-weight: 900; text-align: center; }
+.chain-product.good > b { background: #36a269; }.chain-product.defective > b { background: #e05a62; }.chain-product.unknown { opacity: .86; }
+.chain-routed-product { --route-index: 0; position: absolute; z-index: 8; left: calc(69% + var(--route-index) * 4%); display: flex; align-items: center; gap: 0; font-size: 26px; animation: chainRoute 2.4s both ease-out; }
+.chain-routed-product.shipping { top: 31%; }.chain-routed-product.recycling { top: 62%; }.chain-routed-product svg { width: 17px; height: 17px; padding: 2px; color: #fff; background: #36a269; border-radius: 50%; }.chain-routed-product.wrong svg { background: #e05a62; }
+.chain-critical,.chain-paused { position: absolute; z-index: 30; inset: 0; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 18px; color: #fff; background: rgba(127,29,50,.88); font-size: clamp(15px,2.5vw,22px); font-weight: 950; text-align: center; backdrop-filter: blur(3px); }
+.chain-paused { background: rgba(30,61,51,.84); }
+.chain-control-panel { display: grid; grid-template-columns: minmax(150px,1fr) repeat(2,minmax(150px,1fr)); gap: 9px; }
+.chain-control-panel > div { display: grid; align-content: center; gap: 3px; padding: 9px 11px; color: #315c4d; background: #edf5f0; border-radius: 13px; }.chain-control-panel > div span { font-size: 12px; font-weight: 950; }.chain-control-panel > div small { color: #64748b; font-size: 9px; font-weight: 750; }
+.chain-control-panel button { min-height: 58px; display: flex; align-items: center; justify-content: center; gap: 9px; padding: 10px; color: #334155; background: #fff; border: 2px solid #cbd5e1; border-radius: 14px; cursor: pointer; transition: transform .16s ease,border-color .16s ease,background .16s ease,box-shadow .16s ease; }
+.chain-control-panel button:hover,.chain-control-panel button:focus-visible { transform: translateY(-2px); border-color: #527f6f; outline: none; }.chain-control-panel button.active { color: #173c30; background: #dff2e6; border-color: #36a269; box-shadow: 0 0 0 4px rgba(54,162,105,.13); }.chain-control-panel button strong { font-size: 12px; }
+.chain-effects { min-height: 70px; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+.chain-effect-empty,.chain-effect-card { min-width: 0; display: grid; align-items: center; gap: 5px 8px; padding: 10px 12px; background: #fff; border: 1px solid #dbe4e0; border-radius: 13px; }
+.chain-effect-empty { grid-column: 1/-1; grid-template-columns: auto 1fr; color: #64748b; font-size: 11px; font-weight: 800; }
+.chain-effect-card { position: relative; grid-template-columns: 23px minmax(0,1fr) auto; }.chain-effect-card > svg { color: #36a269; }.chain-effect-card > strong { font-size: 10px; }.chain-effect-card > span { color: #17643e; font-size: 13px; font-weight: 950; }.chain-effect-card.waste,.chain-effect-card.return { border-color: #e9a5a5; background: #fff8f8; }.chain-effect-card.waste > svg,.chain-effect-card.return > svg,.chain-effect-card.waste > span,.chain-effect-card.return > span { color: #be314b; }
+.chain-effect-card ol { grid-column: 1/-1; display: flex; flex-wrap: wrap; gap: 4px; margin: 2px 0 0; padding: 0; list-style: none; }.chain-effect-card li { padding: 3px 5px; color: #94a3b8; background: #f1f5f9; border-radius: 5px; font-size: 8px; font-weight: 850; transition: color .2s ease,background .2s ease; }.chain-effect-card li.active { color: #7c2d12; background: #ffedd5; }
+.chain-final-score { display: inline-grid; place-items: center; min-width: 120px; padding: 12px 18px; color: #fff; background: #315c4d; border-radius: 14px; font-size: 24px; }
+
+.week-five-chain-demo { background: linear-gradient(#dcebe3 0 57%,#b7c7be 57%); }
+.week-five-demo-belt { position: absolute; left: 4%; right: 25%; top: 45%; height: 23px; overflow: hidden; background: repeating-linear-gradient(90deg,#53635c 0 16px,#81928a 16px 20px); border: 3px solid #34443d; border-radius: 8px; }.week-five-demo-belt i { display: none; }
+.week-five-demo-sensor { position: absolute; z-index: 4; left: 27%; top: 25%; display: grid; place-items: center; color: #36a269; font-size: 23px; font-weight: 950; }.week-five-demo-sensor small { padding: 2px 4px; color: #173c30; background: #fff; border-radius: 4px; font-size: 7px; }
+.week-five-demo-split { position: absolute; z-index: 5; left: 63%; top: 34%; width: 32px; height: 32px; display: grid; place-items: center; color: #fff; background: #315c4d; border: 3px solid #fff; border-radius: 50%; font-size: 21px; }
+.week-five-demo-target { position: absolute; right: 3%; padding: 4px 6px; background: #fff; border: 1px solid; border-radius: 6px; font-size: clamp(6px,1.2vw,8px); font-weight: 900; }.week-five-demo-target.shipping { top: 9%; color: #17643e; border-color: #75bd93; }.week-five-demo-target.recycling { bottom: 8%; color: #7c5a0a; border-color: #d4a62a; }
+.week-five-demo-product { position: absolute; z-index: 8; transform: translate(-50%,-50%); font-size: 24px; }.week-five-demo-product b { position: absolute; right: -5px; top: -5px; width: 15px; height: 15px; display: grid; place-items: center; color: #fff; background: #e05a62; border-radius: 50%; font-size: 9px; }
+.week-five-demo-alert { position: absolute; z-index: 9; right: 4%; top: 38%; padding: 4px 6px; color: #972a3e; background: #fee2e2; border: 1px solid #e05a62; border-radius: 6px; font-size: 8px; font-weight: 950; }.week-five-demo-return { position: absolute; left: 16%; bottom: 4%; padding: 4px 6px; color: #7c2d12; background: #ffedd5; border-radius: 6px; font-size: 8px; font-weight: 950; }
+
+@keyframes chainBelt { to { background-position-x: 27px; } }
+@keyframes chainSensor { 50% { color: #86efac; box-shadow: 0 0 0 11px rgba(54,162,105,0); } }
+@keyframes chainReturn { from { transform: translateX(90px); } to { transform: translateX(-80px); } }
+@keyframes chainRoute { from { transform: translateX(-20px) scale(.85); opacity: 1; } to { transform: translateX(105px) scale(.75); opacity: 0; } }
+
+@media (max-width: 760px) {
+  .chain-chaos-hud { flex-direction: column; }.chain-section-chip { width: 100%; box-sizing: border-box; text-align: left; }
+  .chain-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .chain-factory { min-height: 300px; }
+  .chain-main-belt { right: 24%; top: 44%; }.chain-splitter { left: 67%; }.chain-shipping-branch,.chain-recycling-branch { left: 70%; width: 15%; }
+  .chain-destination { right: 1%; width: 102px; grid-template-columns: 29px minmax(0,1fr); padding: 7px; }.chain-destination svg { width: 23px; }.chain-destination strong { font-size: 10px; }.chain-destination small { font-size: 7px; }
+  .chain-return-belt { right: 26%; }.chain-control-panel { grid-template-columns: repeat(2,minmax(0,1fr)); }.chain-control-panel > div { grid-column: 1/-1; }.chain-effects { grid-template-columns: 1fr; }
+}
+@media (max-width: 460px) {
+  .chain-chaos-shell { margin-inline: -5px; padding-inline: 9px; }.chain-metrics { gap: 5px; }.chain-metrics > div { padding: 7px; }.chain-metrics span { font-size: 8px; }
+  .chain-factory { min-height: 278px; border-radius: 14px; }.chain-main-belt { right: 29%; height: 40px; }.chain-sensor { left: 27%; transform: scale(.82); }.chain-splitter { left: 61%; transform: scale(.83); }
+  .chain-destination { width: 91px; min-height: 60px; grid-template-columns: 23px minmax(0,1fr); gap: 2px 4px; padding: 5px; }.chain-destination small { display: none; }
+  .chain-shipping-branch,.chain-recycling-branch { left: 64%; width: 20%; }.chain-return-belt { right: 31%; }.chain-return-belt > small { display: none; }
+  .chain-product { top: calc(44% - 26px); }.chain-control-panel button { min-height: 62px; gap: 5px; }.chain-control-panel button strong { font-size: 10px; }.chain-control-panel button svg { width: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chain-main-belt::after,.chain-return-belt::after,.chain-sensor b,.chain-return-belt > i,.chain-routed-product { animation: none; }
+  .chain-product,.chain-splitter b,.chain-control-panel button,.chain-effect-card li { transition: none; }
+}
