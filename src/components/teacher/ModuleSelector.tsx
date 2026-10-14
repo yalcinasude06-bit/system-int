@@ -32,6 +32,7 @@ const weekFourModules: typeof weekOneModules = [
 
 const weekFiveModules: typeof weekOneModules = [
   { id: 1, title: "Zincirleme Kaos", subtitle: "3 bölüm · gecikmeli sistem etkileri", description: "Ürünleri yönlendir; yanlış kararların şikâyet, iade ve iş yüküne dönüşen zincirini yönet.", Icon: Workflow },
+  { id: 2, title: "Sorun Avcısı", subtitle: "3 seviye · 90 hedeflik arcade", description: "Olay, davranış örüntüsü ve sistem yapısı hedeflerini doğru görevde yakala.", Icon: Target },
 ];
 
 export function WeekSelector({ activeWeek, onChange, disabled }: { activeWeek: number; onChange: (week: number) => void; disabled?: boolean }) {

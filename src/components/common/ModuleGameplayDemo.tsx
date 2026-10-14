@@ -420,6 +420,33 @@ function WeekFiveChainChaosDemo() {
   </div>;
 }
 
+function WeekFiveProblemHunterDemo() {
+  const { locale } = useI18n();
+  const copy = {
+    tr: {
+    mission: "YAPIYI YAKALA",
+    definition: "Sonuçları üreten kural veya süreci bul.",
+    target: "Bakım planı üretime bağlanmıyor.",
+    },
+    en: {
+    mission: "CATCH THE STRUCTURE",
+    definition: "Find the rule or process producing outcomes.",
+    target: "Maintenance is not linked to production.",
+    },
+  } as const;
+  const text = copy[locale];
+  const transition = { duration: 4.4, repeat: Infinity, ease: "easeInOut" as const, times: [0, .2, .38, .55, .72, 1] };
+  return <div className="module-demo week-five-hunter-demo" aria-hidden="true">
+    <div className="week-five-hunter-demo-mission"><small>{text.mission}</small><b>{text.definition}</b></div>
+    <div className="week-five-hunter-demo-grid">
+      {Array.from({ length: 6 }, (_, hole) => <span className="week-five-hunter-demo-hole" key={hole}>
+        {hole === 3 && <motion.i data-i18n-skip animate={{ y: [18, 18, 0, 0, 18, 18], opacity: [0, 0, 1, 1, 0, 0], scale: [.9, .9, 1, 1.04, .9, .9], backgroundColor: ["#fff", "#fff", "#fff", "#dcfce7", "#fff", "#fff"] }} transition={transition}>⚙️ <b>{text.target}</b></motion.i>}
+      </span>)}
+    </div>
+    <motion.span className="week-five-hunter-demo-hand" animate={{ x: [0, 0, 0, 0, 0, 0], y: [9, 9, -2, -2, 9, 9], opacity: [0, 0, 1, 1, 0, 0], scale: [1, 1, .82, 1, 1, 1] }} transition={transition}>👆</motion.span>
+  </div>;
+}
+
 const demos: Record<ModuleId, () => ReactNode> = {
   1: ModuleOneDemo,
   2: ModuleTwoDemo,
@@ -443,6 +470,8 @@ export function ModuleGameplayDemo({ moduleId, weekId = 1 }: { moduleId: ModuleI
         ? WeekFourSystemProcessDemo
       : weekId === 5 && moduleId === 1
         ? WeekFiveChainChaosDemo
+      : weekId === 5 && moduleId === 2
+        ? WeekFiveProblemHunterDemo
       : demos[moduleId];
   return <MotionConfig reducedMotion="user"><Demo /></MotionConfig>;
 }

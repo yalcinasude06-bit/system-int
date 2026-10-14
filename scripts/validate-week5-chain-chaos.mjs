@@ -72,7 +72,7 @@ assert.match(component, /chain-return-belt/, "Returned products must be visible 
 
 assert.match(studentPage, /session\.selected_week === 5 && session\.current_module === 1/);
 assert.match(studentPage, /<Week5ChainChaos/);
-assert.match(teacherPage, /session\.selected_week === 5 && currentModule === 1/);
+assert.match(teacherPage, /session\.selected_week === 5 && currentModule <= 2/);
 assert.match(selector, /title: "Zincirleme Kaos"/);
 assert.match(countdown, /weekId === 5 && moduleId === 1/);
 assert.match(demo, /WeekFiveChainChaosDemo/);
