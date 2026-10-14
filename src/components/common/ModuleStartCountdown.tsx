@@ -141,6 +141,19 @@ const weekFiveModuleTwoBrief: Record<"tr" | "en", ModuleBrief> = {
   },
 };
 
+const weekFiveModuleThreeBrief: Record<"tr" | "en", ModuleBrief> = {
+  tr: {
+    icon: "⚖️",
+    title: "Modül 3: Denge Ustası",
+    description: "Göstergeleri izle; sınırlı bütçe ve ekiple sistemi 60 saniye dengede tut.",
+  },
+  en: {
+    icon: "⚖️",
+    title: "Module 3: Balance Master",
+    description: "Watch the indicators and keep the system balanced for 60 seconds with limited budget and staff.",
+  },
+};
+
 type ModuleStartCountdownProps = {
   weekId?: number;
   moduleId: ModuleId;
@@ -170,6 +183,8 @@ export function ModuleStartCountdown({ weekId = 1, moduleId, startedAt, onComple
         ? weekFiveModuleOneBrief[locale]
       : weekId === 5 && moduleId === 2
         ? weekFiveModuleTwoBrief[locale]
+      : weekId === 5 && moduleId === 3
+        ? weekFiveModuleThreeBrief[locale]
       : moduleBriefs[moduleId];
 
   useEffect(() => {

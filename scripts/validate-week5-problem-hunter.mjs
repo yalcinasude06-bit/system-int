@@ -84,7 +84,7 @@ assert.match(component, /forceSubmit[\s\S]*finalize\("teacher-ended"\)/, "Teache
 assert.match(component, /onDraft/, "Meaningful progress must be draftable");
 assert.doesNotMatch(component, /setElapsedMs\(nextElapsed\)[\s\S]{0,180}saveDraft/, "The high-frequency timer must not save a draft on every tick");
 assert.match(studentPage, /session\.selected_week === 5 && session\.current_module === 2[\s\S]*<Week5ProblemHunter/);
-assert.match(teacherPage, /session\.selected_week === 5 && currentModule <= 2/);
+assert.match(teacherPage, /session\.selected_week === 5 && currentModule <= 3/);
 assert.match(selector, /id: 2, title: "Sorun Avcısı"/);
 assert.match(countdown, /weekFiveModuleTwoBrief/);
 assert.match(demo, /WeekFiveProblemHunterDemo/);

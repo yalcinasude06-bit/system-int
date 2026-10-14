@@ -21,6 +21,7 @@ import { Week4BossApproach } from "@/components/modules/Week4_BossApproach";
 import { Week4SystemProcess } from "@/components/modules/Week4_SystemProcess";
 import { Week5ChainChaos } from "@/components/modules/Week5_ChainChaos";
 import { Week5ProblemHunter } from "@/components/modules/Week5_ProblemHunter";
+import { Week5BalanceMaster } from "@/components/modules/Week5_BalanceMaster";
 import { getRemainingCountdown } from "@/lib/moduleCountdown";
 import { getStudentGameState, getStudentSessionStatus, saveModuleDraft, saveSubmission, submitModuleFeedback } from "@/lib/session";
 import type { ModuleDraft, ModuleId, ModuleSubmission, Session, Student, StudentProfile, Submission } from "@/types";
@@ -364,7 +365,7 @@ export default function StudentPlayPage() {
   const isSupportedModule = session.selected_week === 1
     || (session.selected_week === 3 && (session.current_module === 1 || session.current_module === 2 || session.current_module === 3))
     || (session.selected_week === 4 && (session.current_module === 1 || session.current_module === 2 || session.current_module === 3))
-    || (session.selected_week === 5 && session.current_module <= 2);
+    || (session.selected_week === 5 && session.current_module <= 3);
   if (!isSupportedModule) return <>{studentNav}<main className="container page"><div className="student-waiting-card panel"><span className="waiting-illustration">🚧</span><span className="eyebrow">Hafta {session.selected_week}</span><h1>Yeni içerikler hazırlanıyor</h1><p>Bu haftanın modülleri ve interaktif içerikleri yakında eklenecektir.</p><div className="waiting-pulse"><i /> Öğretmenin yönlendirmesini bekleyin</div></div></main></>;
 
   if (!isAnswerReviewing && resultsRevealed && !activeSubmission) return <>{studentNav}<main className="container page"><section className="student-waiting-card panel"><span className="waiting-illustration">⏳</span><span className="eyebrow">Sonuç hazırlanıyor</span><h1>Puanın hesaplanıyor…</h1><div className="waiting-pulse"><i /> Sonuç kaydı alınıyor</div></section></main></>;
@@ -431,6 +432,8 @@ export default function StudentPlayPage() {
         ? <Week5ChainChaos key={activeModuleKey} seedKey={`${session.id}:${student.id}:5:1:${session.current_run_number}`} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(1, draft)} onSubmit={(submission) => submit(1, submission)} />
       : session.selected_week === 5 && session.current_module === 2
         ? <Week5ProblemHunter key={activeModuleKey} seedKey={`${session.id}:${student.id}:5:2:${session.current_run_number}`} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(2, draft)} onSubmit={(submission) => submit(2, submission)} />
+      : session.selected_week === 5 && session.current_module === 3
+        ? <Week5BalanceMaster key={activeModuleKey} seedKey={`${session.id}:${student.id}:5:3:${session.current_run_number}`} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(3, draft)} onSubmit={(submission) => submit(3, submission)} />
       : modules[session.current_module];
 
   return <>{studentNav}<main className="container student-module-page stack">

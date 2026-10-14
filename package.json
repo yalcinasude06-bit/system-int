@@ -15,6 +15,7 @@
     "test:week4-module3-save": "node scripts/validate-week4-module3-save.mjs",
     "test:week5-chain-chaos": "node --no-warnings --experimental-strip-types scripts/validate-week5-chain-chaos.mjs",
     "test:week5-problem-hunter": "node --no-warnings --experimental-strip-types scripts/validate-week5-problem-hunter.mjs",
+    "test:week5-balance-master": "node --no-warnings --experimental-strip-types scripts/validate-week5-balance-master.mjs",
     "test:run-replay": "node --no-warnings --experimental-strip-types scripts/validate-run-replay.mjs",
     "test:run-load": "node scripts/report-run-load.mjs"
   },

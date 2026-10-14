@@ -447,6 +447,23 @@ function WeekFiveProblemHunterDemo() {
   </div>;
 }
 
+function WeekFiveBalanceMasterDemo() {
+  const { locale } = useI18n();
+  const copy = {
+    tr: { production: "Üretim", risk: "Arıza riski", accelerate: "Üretimi Hızlandır", maintenance: "Planlı Bakım", balance: "İş Yükünü Dengele", quality: "Kalite Kontrolü", delayed: "5 sn sonra: arıza riski arttı" },
+    en: { production: "Production", risk: "Failure risk", accelerate: "Accelerate Production", maintenance: "Planned Maintenance", balance: "Balance Workload", quality: "Quality Control", delayed: "5 sec later: failure risk increased" },
+  } as const;
+  const text = copy[locale];
+  const transition = { duration: 7.2, repeat: Infinity, ease: "easeInOut" as const, times: [0, .12, .28, .48, .68, .86, 1] };
+  return <div className="module-demo week-five-balance-demo" aria-hidden="true">
+    <div className="week-five-balance-demo-metrics"><span><b>{text.production}</b><motion.i animate={{ width: ["52%", "52%", "82%", "82%", "67%", "52%", "52%"], backgroundColor: ["#36a269", "#36a269", "#36a269", "#36a269", "#d4a62a", "#36a269", "#36a269"] }} transition={transition} /></span><span><b>{text.risk}</b><motion.i animate={{ width: ["18%", "18%", "22%", "22%", "73%", "32%", "18%"], backgroundColor: ["#36a269", "#36a269", "#36a269", "#36a269", "#d94b60", "#d4a62a", "#36a269"] }} transition={transition} /></span></div>
+    <div className="week-five-balance-demo-factory"><motion.span animate={{ x: [0, 0, 45, 95, 140, 180, 0] }} transition={transition}>📦</motion.span><motion.b animate={{ rotate: [0, 0, 90, 180, 270, 360, 0], color: ["#315c4d", "#315c4d", "#315c4d", "#315c4d", "#972a3e", "#315c4d", "#315c4d"] }} transition={transition}>⚙</motion.b></div>
+    <div className="week-five-balance-demo-actions"><motion.span animate={{ backgroundColor: ["#fff", "#dff2e6", "#dff2e6", "#fff", "#fff", "#fff", "#fff"], scale: [1, .97, 1.03, 1, 1, 1, 1] }} transition={transition}>⚡ {text.accelerate}</motion.span><span>🔧 {text.maintenance}</span><span>⚖️ {text.balance}</span><span>🔎 {text.quality}</span></div>
+    <motion.div className="week-five-balance-demo-log" animate={{ opacity: [0, 0, 0, 0, 1, 1, 0] }} transition={transition}>↪ {text.delayed}</motion.div>
+    <motion.span className="week-five-balance-demo-hand" animate={{ y: [7, -2, -2, 7, 7, 7, 7], scale: [1, .82, 1, 1, 1, 1, 1], opacity: [1, 1, 1, 0, 0, 0, 1] }} transition={transition}>👆</motion.span>
+  </div>;
+}
+
 const demos: Record<ModuleId, () => ReactNode> = {
   1: ModuleOneDemo,
   2: ModuleTwoDemo,
@@ -472,6 +489,8 @@ export function ModuleGameplayDemo({ moduleId, weekId = 1 }: { moduleId: ModuleI
         ? WeekFiveChainChaosDemo
       : weekId === 5 && moduleId === 2
         ? WeekFiveProblemHunterDemo
+      : weekId === 5 && moduleId === 3
+        ? WeekFiveBalanceMasterDemo
       : demos[moduleId];
   return <MotionConfig reducedMotion="user"><Demo /></MotionConfig>;
 }
