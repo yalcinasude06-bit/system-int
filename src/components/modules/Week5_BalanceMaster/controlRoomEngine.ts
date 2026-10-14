@@ -26,7 +26,6 @@ export type SimulationDelta = Partial<{
   failureRisk: number;
   delay: number;
   health: number;
-  budget: number;
   team: number;
   backlog: number;
   qualityRisk: number;
@@ -46,8 +45,6 @@ export type InterventionDefinition = {
   name: LocalizedText;
   icon: string;
   description: LocalizedText;
-  cost: number;
-  teamCost: number;
   cooldownMs: number;
   kind: InterventionKind;
   instantEffect: SimulationDelta;
@@ -72,6 +69,7 @@ export type ControlRoomScenario = {
   seedKey: string;
   events: ControlRoomEvent[];
   cardWindows: InterventionId[][];
+  initialState: Pick<ControlRoomState, "production" | "failureRisk" | "delay" | "health" | "team" | "backlog" | "qualityRisk" | "fatigue">;
 };
 
 export type PendingEffect = {
@@ -107,7 +105,6 @@ export type ControlRoomState = {
   failureRisk: number;
   delay: number;
   health: number;
-  budget: number;
   team: number;
   backlog: number;
   qualityRisk: number;
@@ -119,6 +116,8 @@ export type ControlRoomState = {
   sampledMs: number;
   healthIntegral: number;
   failureIntegral: number;
+  productionIntegral: number;
+  delayIntegral: number;
   cooldowns: Partial<Record<InterventionId, number>>;
   pendingEffects: PendingEffect[];
   effectLog: EffectLogEntry[];
@@ -129,20 +128,22 @@ export type ControlRoomState = {
     qualityControlUntil: number;
     limitedOrdersUntil: number;
     reserveUntil: number;
+    majorUntil: number;
+    majorInterventionId: InterventionId | null;
   };
 };
 
-export type InterventionAvailability = { available: boolean; reason: "ready" | "cooldown" | "budget" | "team" | "condition"; remainingMs: number };
+export type InterventionAvailability = { available: boolean; reason: "ready" | "cooldown" | "major-active" | "condition"; remainingMs: number };
 export type InterventionResult = { state: ControlRoomState; accepted: boolean; availability: InterventionAvailability; use?: InterventionUse };
 export type ControlRoomScore = { total: number; safe: number; orders: number; sustainability: number; efficiency: number };
 
 export const CONTROL_ROOM_CONFIG = {
-  durationMs: 60_000,
+  durationMs: 90_000,
   fixedStepMs: 100,
   cardWindowMs: 9_000,
-  criticalGraceMs: 5_000,
-  safeThresholds: { production: 40, failureRisk: 70, delay: 70, health: 30 },
-  maxLogEntries: 8,
+  criticalGraceMs: 6_000,
+  safeThresholds: { production: 45, failureRisk: 65, delay: 65, health: 35 },
+  maxLogEntries: 6,
 } as const;
 
 const text = (tr: string, en: string): LocalizedText => ({ tr, en });
@@ -151,7 +152,7 @@ export const interventionPool: InterventionDefinition[] = [
   {
     id: "accelerate", name: text("Üretimi Hızlandır", "Accelerate Production"), icon: "⚡",
     description: text("Çıktıyı hemen artırır; yüksek yükte yıpranmayı büyütür.", "Raises output now; increases wear under heavy load."),
-    cost: 8, teamCost: 7, cooldownMs: 5_000, kind: "tradeoff",
+    cooldownMs: 6_000, kind: "tradeoff",
     instantEffect: { production: 14, delay: -5, backlog: -2 },
     delayedEffect: { delayMs: 5_000, delta: { health: -8, failureRisk: 11, fatigue: 8 }, message: text("Hızlandırmanın gecikmiş yükü → sağlık düştü, arıza riski arttı.", "Delayed acceleration load → health fell and failure risk rose.") },
     conditions: text("Sağlıklı makinede ve birikmiş iş varken daha etkilidir.", "Works best with a healthy machine and an existing backlog."),
@@ -161,27 +162,27 @@ export const interventionPool: InterventionDefinition[] = [
   {
     id: "planned-maintenance", name: text("Planlı Bakım", "Planned Maintenance"), icon: "🔧",
     description: text("Üretimi kısa süre azaltır; sağlığı gecikmeli güçlendirir.", "Temporarily lowers output; improves health after a delay."),
-    cost: 18, teamCost: 12, cooldownMs: 6_500, kind: "supportive",
+    cooldownMs: 7_000, kind: "supportive",
     instantEffect: { production: -10, delay: 3 },
     delayedEffect: { delayMs: 6_000, delta: { health: 20, failureRisk: -16, fatigue: -4 }, message: text("Planlı bakım tamamlandı → makine sağlığı yükseldi.", "Planned maintenance completed → machine health improved.") },
     conditions: text("Sağlık düştüğünde veya arıza riski yükseldiğinde değerlidir.", "Valuable when health falls or failure risk rises."),
-    sideEffect: text("Gereksiz sıklıkta kullanım bütçe ve kapasite kaybettirir.", "Unnecessary repetition wastes budget and capacity."),
+    sideEffect: text("Gereksiz sıklıkta kullanım akışı yavaşlatır ve fırsat kaybettirir.", "Unnecessary repetition slows the flow and loses opportunities."),
     contextualExplanation: text("Kısa üretim kaybı, gecikmeli olarak daha dayanıklı bir akış sağladı.", "A short output loss produced a more resilient flow later."),
   },
   {
     id: "extra-support", name: text("Ek Personel / Destek", "Extra Staff / Support"), icon: "👥",
     description: text("Uyum süresinden sonra ekip kapasitesini artırır.", "Increases team capacity after an onboarding delay."),
-    cost: 20, teamCost: 3, cooldownMs: 7_000, kind: "supportive",
+    cooldownMs: 8_000, kind: "supportive",
     instantEffect: { production: -2 },
     delayedEffect: { delayMs: 5_000, delta: { team: 22, production: 7, fatigue: -5 }, message: text("Yeni destek uyum sağladı → ekip kapasitesi arttı.", "New support finished onboarding → team capacity increased.") },
     conditions: text("Personel eksikliği ve yüksek iş yükünde daha yararlıdır.", "More useful during staff shortages and heavy workloads."),
-    sideEffect: text("İlk anda tam kapasite sağlamaz ve bütçe tüketir.", "It does not provide full capacity immediately and consumes budget."),
+    sideEffect: text("İlk anda tam kapasite sağlamaz; uyum sırasında üretimi yavaşlatır.", "It does not provide full capacity immediately and slows output during onboarding."),
     contextualExplanation: text("Destek anında değil, uyum gecikmesinden sonra kapasiteye dönüştü.", "Support became capacity only after an onboarding delay."),
   },
   {
     id: "quality-boost", name: text("Kalite Kontrolünü Güçlendir", "Strengthen Quality Control"), icon: "🔎",
     description: text("Akışı biraz yavaşlatır; yeniden iş yükünü azaltır.", "Slows flow slightly; reduces rework later."),
-    cost: 15, teamCost: 10, cooldownMs: 6_000, kind: "supportive",
+    cooldownMs: 7_000, kind: "supportive",
     instantEffect: { production: -6, delay: 2 },
     delayedEffect: { delayMs: 5_000, delta: { qualityRisk: -22, backlog: -4, delay: -7 }, message: text("Kalite kontrolü etkisini gösterdi → yeniden iş ve gecikme azaldı.", "Quality control took effect → rework and delay fell.") },
     conditions: text("Kalite alarmında veya hızlı üretim sonrasında değerlidir.", "Valuable during a quality alert or after accelerated production."),
@@ -191,7 +192,7 @@ export const interventionPool: InterventionDefinition[] = [
   {
     id: "cancel-maintenance", name: text("Bakımı İptal Et", "Cancel Maintenance"), icon: "⛔",
     description: text("Kapasiteyi hemen açar; ileride yıpranmayı büyütür.", "Frees capacity now; increases wear later."),
-    cost: 2, teamCost: 0, cooldownMs: 5_500, kind: "risky",
+    cooldownMs: 6_500, kind: "risky",
     instantEffect: { production: 8, delay: -3 },
     delayedEffect: { delayMs: 6_000, delta: { health: -16, failureRisk: 19 }, message: text("İptal edilen bakımın bedeli → yıpranma ve arıza riski yükseldi.", "Cost of canceled maintenance → wear and failure risk increased.") },
     conditions: text("Yalnızca sağlık yüksekken kısa bir kapasite takası olabilir.", "Only a short capacity tradeoff when health is high."),
@@ -201,7 +202,7 @@ export const interventionPool: InterventionDefinition[] = [
   {
     id: "remove-quality", name: text("Kalite Kontrolünü Kaldır", "Remove Quality Control"), icon: "🚫",
     description: text("Akışı hemen hızlandırır; hata ve yeniden işi artırır.", "Speeds flow immediately; increases defects and rework."),
-    cost: 1, teamCost: 0, cooldownMs: 5_500, kind: "risky",
+    cooldownMs: 6_500, kind: "risky",
     instantEffect: { production: 10, delay: -3 },
     delayedEffect: { delayMs: 5_000, delta: { qualityRisk: 24, backlog: 6, delay: 8 }, message: text("Kontrolsüz ürünler geri döndü → yeniden iş kuyruğu büyüdü.", "Unchecked products returned → the rework queue grew.") },
     conditions: text("Kısa vadeli hız sağlar fakat sürdürülebilir bir çözüm değildir.", "Provides short-term speed but is not a sustainable solution."),
@@ -211,7 +212,7 @@ export const interventionPool: InterventionDefinition[] = [
   {
     id: "overtime", name: text("Zorunlu Fazla Mesai", "Mandatory Overtime"), icon: "🌙",
     description: text("Üretimi kısa süre yükseltir; yorgunluk biriktirir.", "Raises output briefly; accumulates fatigue."),
-    cost: 12, teamCost: 12, cooldownMs: 6_000, kind: "tradeoff",
+    cooldownMs: 7_000, kind: "tradeoff",
     instantEffect: { production: 11, delay: -5 },
     delayedEffect: { delayMs: 6_000, delta: { fatigue: 22, health: -8, failureRisk: 10, qualityRisk: 8 }, message: text("Fazla mesai yorgunluğu → hata ve arıza baskısı arttı.", "Overtime fatigue → defect and failure pressure increased.") },
     conditions: text("Yüksek gecikmede tek seferlik geçici rahatlama sağlar.", "Provides one temporary relief during high delay."),
@@ -221,7 +222,7 @@ export const interventionPool: InterventionDefinition[] = [
   {
     id: "ignore-fault", name: text("Arızayı Görmezden Gel", "Ignore the Fault"), icon: "🙈",
     description: text("Duruşu erteler; kritik makine riski biriktirir.", "Postpones downtime; builds critical machine risk."),
-    cost: 0, teamCost: 0, cooldownMs: 5_000, kind: "risky",
+    cooldownMs: 6_000, kind: "risky",
     instantEffect: { production: 7, delay: -2 },
     delayedEffect: { delayMs: 4_000, delta: { failureRisk: 27, health: -17, delay: 10 }, message: text("Görmezden gelinen uyarı → kritik arıza baskısına dönüştü.", "Ignored warning → became critical failure pressure.") },
     conditions: text("Anlık duruşu önler fakat sorunu ortadan kaldırmaz.", "Avoids immediate downtime but does not remove the problem."),
@@ -231,7 +232,7 @@ export const interventionPool: InterventionDefinition[] = [
   {
     id: "prioritize-orders", name: text("Siparişleri Önceliklendir", "Prioritize Orders"), icon: "📋",
     description: text("Kritik siparişleri öne alır; toplam kuyruğu sıfırlamaz.", "Moves critical orders forward; does not erase the total queue."),
-    cost: 7, teamCost: 5, cooldownMs: 5_000, kind: "tradeoff",
+    cooldownMs: 6_000, kind: "tradeoff",
     instantEffect: { delay: -10, backlog: -2 },
     delayedEffect: { delayMs: 5_000, delta: { backlog: 3, delay: 3 }, message: text("Öncelik dışı siparişler bekledi → kuyruğun bir bölümü geri döndü.", "Non-priority orders waited → part of the queue returned.") },
     conditions: text("Sipariş dalgasında kritik gecikmeyi sınırlar.", "Limits critical delays during an order surge."),
@@ -241,7 +242,7 @@ export const interventionPool: InterventionDefinition[] = [
   {
     id: "balance-workload", name: text("İş Yükünü Dengele", "Balance Workload"), icon: "⚖️",
     description: text("Kısa düzenleme sonrası sıkışıklığı ekipler arasında dağıtır.", "Redistributes congestion after a short reorganization."),
-    cost: 10, teamCost: 8, cooldownMs: 5_500, kind: "supportive",
+    cooldownMs: 6_500, kind: "supportive",
     instantEffect: { production: -3 },
     delayedEffect: { delayMs: 4_000, delta: { delay: -13, backlog: -4, team: 7, fatigue: -6 }, message: text("İş yükü dengelendi → kuyruk ve ekip baskısı azaldı.", "Workload balanced → queue and team pressure fell.") },
     conditions: text("Gecikme, yorgunluk veya personel eksikliğinde etkilidir.", "Effective during delays, fatigue, or staff shortages."),
@@ -251,8 +252,8 @@ export const interventionPool: InterventionDefinition[] = [
   {
     id: "accept-all", name: text("Tüm Yeni Siparişleri Kabul Et", "Accept All New Orders"), icon: "📥",
     description: text("Fırsatı büyütür; kapasite yetmezse kuyruk hızla artar.", "Expands opportunity; rapidly grows the queue if capacity is insufficient."),
-    cost: 0, teamCost: 2, cooldownMs: 6_000, kind: "tradeoff",
-    instantEffect: { budget: 8, ordersReceived: 10, backlog: 10, production: 3 },
+    cooldownMs: 7_000, kind: "tradeoff",
+    instantEffect: { ordersReceived: 10, backlog: 10, production: 3 },
     delayedEffect: { delayMs: 6_000, delta: { delay: 14, failureRisk: 5 }, message: text("Kabul edilen ek siparişler → teslimat baskısını artırdı.", "Extra accepted orders → increased delivery pressure.") },
     conditions: text("Boş kapasite ve düşük kuyruk varken değerlidir.", "Valuable when spare capacity exists and the queue is low."),
     sideEffect: text("Dolu sistemde gelir fırsatı gecikme krizine dönüşür.", "In a full system, revenue opportunity becomes a delay crisis."),
@@ -261,7 +262,7 @@ export const interventionPool: InterventionDefinition[] = [
   {
     id: "double-target", name: text("Performans Hedefini İkiye Katla", "Double the Performance Target"), icon: "🎯",
     description: text("Baskıyla kısa hız sağlar; sürdürülebilir değildir.", "Creates short speed through pressure; not sustainable."),
-    cost: 3, teamCost: 8, cooldownMs: 6_500, kind: "risky",
+    cooldownMs: 7_000, kind: "risky",
     instantEffect: { production: 9, delay: -3 },
     delayedEffect: { delayMs: 6_000, delta: { fatigue: 19, failureRisk: 14, qualityRisk: 11, health: -7 }, message: text("İki kat hedef baskısı → yorgunluk, hata ve arıza arttı.", "Doubled target pressure → fatigue, defects, and failures increased.") },
     conditions: text("Yalnızca sağlıklı ve düşük baskılı sistem kısa süre tolere edebilir.", "Only a healthy, low-pressure system can tolerate it briefly."),
@@ -271,17 +272,17 @@ export const interventionPool: InterventionDefinition[] = [
   {
     id: "emergency-maintenance", name: text("Acil Bakım", "Emergency Maintenance"), icon: "🛠️",
     description: text("Makine uyarısında üretimi kesip kritik riski düşürür.", "Stops output during a warning and reduces critical risk."),
-    cost: 24, teamCost: 16, cooldownMs: 7_000, kind: "supportive",
+    cooldownMs: 8_000, kind: "supportive",
     instantEffect: { production: -14, delay: 5 },
     delayedEffect: { delayMs: 4_000, delta: { health: 25, failureRisk: -27 }, message: text("Acil bakım tamamlandı → kritik makine riski bastırıldı.", "Emergency maintenance completed → critical machine risk was contained.") },
     conditions: text("Makine uyarısında veya arıza riski yükseldiğinde açılır.", "Unlocks during a machine warning or elevated failure risk."),
-    sideEffect: text("Yüksek bütçe ve ekip kapasitesi kullanır.", "Consumes substantial budget and team capacity."),
+    sideEffect: text("Üretimi belirgin biçimde durdurur; gereksiz kullanım teslimatı geciktirir.", "Stops output substantially; unnecessary use delays delivery."),
     contextualExplanation: text("Kısa duruş, daha uzun ve kontrolsüz bir arıza olasılığını azalttı.", "A short stop reduced the chance of a longer uncontrolled failure."),
   },
   {
     id: "limit-orders", name: text("Sipariş Kabulünü Sınırla", "Limit Order Intake"), icon: "🛑",
     description: text("Yeni talebi geçici azaltır; mevcut kuyruğa çalışma alanı açar.", "Temporarily reduces new demand and creates room for the current queue."),
-    cost: 5, teamCost: 2, cooldownMs: 6_000, kind: "supportive",
+    cooldownMs: 7_000, kind: "supportive",
     instantEffect: { production: -2 },
     delayedEffect: { delayMs: 4_000, delta: { delay: -8, backlog: -3 }, message: text("Sınırlı sipariş kabulü → mevcut kuyruğun baskısı azaldı.", "Limited order intake → pressure from the existing queue fell.") },
     conditions: text("Sipariş dalgası veya yüksek gecikmede etkilidir.", "Effective during an order surge or high delay."),
@@ -291,7 +292,7 @@ export const interventionPool: InterventionDefinition[] = [
   {
     id: "cross-train", name: text("Çapraz Eğitim", "Cross-Training"), icon: "🎓",
     description: text("Kısa öğrenme süresinden sonra ekip esnekliğini artırır.", "Improves team flexibility after a short learning period."),
-    cost: 16, teamCost: 7, cooldownMs: 7_000, kind: "supportive",
+    cooldownMs: 8_000, kind: "supportive",
     instantEffect: { production: -5 },
     delayedEffect: { delayMs: 7_000, delta: { team: 17, fatigue: -9, production: 5 }, message: text("Çapraz eğitim tamamlandı → ekip esnekliği yükseldi.", "Cross-training completed → team flexibility increased.") },
     conditions: text("Personel eksikliğine karşı gecikmeli dayanıklılık sağlar.", "Provides delayed resilience against staff shortages."),
@@ -301,7 +302,7 @@ export const interventionPool: InterventionDefinition[] = [
   {
     id: "reserve-capacity", name: text("Kapasite Tamponu Ayır", "Reserve Capacity Buffer"), icon: "🛡️",
     description: text("Bir miktar hızı bırakır; ani olaylara karşı tampon oluşturur.", "Gives up some speed and creates a buffer for sudden events."),
-    cost: 11, teamCost: 6, cooldownMs: 6_000, kind: "supportive",
+    cooldownMs: 7_000, kind: "supportive",
     instantEffect: { production: -6, failureRisk: -4 },
     delayedEffect: { delayMs: 5_000, delta: { health: 9, failureRisk: -8, team: 5 }, message: text("Kapasite tamponu → ani yükün makineye aktarılmasını azalttı.", "Capacity buffer → reduced how much sudden load reached the machine.") },
     conditions: text("Yük artmadan önce koruyucu değer üretir.", "Creates protective value before demand rises."),
@@ -311,6 +312,16 @@ export const interventionPool: InterventionDefinition[] = [
 ];
 
 const interventionById = new Map(interventionPool.map((item) => [item.id, item]));
+const majorInterventions = new Set<InterventionId>([
+  "accelerate",
+  "planned-maintenance",
+  "extra-support",
+  "overtime",
+  "double-target",
+  "emergency-maintenance",
+  "cross-train",
+  "reserve-capacity",
+]);
 
 export function getIntervention(id: InterventionId) {
   return interventionById.get(id)!;
@@ -348,45 +359,67 @@ function shuffle<T>(items: readonly T[], random: () => number) {
 export function buildControlRoomScenario(seedKey: string): ControlRoomScenario {
   const random = seededRandom(hashSeed(`week-5-balance-master:${seedKey}`));
   const eventTemplates: Array<Omit<ControlRoomEvent, "id" | "atMs" | "intensity"> & { baseAtMs: number }> = [
-    { type: "order-surge", baseAtMs: 8_000, durationMs: 7_000, title: text("Sipariş dalgası", "Order surge"), message: text("Yeni siparişler kuyruğu büyütüyor.", "New orders are growing the queue."), effect: { ordersReceived: 8, backlog: 8, delay: 5 } },
-    { type: "machine-warning", baseAtMs: 19_000, durationMs: 7_500, title: text("Bakım uyarısı", "Maintenance warning"), message: text("Makinede titreşim arttı; müdahale için zaman var.", "Machine vibration increased; there is time to respond."), effect: { health: -5, failureRisk: 11 } },
-    { type: "quality-alarm", baseAtMs: 32_000, durationMs: 8_000, title: text("Kalite alarmı", "Quality alert"), message: text("Yeniden iş riski yükseliyor.", "Rework risk is rising."), effect: { qualityRisk: 13, backlog: 3 } },
-    { type: "staff-shortage", baseAtMs: 45_000, durationMs: 8_500, title: text("Personel eksikliği", "Staff shortage"), message: text("Kullanılabilir ekip kapasitesi azaldı.", "Available team capacity decreased."), effect: { team: -13, production: -5, fatigue: 5 } },
+    { type: "order-surge", baseAtMs: 12_000, durationMs: 7_000, title: text("Hafif sipariş artışı", "Light order increase"), message: text("Yeni siparişler kuyruğu yavaşça büyütüyor.", "New orders are gradually growing the queue."), effect: { ordersReceived: 5, backlog: 4, delay: 2 } },
+    { type: "machine-warning", baseAtMs: 24_000, durationMs: 6_500, title: text("Erken bakım sinyali", "Early maintenance signal"), message: text("Makinede hafif titreşim algılandı.", "Mild machine vibration was detected."), effect: { health: -3, failureRisk: 6 } },
+    { type: "order-surge", baseAtMs: 34_000, durationMs: 8_000, title: text("Talep dalgası", "Demand wave"), message: text("Sipariş girişi kapasiteyi zorluyor.", "Incoming orders are testing capacity."), effect: { ordersReceived: 8, backlog: 7, delay: 4 } },
+    { type: "machine-warning", baseAtMs: 46_000, durationMs: 8_000, title: text("Bakım uyarısı", "Maintenance warning"), message: text("Makine yük altında; sağlık ve riski birlikte izle.", "The machine is under load; watch health and risk together."), effect: { health: -5, failureRisk: 10 } },
+    { type: "quality-alarm", baseAtMs: 56_000, durationMs: 7_500, title: text("Kalite baskısı", "Quality pressure"), message: text("Yeniden iş olasılığı yükseliyor.", "The likelihood of rework is rising."), effect: { qualityRisk: 10, backlog: 3 } },
+    { type: "staff-shortage", baseAtMs: 66_000, durationMs: 8_500, title: text("Kapasite daralması", "Capacity squeeze"), message: text("İç kapasite geçici olarak daraldı.", "Internal capacity temporarily narrowed."), effect: { team: -9, production: -4, fatigue: 4 } },
+    { type: "order-surge", baseAtMs: 75_000, durationMs: 8_000, title: text("Kritik teslimat dalgası", "Critical delivery wave"), message: text("Son aşamada teslimat dengesi zorlanıyor.", "Delivery balance is under pressure in the final phase."), effect: { ordersReceived: 9, backlog: 8, delay: 5 } },
+    { type: "machine-warning", baseAtMs: 83_000, durationMs: 6_000, title: text("Son makine uyarısı", "Final machine warning"), message: text("Kapanışa kadar makine dengesini koru.", "Protect machine balance through the finish."), effect: { health: -4, failureRisk: 8 } },
   ];
   const events = eventTemplates.map((event, index) => {
-    const jitter = Math.round(random() * 1_200);
-    const intensity = .88 + random() * .24;
+    const jitter = Math.round(random() * 900);
+    const phaseFactor = event.baseAtMs < 30_000 ? .62 : event.baseAtMs < 60_000 ? .86 : 1;
+    const intensity = phaseFactor * (.9 + random() * .18);
     return { ...event, id: `W5M3-E${index + 1}`, atMs: event.baseAtMs + jitter, intensity };
   });
   const pairSource: InterventionId[][] = [
-    ["accelerate", "accept-all"],
-    ["planned-maintenance", "balance-workload"],
-    ["prioritize-orders", "limit-orders"],
-    ["emergency-maintenance", "ignore-fault"],
+    ["planned-maintenance", "cancel-maintenance"],
     ["quality-boost", "remove-quality"],
     ["extra-support", "overtime"],
+    ["balance-workload", "accept-all"],
+    ["emergency-maintenance", "ignore-fault"],
+    ["limit-orders", "accelerate"],
     ["cross-train", "double-target"],
-    ["reserve-capacity", "cancel-maintenance"],
+    ["reserve-capacity", "prioritize-orders"],
   ];
-  const pairs = pairSource.map((pair) => shuffle(pair, random));
-  const cardWindows = Array.from({ length: 7 }, (_, index) => index % 2 === 0
-    ? [pairs[index]![0]!, pairs[index + 1]![0]!, pairs[index]![1]!, pairs[index + 1]![1]!]
-    : [pairs[index + 1]![0]!, pairs[index]![0]!, pairs[index + 1]![1]!, pairs[index]![1]!]);
-  return { seedKey, events, cardWindows };
+  const pairs = shuffle(pairSource, random).map((pair) => shuffle(pair, random));
+  const pairAt = (index: number) => pairs[index % pairs.length]!;
+  const cardWindows: InterventionId[][] = [];
+  let left = pairAt(0);
+  let right = pairAt(1);
+  cardWindows.push([left[0]!, left[1]!, right[0]!, right[1]!]);
+  for (let index = 1; index < Math.ceil(CONTROL_ROOM_CONFIG.durationMs / CONTROL_ROOM_CONFIG.cardWindowMs); index += 1) {
+    if (index % 2 === 1) left = pairAt(index + 1);
+    else right = pairAt(index + 1);
+    cardWindows.push([left[0]!, left[1]!, right[0]!, right[1]!]);
+  }
+  const initialState = {
+    production: 52 + Math.round(random() * 7),
+    failureRisk: 16 + Math.round(random() * 7),
+    delay: 22 + Math.round(random() * 7),
+    health: 77 + Math.round(random() * 7),
+    team: 72 + Math.round(random() * 8),
+    backlog: 10 + Math.round(random() * 5),
+    qualityRisk: 14 + Math.round(random() * 6),
+    fatigue: 8 + Math.round(random() * 6),
+  };
+  return { seedKey, events, cardWindows, initialState };
 }
 
-export function createInitialControlRoomState(): ControlRoomState {
+export function createInitialControlRoomState(scenario?: ControlRoomScenario): ControlRoomState {
+  const initial = scenario?.initialState;
   return {
     elapsedMs: 0,
-    production: 55,
-    failureRisk: 18,
-    delay: 24,
-    health: 80,
-    budget: 100,
-    team: 76,
-    backlog: 12,
-    qualityRisk: 16,
-    fatigue: 10,
+    production: initial?.production ?? 55,
+    failureRisk: initial?.failureRisk ?? 18,
+    delay: initial?.delay ?? 24,
+    health: initial?.health ?? 80,
+    team: initial?.team ?? 76,
+    backlog: initial?.backlog ?? 12,
+    qualityRisk: initial?.qualityRisk ?? 16,
+    fatigue: initial?.fatigue ?? 10,
     ordersReceived: 12,
     ordersCompleted: 0,
     safeMs: 0,
@@ -394,12 +427,14 @@ export function createInitialControlRoomState(): ControlRoomState {
     sampledMs: 0,
     healthIntegral: 0,
     failureIntegral: 0,
+    productionIntegral: 0,
+    delayIntegral: 0,
     cooldowns: {},
     pendingEffects: [],
-    effectLog: [{ id: "system-start", atMs: 0, sourceId: "system", message: text("Kontrol odası aktif. İlk 5 saniye düşük baskılı başlangıç.", "Control room online. The first 5 seconds are a low-pressure start."), tone: "neutral" }],
+    effectLog: [{ id: "system-start", atMs: 0, sourceId: "system", message: text("Kontrol odası aktif. İlk 30 saniye düşük baskı aşaması.", "Control room online. The first 30 seconds are the low-pressure phase."), tone: "neutral" }],
     interventionUses: [],
     triggeredEventIds: [],
-    modifiers: { acceleratedUntil: 0, qualityControlUntil: 0, limitedOrdersUntil: 0, reserveUntil: 0 },
+    modifiers: { acceleratedUntil: 0, qualityControlUntil: 0, limitedOrdersUntil: 0, reserveUntil: 0, majorUntil: 0, majorInterventionId: null },
   };
 }
 
@@ -415,7 +450,6 @@ function clampState(state: ControlRoomState): ControlRoomState {
     failureRisk: clampMetric(state.failureRisk),
     delay: clampMetric(state.delay),
     health: clampMetric(state.health),
-    budget: clampMetric(state.budget),
     team: clampMetric(state.team),
     backlog: Math.max(0, Number.isFinite(state.backlog) ? state.backlog : 0),
     qualityRisk: clampMetric(state.qualityRisk),
@@ -427,6 +461,8 @@ function clampState(state: ControlRoomState): ControlRoomState {
     sampledMs: Math.max(0, state.sampledMs),
     healthIntegral: Math.max(0, state.healthIntegral),
     failureIntegral: Math.max(0, state.failureIntegral),
+    productionIntegral: Math.max(0, state.productionIntegral),
+    delayIntegral: Math.max(0, state.delayIntegral),
   };
 }
 
@@ -437,7 +473,6 @@ function withDelta(state: ControlRoomState, delta: SimulationDelta) {
     failureRisk: state.failureRisk + (delta.failureRisk ?? 0),
     delay: state.delay + (delta.delay ?? 0),
     health: state.health + (delta.health ?? 0),
-    budget: state.budget + (delta.budget ?? 0),
     team: state.team + (delta.team ?? 0),
     backlog: state.backlog + (delta.backlog ?? 0),
     qualityRisk: state.qualityRisk + (delta.qualityRisk ?? 0),
@@ -452,7 +487,7 @@ function addLog(state: ControlRoomState, entry: EffectLogEntry) {
 }
 
 export function cardWindowIndex(elapsedMs: number) {
-  return Math.min(6, Math.floor(Math.max(0, elapsedMs) / CONTROL_ROOM_CONFIG.cardWindowMs));
+  return Math.min(Math.ceil(CONTROL_ROOM_CONFIG.durationMs / CONTROL_ROOM_CONFIG.cardWindowMs) - 1, Math.floor(Math.max(0, elapsedMs) / CONTROL_ROOM_CONFIG.cardWindowMs));
 }
 
 export function cardsForState(state: ControlRoomState, scenario: ControlRoomScenario) {
@@ -470,8 +505,9 @@ function eventIsActive(state: ControlRoomState, scenario: ControlRoomScenario, t
 export function getInterventionAvailability(state: ControlRoomState, scenario: ControlRoomScenario, intervention: InterventionDefinition): InterventionAvailability {
   const remainingMs = Math.max(0, (state.cooldowns[intervention.id] ?? 0) - state.elapsedMs);
   if (remainingMs > 0) return { available: false, reason: "cooldown", remainingMs };
-  if (state.budget < intervention.cost) return { available: false, reason: "budget", remainingMs: 0 };
-  if (state.team < intervention.teamCost) return { available: false, reason: "team", remainingMs: 0 };
+  if (majorInterventions.has(intervention.id) && state.modifiers.majorUntil > state.elapsedMs) {
+    return { available: false, reason: "major-active", remainingMs: state.modifiers.majorUntil - state.elapsedMs };
+  }
   if (intervention.id === "emergency-maintenance" && state.failureRisk < 30 && !eventIsActive(state, scenario, "machine-warning")) return { available: false, reason: "condition", remainingMs: 0 };
   return { available: true, reason: "ready", remainingMs: 0 };
 }
@@ -543,12 +579,12 @@ export function applyIntervention(state: ControlRoomState, scenario: ControlRoom
     unnecessary = state.backlog < 9 && state.delay < 22;
     if (unnecessary) delayed = scaledDelta(delayed, .4);
   } else if (interventionId === "cross-train") {
-    useful = state.team < 70 || state.fatigue > 35 || state.elapsedMs < 42_000;
+    useful = state.team < 70 || state.fatigue > 35 || state.elapsedMs < 62_000;
   } else if (interventionId === "reserve-capacity") {
-    useful = state.failureRisk > 30 || state.elapsedMs < 18_000 || state.elapsedMs > 38_000;
+    useful = state.failureRisk > 30 || state.elapsedMs < 30_000 || state.elapsedMs > 60_000;
   }
 
-  let next = withDelta(state, { ...instant, budget: (instant.budget ?? 0) - intervention.cost, team: (instant.team ?? 0) - intervention.teamCost });
+  let next = withDelta(state, instant);
   const useNumber = next.interventionUses.length + 1;
   const pending: PendingEffect = {
     id: `${intervention.id}-${Math.round(state.elapsedMs)}-${useNumber}`,
@@ -578,6 +614,8 @@ export function applyIntervention(state: ControlRoomState, scenario: ControlRoom
       qualityControlUntil: interventionId === "quality-boost" ? state.elapsedMs + 9_000 : next.modifiers.qualityControlUntil,
       limitedOrdersUntil: interventionId === "limit-orders" ? state.elapsedMs + 8_000 : next.modifiers.limitedOrdersUntil,
       reserveUntil: interventionId === "reserve-capacity" ? state.elapsedMs + 9_000 : next.modifiers.reserveUntil,
+      majorUntil: majorInterventions.has(interventionId) ? state.elapsedMs + intervention.delayedEffect.delayMs : next.modifiers.majorUntil,
+      majorInterventionId: majorInterventions.has(interventionId) ? interventionId : next.modifiers.majorInterventionId,
     },
   };
   next = addLog(next, {
@@ -619,8 +657,8 @@ function stepSlice(state: ControlRoomState, scenario: ControlRoomScenario, dtMs:
   const machinePressure = events.filter((event) => event.type === "machine-warning").reduce((total, event) => total + event.intensity, 0);
   const qualityPressure = events.filter((event) => event.type === "quality-alarm").reduce((total, event) => total + event.intensity, 0);
   const staffPressure = events.filter((event) => event.type === "staff-shortage").reduce((total, event) => total + event.intensity, 0);
-  const phase = toMs < 5_000 ? 0 : toMs < 20_000 ? 1 : toMs < 40_000 ? 2 : 3;
-  const baseArrival = [0.28, .72, .88, 1.02][phase]!;
+  const phase = toMs < 30_000 ? 0 : toMs < 60_000 ? 1 : 2;
+  const baseArrival = [.56, .82, 1.02][phase]!;
   const intakeFactor = next.modifiers.limitedOrdersUntil > toMs ? .52 : 1;
   const arrivals = (baseArrival + orderPressure * .48) * intakeFactor * seconds;
   const reserveFactor = next.modifiers.reserveUntil > toMs ? .62 : 1;
@@ -650,7 +688,6 @@ function stepSlice(state: ControlRoomState, scenario: ControlRoomScenario, dtMs:
     failureRisk: next.failureRisk + (failureTarget - next.failureRisk) * .055 * seconds * reserveFactor,
     fatigue: next.fatigue + fatigueDelta,
     qualityRisk: next.qualityRisk + qualityDelta,
-    budget: next.budget + .21 * seconds,
     team: next.team + (.16 - staffPressure * .19) * seconds,
   });
 
@@ -666,6 +703,8 @@ function stepSlice(state: ControlRoomState, scenario: ControlRoomScenario, dtMs:
     sampledMs: next.sampledMs + dtMs,
     healthIntegral: next.healthIntegral + next.health * dtMs,
     failureIntegral: next.failureIntegral + next.failureRisk * dtMs,
+    productionIntegral: next.productionIntegral + next.production * dtMs,
+    delayIntegral: next.delayIntegral + next.delay * dtMs,
   };
   return next;
 }
@@ -694,15 +733,31 @@ export function hasCollapsed(state: ControlRoomState) {
 
 export function scoreControlRoom(state: ControlRoomState): ControlRoomScore {
   const elapsed = Math.max(1, state.sampledMs || state.elapsedMs);
-  const safe = Math.max(0, Math.min(40, state.safeMs / elapsed * 40));
-  const orders = Math.max(0, Math.min(25, state.ordersCompleted / Math.max(1, state.ordersReceived) * 25));
+  const averageProduction = state.sampledMs ? state.productionIntegral / state.sampledMs : state.production;
   const averageHealth = state.sampledMs ? state.healthIntegral / state.sampledMs : state.health;
   const averageFailure = state.sampledMs ? state.failureIntegral / state.sampledMs : state.failureRisk;
-  const sustainability = Math.max(0, Math.min(20, (averageHealth / 100 * .55 + (100 - averageFailure) / 100 * .45) * 20));
+  const averageDelay = state.sampledMs ? state.delayIntegral / state.sampledMs : state.delay;
+  const balanceQuality = (
+    Math.max(0, Math.min(1, (averageProduction - 35) / 35))
+    + Math.max(0, Math.min(1, (averageHealth - 30) / 45))
+    + Math.max(0, Math.min(1, (72 - averageFailure) / 50))
+    + Math.max(0, Math.min(1, (72 - averageDelay) / 50))
+  ) / 4;
+  const safe = Math.max(0, Math.min(35, state.safeMs / elapsed * 20 + balanceQuality * 15));
+  const completionRate = state.ordersCompleted / Math.max(1, state.ordersReceived);
+  const productionAdequacy = Math.max(0, Math.min(1, (averageProduction - 35) / 35));
+  const orders = Math.max(0, Math.min(25, completionRate * 18 + productionAdequacy * 7));
+  const sustainability = Math.max(0, Math.min(25, (
+    Math.max(0, Math.min(1, averageHealth / 85)) * .4
+    + Math.max(0, Math.min(1, (85 - averageFailure) / 70)) * .3
+    + Math.max(0, Math.min(1, (85 - averageDelay) / 70)) * .3
+  ) * 25));
   const uses = state.interventionUses.length;
-  const decisionPenalty = uses ? state.interventionUses.reduce((total, use) => total + (use.risky ? 1 : 0) + (use.conflict ? 1 : 0) + (use.unnecessary ? .75 : 0), 0) / uses : 0;
-  const decisionQuality = uses ? Math.max(0, Math.min(1, 1 - decisionPenalty * .55)) : .15;
-  const efficiency = Math.max(0, Math.min(15, (state.budget / 100 * .35 + decisionQuality * .65) * 15));
+  const usefulUses = state.interventionUses.filter((use) => use.useful && !use.risky && !use.conflict && !use.unnecessary).length;
+  const poorUses = state.interventionUses.reduce((total, use) => total + (use.risky ? 1 : 0) + (use.conflict ? 1 : 0) + (use.unnecessary ? .75 : 0), 0);
+  const decisionQuality = uses ? Math.max(0, Math.min(1, usefulUses / uses - poorUses / Math.max(4, uses) * .55)) : 0;
+  const participation = Math.min(1, usefulUses / 4);
+  const efficiency = Math.max(0, Math.min(15, decisionQuality * 11 + participation * 4));
   return { safe: Math.round(safe), orders: Math.round(orders), sustainability: Math.round(sustainability), efficiency: Math.round(efficiency), total: Math.max(0, Math.min(100, Math.round(safe + orders + sustainability + efficiency))) };
 }
 
@@ -712,17 +767,59 @@ export function causalFeedback(state: ControlRoomState, limit = 2) {
   return candidates.slice(0, limit).map((use) => ({ interventionId: use.interventionId, explanation: use.explanation }));
 }
 
-export function restoreControlRoomState(value: unknown) {
-  if (!value || typeof value !== "object") return createInitialControlRoomState();
+export function restoreControlRoomState(value: unknown, scenario?: ControlRoomScenario) {
+  if (!value || typeof value !== "object") return createInitialControlRoomState(scenario);
   const candidate = value as Partial<ControlRoomState>;
-  const required = [candidate.elapsedMs, candidate.production, candidate.failureRisk, candidate.delay, candidate.health, candidate.budget, candidate.team];
-  if (!required.every((item) => typeof item === "number" && Number.isFinite(item))) return createInitialControlRoomState();
-  const initial = createInitialControlRoomState();
+  const required = [candidate.elapsedMs, candidate.production, candidate.failureRisk, candidate.delay, candidate.health, candidate.team];
+  if (!required.every((item) => typeof item === "number" && Number.isFinite(item))) return createInitialControlRoomState(scenario);
+  const initial = createInitialControlRoomState(scenario);
+  const numberOr = (item: unknown, fallback: number) => typeof item === "number" && Number.isFinite(item) ? item : fallback;
+  const pendingEffects = Array.isArray(candidate.pendingEffects) ? candidate.pendingEffects.flatMap((effect) => {
+    if (!effect || typeof effect !== "object") return [];
+    const value = effect as Partial<PendingEffect>;
+    if (typeof value.id !== "string" || typeof value.sourceId !== "string" || typeof value.dueAtMs !== "number" || !value.message) return [];
+    const delta = value.delta && typeof value.delta === "object" ? value.delta : {};
+    return [{
+      id: value.id,
+      sourceId: value.sourceId as InterventionId,
+      dueAtMs: value.dueAtMs,
+      message: value.message,
+      delta: {
+        production: delta.production,
+        failureRisk: delta.failureRisk,
+        delay: delta.delay,
+        health: delta.health,
+        team: delta.team,
+        backlog: delta.backlog,
+        qualityRisk: delta.qualityRisk,
+        fatigue: delta.fatigue,
+        ordersReceived: delta.ordersReceived,
+        ordersCompleted: delta.ordersCompleted,
+      },
+    }];
+  }) : [];
   return clampState({
     ...initial,
-    ...candidate,
+    elapsedMs: candidate.elapsedMs!,
+    production: candidate.production!,
+    failureRisk: candidate.failureRisk!,
+    delay: candidate.delay!,
+    health: candidate.health!,
+    team: candidate.team!,
+    backlog: numberOr(candidate.backlog, initial.backlog),
+    qualityRisk: numberOr(candidate.qualityRisk, initial.qualityRisk),
+    fatigue: numberOr(candidate.fatigue, initial.fatigue),
+    ordersReceived: numberOr(candidate.ordersReceived, initial.ordersReceived),
+    ordersCompleted: numberOr(candidate.ordersCompleted, initial.ordersCompleted),
+    safeMs: numberOr(candidate.safeMs, initial.safeMs),
+    criticalMs: numberOr(candidate.criticalMs, initial.criticalMs),
+    sampledMs: numberOr(candidate.sampledMs, initial.sampledMs),
+    healthIntegral: numberOr(candidate.healthIntegral, initial.healthIntegral),
+    failureIntegral: numberOr(candidate.failureIntegral, initial.failureIntegral),
+    productionIntegral: numberOr(candidate.productionIntegral, candidate.production! * numberOr(candidate.sampledMs, 0)),
+    delayIntegral: numberOr(candidate.delayIntegral, candidate.delay! * numberOr(candidate.sampledMs, 0)),
     cooldowns: candidate.cooldowns && typeof candidate.cooldowns === "object" ? candidate.cooldowns : {},
-    pendingEffects: Array.isArray(candidate.pendingEffects) ? candidate.pendingEffects : [],
+    pendingEffects,
     effectLog: Array.isArray(candidate.effectLog) ? candidate.effectLog.slice(-CONTROL_ROOM_CONFIG.maxLogEntries) : initial.effectLog,
     interventionUses: Array.isArray(candidate.interventionUses) ? candidate.interventionUses : [],
     triggeredEventIds: Array.isArray(candidate.triggeredEventIds) ? candidate.triggeredEventIds.filter((id): id is string => typeof id === "string") : [],

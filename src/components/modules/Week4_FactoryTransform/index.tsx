@@ -9,6 +9,8 @@ import type { LearningModuleProps, ModuleDraft, ModuleSubmission } from "@/types
 import {
   buildFactoryRound,
   clampMetric,
+  FACTORY_FIRST_CORRECT_POINTS,
+  FACTORY_RECOVERY_POINTS,
   factoryZoneLabels,
   type FactoryEffectType,
   type FactoryMetrics,
@@ -76,7 +78,7 @@ const copy = {
     recoveryChoice: "Kurtarma modu: Kalan iki karardan doğru olanı seç.",
     recoveryTime: "Kurtarma süresi",
     eliminated: "elendi",
-    repaired: "Fabrikayı zamanında kurtardın! +4 puan",
+    repaired: "Fabrikayı zamanında kurtardın! +8 puan",
     secondWrong: "İkinci karar da sorunu çözemedi.",
     timeout: "Kurtarma süresi doldu.",
     locked: "Bu modül tamamlandı",
@@ -94,7 +96,7 @@ const copy = {
     recoveryChoice: "Rescue mode: choose the correct one of the two remaining decisions.",
     recoveryTime: "Rescue time",
     eliminated: "eliminated",
-    repaired: "You rescued the factory in time! +4 points",
+    repaired: "You rescued the factory in time! +8 points",
     secondWrong: "The second decision did not solve the problem either.",
     timeout: "The rescue window expired.",
     locked: "This module is complete",
@@ -120,7 +122,12 @@ function answersFromPayload(payload: DraftPayload | undefined): FactoryAnswer[] 
     if (!item || typeof item !== "object") return false;
     const answer = item as Partial<FactoryAnswer>;
     return typeof answer.scenarioId === "string" && typeof answer.firstOptionId === "string" && typeof answer.points === "number";
-  });
+  }).map((answer) => ({
+    ...answer,
+    // Drafts created by v1 used a 10/4 scale. Saved submissions are never
+    // rewritten, but an unfinished play resumes on the current 20/8 scale.
+    points: answer.firstCorrect ? FACTORY_FIRST_CORRECT_POINTS : answer.recoveryOutcome === "recovered" ? FACTORY_RECOVERY_POINTS : 0,
+  }));
 }
 
 function answersFromDraft(draft: ModuleDraft | null | undefined) {
@@ -255,7 +262,8 @@ export function Week4FactoryTransform({
     score: nextAnswers.reduce((total, answer) => total + answer.points, 0),
     payload: {
       mode: "factory-transformation",
-      gameId: "week-4-factory-transformation-v1",
+      gameId: "week-4-factory-transformation-v2",
+      scoringVersion: 2,
       selectedScenarioIds: scenarios.map((scenario) => scenario.id),
       offeredQuestions: scenarios.map((scenario) => ({ scenarioId: scenario.id, stageId: scenario.stage, optionIds: scenario.options.map((option) => option.id) })),
       answers: nextAnswers,
@@ -274,7 +282,7 @@ export function Week4FactoryTransform({
       unrecoveredCount: nextAnswers.filter((answer) => answer.recoveryOutcome === "second-wrong" || answer.recoveryOutcome === "timeout").length,
       answeredCount: nextAnswers.length,
       decisionCount: scenarios.length,
-      maxBaseScore: 50,
+      maxBaseScore: 100,
       recoveryWindowMs,
       completionReason,
       completionStatus: completionReason === "completed" ? "completed" : completionReason === "teacher-ended" ? "incomplete" : "draft",
@@ -370,7 +378,7 @@ export function Week4FactoryTransform({
         clickedRepairZones: progress.clickedRepairZones,
         repairZone: current.repairZone,
         recoveryOutcome: "recovered",
-        points: 4,
+          points: FACTORY_RECOVERY_POINTS,
         effectType: "recover",
       }, nextMetrics, "recover", t.repaired);
       setSelectedOptionId(recovery.id);
@@ -487,7 +495,7 @@ export function Week4FactoryTransform({
           clickedRepairZones: [],
           repairZone: current.repairZone,
           recoveryOutcome: "not-needed",
-          points: 10,
+          points: FACTORY_FIRST_CORRECT_POINTS,
           effectType: option.effectType,
         }, changedMetrics, option.effectType, option.notification[locale]);
         actionLocked.current = false;
@@ -531,7 +539,7 @@ export function Week4FactoryTransform({
         clickedRepairZones: progress.clickedRepairZones,
         repairZone: current.repairZone,
         recoveryOutcome: "recovered",
-        points: 4,
+        points: FACTORY_RECOVERY_POINTS,
         effectType: "recover",
       }, nextMetrics, "recover", t.repaired);
       setInspectedZone(null);

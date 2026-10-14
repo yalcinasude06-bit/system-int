@@ -32,11 +32,11 @@ export type HunterAction = {
   atMs: number;
 };
 
-export const HUNTER_LEVEL_DURATION_MS = 20_000;
-export const HUNTER_TASK_WINDOW_MS = 5_000;
-export const HUNTER_TASK_TRANSITION_MS = 600;
-export const HUNTER_MAX_HIT_SCORE = 130;
-export const HUNTER_CORRECT_OPPORTUNITIES = 13;
+export const HUNTER_LEVEL_DURATION_MS = 35_000;
+export const HUNTER_TASK_WINDOW_MS = 10_000;
+export const HUNTER_TASK_TRANSITION_MS = 1_500;
+export const HUNTER_TARGET_DURATION_MS = [4_500, 4_000, 3_500] as const;
+export const HUNTER_CORRECT_POINTS = 10;
 
 const contextIcons: Record<TargetContext, string> = {
   production: "⚙️",
@@ -198,30 +198,44 @@ function shuffle<T>(items: readonly T[], random: () => number) {
 
 type Slot = { level: number; task: TargetCategory; category: TargetCategory; spawnAtMs: number; durationMs: number };
 
-const levelOneTimes = [1_200, 3_600, 6_000, 8_400, 10_800, 13_200, 15_600, 18_000];
-const levelTwoTimes = [900, 2_600, 4_300, 6_000, 7_700, 9_400, 11_100, 12_800, 14_500, 16_200];
 const taskCycle: TargetCategory[] = ["event", "pattern", "structure", "event"];
 
-function scheduleSlots(): Slot[] {
-  const levelOneCategories: TargetCategory[] = ["structure", "event", "structure", "pattern", "structure", "event", "structure", "pattern"];
-  const levelTwoCategories: TargetCategory[] = ["pattern", "event", "pattern", "structure", "pattern", "event", "pattern", "structure", "pattern", "event"];
-  const slots: Slot[] = [
-    ...levelOneTimes.map((spawnAtMs, index) => ({ level: 0, task: "structure" as const, category: levelOneCategories[index]!, spawnAtMs, durationMs: 1_900 })),
-    ...levelTwoTimes.map((spawnAtMs, index) => ({ level: 1, task: "pattern" as const, category: levelTwoCategories[index]!, spawnAtMs, durationMs: 2_500 })),
-  ];
+function scheduleSlots(random: () => number = () => .5): Slot[] {
+  const levelOneTimes = [500, 5_000, 9_500, 14_000, 18_500, 23_000, 27_500];
+  const levelOneCategories = shuffle<TargetCategory>(["structure", "structure", "structure", "event", "event", "pattern", "pattern"], random);
+  const levelTwoTimes = [500, 5_000, 9_500, 14_000, 18_500, 23_000, 28_000];
+  const levelTwoTraps = shuffle<TargetCategory>(["event", "structure", "event", "structure", "event", "structure", "event"], random);
+  const slots: Slot[] = levelOneTimes.map((spawnAtMs, index) => ({
+    level: 0,
+    task: "structure" as const,
+    category: levelOneCategories[index]!,
+    spawnAtMs,
+    durationMs: HUNTER_TARGET_DURATION_MS[0],
+  }));
+  levelTwoTimes.forEach((spawnAtMs, index) => {
+    const categories = shuffle<TargetCategory>(["pattern", levelTwoTraps[index]!], random);
+    categories.forEach((category) => slots.push({ level: 1, task: "pattern", category, spawnAtMs, durationMs: HUNTER_TARGET_DURATION_MS[1] }));
+  });
   for (let phase = 0; phase < taskCycle.length; phase += 1) {
     const task = taskCycle[phase]!;
     const traps = (["event", "pattern", "structure"] as TargetCategory[]).filter((category) => category !== task);
-    [task, traps[0]!, traps[1]!].forEach((category, index) => slots.push({
-      level: 2,
-      task,
-      category,
-      spawnAtMs: phase * HUNTER_TASK_WINDOW_MS + [700, 2_000, 3_300][index]!,
-      durationMs: 1_500,
-    }));
+    const batchOffsets = phase === taskCycle.length - 1 ? [500] : [500, 5_000];
+    batchOffsets.forEach((offset) => {
+      shuffle<TargetCategory>([task, traps[0]!, traps[1]!], random).forEach((category) => slots.push({
+        level: 2,
+        task,
+        category,
+        spawnAtMs: phase * HUNTER_TASK_WINDOW_MS + offset,
+        durationMs: HUNTER_TARGET_DURATION_MS[2],
+      }));
+    });
   }
   return slots;
 }
+
+const scoringSlots = scheduleSlots();
+export const HUNTER_CORRECT_OPPORTUNITIES = scoringSlots.filter((slot) => slot.category === slot.task).length;
+export const HUNTER_MAX_HIT_SCORE = HUNTER_CORRECT_OPPORTUNITIES * HUNTER_CORRECT_POINTS;
 
 export function taskForLevelTime(level: number, elapsedMs: number): TargetCategory {
   if (level === 0) return "structure";
@@ -237,12 +251,18 @@ export function buildProblemHunterRound(seedKey: string): ScheduledTarget[] {
     structure: shuffle(problemHunterPool.filter((item) => item.category === "structure"), random),
   };
   const cursors: Record<TargetCategory, number> = { event: 0, pattern: 0, structure: 0 };
-  const holeCycles = Array.from({ length: 5 }, () => shuffle([0, 1, 2, 3, 4, 5], random)).flat();
+  const slots = scheduleSlots(random);
+  const holeCycles = Array.from({ length: Math.ceil(slots.length / 6) }, () => shuffle([0, 1, 2, 3, 4, 5], random)).flat();
   let previousHole = -1;
-  return scheduleSlots().map((slot, index) => {
+  const occupiedByTime = new Map<string, Set<number>>();
+  return slots.map((slot, index) => {
     const item = pools[slot.category][cursors[slot.category]++]!;
     let hole = holeCycles[index]!;
-    if (hole === previousHole) hole = (hole + 1) % 6;
+    const timeKey = `${slot.level}:${slot.spawnAtMs}`;
+    const occupied = occupiedByTime.get(timeKey) ?? new Set<number>();
+    while (hole === previousHole || occupied.has(hole)) hole = (hole + 1) % 6;
+    occupied.add(hole);
+    occupiedByTime.set(timeKey, occupied);
     previousHole = hole;
     return { ...item, ...slot, hole };
   });

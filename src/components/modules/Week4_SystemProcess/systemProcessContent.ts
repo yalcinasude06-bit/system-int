@@ -13,6 +13,10 @@ export type SystemProcessCard = {
 
 export type PresentedSystemProcessCard = SystemProcessCard & { order: number };
 
+export function countCorrectSystemProcessPlacements(cards: readonly PresentedSystemProcessCard[], placements: Readonly<Record<string, unknown>>) {
+  return cards.filter((card) => placements[card.id] === card.target).length;
+}
+
 const text = (tr: string, en: string): LocalizedText => ({ tr, en });
 const card = (
   id: string,

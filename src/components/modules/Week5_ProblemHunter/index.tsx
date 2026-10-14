@@ -26,6 +26,8 @@ type HunterDraftPayload = {
   levelIndex?: unknown;
   levelElapsedMs?: unknown;
   selectedTargetIds?: unknown;
+  taskTransitionIndex?: unknown;
+  taskTransitionRemainingMs?: unknown;
 };
 
 type Feedback = { outcome: HunterOutcome; target: ScheduledTarget };
@@ -163,6 +165,8 @@ export function Week5ProblemHunter({
   const initialActions = useMemo(() => hydrateActions(draftPayload, schedule), [draftPayload, schedule]);
   const initialLevel = typeof draftPayload?.levelIndex === "number" ? Math.max(0, Math.min(2, Math.floor(draftPayload.levelIndex))) : 0;
   const initialElapsed = typeof draftPayload?.levelElapsedMs === "number" ? Math.max(0, Math.min(HUNTER_LEVEL_DURATION_MS - 1, draftPayload.levelElapsedMs)) : 0;
+  const restoredTransitionIndex = typeof draftPayload?.taskTransitionIndex === "number" ? Math.max(-1, Math.min(3, Math.floor(draftPayload.taskTransitionIndex))) : null;
+  const initialTransitionRemaining = typeof draftPayload?.taskTransitionRemainingMs === "number" ? Math.max(0, Math.min(HUNTER_TASK_TRANSITION_MS, draftPayload.taskTransitionRemainingMs)) : 0;
 
   const [actions, setActions] = useState<HunterAction[]>(initialActions);
   const [levelIndex, setLevelIndex] = useState(initialLevel);
@@ -174,6 +178,7 @@ export function Week5ProblemHunter({
   const [submitFailed, setSubmitFailed] = useState(false);
   const [finalSubmission, setFinalSubmission] = useState<ModuleSubmission | null>(null);
   const [isHidden, setIsHidden] = useState(false);
+  const [transitionRemainingMs, setTransitionRemainingMs] = useState(initialTransitionRemaining);
 
   const actionsRef = useRef(initialActions);
   const resolvedIds = useRef(new Set(initialActions.map((action) => action.targetId)));
@@ -182,6 +187,9 @@ export function Week5ProblemHunter({
   const completedRef = useRef(false);
   const submissionStarted = useRef(false);
   const lastTick = useRef<number | null>(null);
+  const transitionRemainingRef = useRef(initialTransitionRemaining);
+  const announcedTaskIndex = useRef(restoredTransitionIndex ?? (initialLevel === 2 && initialElapsed === 0 ? -1 : Math.floor(initialElapsed / HUNTER_TASK_WINDOW_MS)));
+  const draftCheckpoint = useRef(Math.floor(initialElapsed / 5_000));
 
   const submissionFor = useCallback((nextActions: HunterAction[], reason: "completed" | "teacher-ended" | "draft", nextLevel = levelRef.current, nextElapsed = elapsedRef.current): ModuleSubmission => ({
     stage: Math.min(3, nextLevel + 1),
@@ -195,6 +203,8 @@ export function Week5ProblemHunter({
       actions: nextActions,
       levelIndex: nextLevel,
       levelElapsedMs: Math.round(nextElapsed),
+      taskTransitionIndex: announcedTaskIndex.current,
+      taskTransitionRemainingMs: Math.round(transitionRemainingRef.current),
       arcadeScore: arcadeScoreFor(nextActions),
       normalizedScore: normalizedHunterScore(nextActions),
       correctCount: nextActions.filter((action) => action.outcome === "correct").length,
@@ -255,12 +265,16 @@ export function Week5ProblemHunter({
     setLevelIndex(nextLevel);
     setElapsedMs(0);
     setFeedback(null);
+    transitionRemainingRef.current = 0;
+    setTransitionRemainingMs(0);
+    announcedTaskIndex.current = nextLevel === 2 ? -1 : 0;
+    draftCheckpoint.current = 0;
     saveDraft(actionsRef.current, nextLevel, 0);
     lastTick.current = performance.now();
   }, [finalize, saveDraft]);
 
   const hitTarget = useCallback((target: ScheduledTarget) => {
-    if (completedRef.current || resolvedIds.current.has(target.id) || forceSubmit) return;
+    if (completedRef.current || resolvedIds.current.has(target.id) || forceSubmit || transitionRemainingRef.current > 0) return;
     const now = elapsedRef.current;
     if (now < target.spawnAtMs || now >= target.spawnAtMs + target.durationMs) return;
     const task = taskForLevelTime(levelRef.current, now);
@@ -282,9 +296,31 @@ export function Week5ProblemHunter({
       const previous = lastTick.current ?? now;
       lastTick.current = now;
       const activeLevel = levelRef.current;
-      const nextElapsed = Math.min(HUNTER_LEVEL_DURATION_MS, elapsedRef.current + Math.min(250, now - previous));
+      const tickDelta = Math.min(250, now - previous);
+      if (activeLevel === 2) {
+        const taskIndex = Math.min(3, Math.floor(elapsedRef.current / HUNTER_TASK_WINDOW_MS));
+        if (announcedTaskIndex.current < taskIndex) {
+          announcedTaskIndex.current = taskIndex;
+          transitionRemainingRef.current = HUNTER_TASK_TRANSITION_MS;
+          setTransitionRemainingMs(HUNTER_TASK_TRANSITION_MS);
+          setFeedback(null);
+          saveDraft(actionsRef.current, activeLevel, elapsedRef.current);
+        }
+        if (transitionRemainingRef.current > 0) {
+          const remaining = Math.max(0, transitionRemainingRef.current - tickDelta);
+          transitionRemainingRef.current = remaining;
+          setTransitionRemainingMs(remaining);
+          return;
+        }
+      }
+      const nextElapsed = Math.min(HUNTER_LEVEL_DURATION_MS, elapsedRef.current + tickDelta);
       elapsedRef.current = nextElapsed;
       setElapsedMs(nextElapsed);
+      const nextCheckpoint = Math.floor(nextElapsed / 5_000);
+      if (nextCheckpoint > draftCheckpoint.current) {
+        draftCheckpoint.current = nextCheckpoint;
+        saveDraft(actionsRef.current, activeLevel, nextElapsed);
+      }
       const expired = schedule
         .filter((target) => target.level === activeLevel && !resolvedIds.current.has(target.id) && nextElapsed >= target.spawnAtMs + target.durationMs)
         .map((target): HunterAction => ({
@@ -309,7 +345,7 @@ export function Week5ProblemHunter({
     lastTick.current = performance.now();
     const timer = window.setInterval(tick, reduceMotion ? 120 : 60);
     return () => window.clearInterval(timer);
-  }, [advanceLevel, completed, existingSubmission, forceSubmit, recordActions, reduceMotion, schedule]);
+  }, [advanceLevel, completed, existingSubmission, forceSubmit, recordActions, reduceMotion, saveDraft, schedule]);
 
   useEffect(() => {
     const onVisibilityChange = () => {
@@ -318,8 +354,13 @@ export function Week5ProblemHunter({
       lastTick.current = performance.now();
       saveDraft(actionsRef.current);
     };
+    const onPageHide = () => saveDraft(actionsRef.current);
     document.addEventListener("visibilitychange", onVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("pagehide", onPageHide);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("pagehide", onPageHide);
+    };
   }, [saveDraft]);
 
   useEffect(() => {
@@ -336,7 +377,7 @@ export function Week5ProblemHunter({
   }
 
   const currentTask = taskForLevelTime(levelIndex, elapsedMs);
-  const changingTask = levelIndex === 2 && elapsedMs % HUNTER_TASK_WINDOW_MS < HUNTER_TASK_TRANSITION_MS;
+  const changingTask = levelIndex === 2 && transitionRemainingMs > 0;
   const resolvedTargetIds = new Set(actions.map((action) => action.targetId));
   const activeTargets = changingTask ? [] : schedule.filter((target) => target.level === levelIndex && !resolvedTargetIds.has(target.id) && elapsedMs >= target.spawnAtMs && elapsedMs < target.spawnAtMs + target.durationMs);
   const targetByHole = new Map(activeTargets.map((target) => [target.hole, target]));

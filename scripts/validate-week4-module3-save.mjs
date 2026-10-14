@@ -22,7 +22,8 @@ assert.ok(
 assert.match(checkedReview, /onReviewStart\?\.\(startedAt \+ durationMs\)/, "The route must receive an absolute review deadline");
 assert.match(checkedReview, /startReviewClock\(durationMs, \(\) => setCompleted\(true\)/, "Five seconds must control only the visual review transition");
 assert.doesNotMatch(checkedReview, /correctedPlacements|setPlacements/, "Review must not auto-correct or move the frozen cards");
-assert.match(component, /wasInitiallyWrong[\s\S]*wrong-placement/, "Only wrong first-check placements must receive the error style");
+assert.match(component, /evaluatedCardIsWrong[\s\S]*wrong-placement/, "Wrong first-check placements must receive the error style");
+assert.match(component, /evaluatedCardIsCorrect[\s\S]*correct-placement/, "Correct first-check placements must receive the success style");
 
 assert.doesNotMatch(studentPage, /Promise\.allSettled\(\[\.\.\.draftWrites\.current\]\)/, "Final submission must not wait for every draft request");
 assert.match(studentPage, /const isAnswerReviewing = answerReview\?\.key === activeModuleKey/, "The route must retain the board while the active round is under review");

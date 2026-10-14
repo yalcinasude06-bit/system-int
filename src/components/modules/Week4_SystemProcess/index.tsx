@@ -8,7 +8,7 @@ import { useI18n } from "@/lib/i18n/I18nContext";
 import { ANSWER_REVIEW_TOTAL_MS, currentReviewTimestamp, remainingReviewTime } from "@/lib/answerReview";
 import { useAnswerReviewTimer } from "@/lib/useAnswerReviewTimer";
 import type { LearningModuleProps, ModuleDraft, ModuleSubmission } from "@/types";
-import { buildSystemProcessRound, type PresentedSystemProcessCard, type SystemProcessTarget } from "./systemProcessContent";
+import { buildSystemProcessRound, countCorrectSystemProcessPlacements, type PresentedSystemProcessCard, type SystemProcessTarget } from "./systemProcessContent";
 
 type Placement = SystemProcessTarget | "pool";
 type Placements = Record<string, Placement>;
@@ -36,6 +36,7 @@ const copy = {
     check: "Kontrol Et",
     checkHint: "Kontrol etmek için tüm 8 kartı yerleştir.",
     wrong: "Yanlış",
+    correct: "Doğru",
     locked: "Bu modül tamamlandı",
     lockedDetail: "Yanıtların kilitlendi. Öğretmen sonuçları açıklayana kadar bekleyin.",
     saving: "Yanıt kaydediliyor…",
@@ -57,6 +58,7 @@ const copy = {
     check: "Check",
     checkHint: "Place all 8 cards before checking.",
     wrong: "Incorrect",
+    correct: "Correct",
     locked: "This module is complete",
     lockedDetail: "Your answers are locked. Wait until the teacher reveals the results.",
     saving: "Saving your answer…",
@@ -156,7 +158,7 @@ export function Week4SystemProcess({
 
   const submissionFor = useCallback((nextPlacements: Placements, completionReason: "completed" | "teacher-ended" | "draft", evaluatedSnapshot?: Placements, review?: { startedAt: number; durationMs: number }): ModuleSubmission => {
     const snapshot = evaluatedSnapshot ?? nextPlacements;
-    const correctCount = cards.filter((card) => snapshot[card.id] === card.target).length;
+    const correctCount = countCorrectSystemProcessPlacements(cards, snapshot);
     return {
       stage: 1,
       score: correctCount * pointsPerCard,
@@ -381,7 +383,8 @@ export function Week4SystemProcess({
   }
 
   const cardsFor = (target: Placement) => cards.filter((card) => placements[card.id] === target);
-  const wasInitiallyWrong = (id: string) => checked && evaluationSnapshot?.[id] !== cards.find((card) => card.id === id)?.target;
+  const evaluatedCardIsCorrect = (id: string) => checked && evaluationSnapshot?.[id] === cards.find((card) => card.id === id)?.target;
+  const evaluatedCardIsWrong = (id: string) => checked && evaluationSnapshot?.[id] !== cards.find((card) => card.id === id)?.target;
   const trashCount = cardsFor("isNot").length;
 
   return <section className="panel module-shell system-process-shell">
@@ -406,11 +409,11 @@ export function Week4SystemProcess({
               data-system-card={card.id}
               key={card.id}
               type="button"
-              className={`system-process-card placed ${settlingCardId === card.id ? "settling" : ""} ${wasInitiallyWrong(card.id) ? "wrong-placement" : ""}`}
+              className={`system-process-card placed ${settlingCardId === card.id ? "settling" : ""} ${evaluatedCardIsCorrect(card.id) ? "correct-placement" : ""} ${evaluatedCardIsWrong(card.id) ? "wrong-placement" : ""}`}
               disabled={checked || completed || Boolean(existingSubmission) || Boolean(forceSubmit)}
               onClick={(event) => { event.stopPropagation(); select(card.id); }}
-              aria-label={`${card.text[locale]}${wasInitiallyWrong(card.id) ? `. ${text.wrong}` : ""}`}
-            ><span data-i18n-skip>{card.text[locale]}</span>{wasInitiallyWrong(card.id) ? <X size={15} aria-label={text.wrong} /> : <Undo2 size={15} aria-label={text.return} />}</button>)}
+              aria-label={`${card.text[locale]}${evaluatedCardIsCorrect(card.id) ? `. ${text.correct}` : evaluatedCardIsWrong(card.id) ? `. ${text.wrong}` : ""}`}
+            ><span data-i18n-skip>{card.text[locale]}</span>{evaluatedCardIsCorrect(card.id) ? <Check size={15} aria-label={text.correct} /> : evaluatedCardIsWrong(card.id) ? <X size={15} aria-label={text.wrong} /> : <Undo2 size={15} aria-label={text.return} />}</button>)}
             {cardsFor(target).length === 0 && <p className="system-zone-empty">{text.empty}</p>}
           </div>
         </section>)}

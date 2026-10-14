@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 const { approachLabels, bossApproachPool, buildBossApproachRound } = await import("../src/components/modules/Week4_BossApproach/approachContent.ts");
-const { buildSystemProcessRound, systemProcessPool } = await import("../src/components/modules/Week4_SystemProcess/systemProcessContent.ts");
-const { buildFactoryRound, factoryScenarioPool } = await import("../src/components/modules/Week4_FactoryTransform/factoryContent.ts");
+const { buildSystemProcessRound, countCorrectSystemProcessPlacements, systemProcessPool } = await import("../src/components/modules/Week4_SystemProcess/systemProcessContent.ts");
+const { FACTORY_FIRST_CORRECT_POINTS, FACTORY_RECOVERY_POINTS, buildFactoryRound, factoryScenarioPool, scoreFactoryOutcomes } = await import("../src/components/modules/Week4_FactoryTransform/factoryContent.ts");
 
 assert.equal(factoryScenarioPool.length, 18, "Week 4 Module 1 must have 18 factory scenarios");
 assert.equal(new Set(factoryScenarioPool.map((scenario) => scenario.id)).size, 18, "Factory scenario IDs must be unique");
@@ -31,6 +31,11 @@ assert.equal(factoryRound[0].id, "W4M1-M01", "The core mechanical scenario must 
 assert.equal(factoryRound[2].id, "W4M1-B01", "The core biological scenario must always be present");
 assert.equal(factoryRound[3].id, "W4M1-S01", "The core socio-cultural scenario must always be present");
 assert.deepEqual(buildFactoryRound("content-validation"), factoryRound, "Factory selection and option order must be deterministic");
+assert.equal(FACTORY_FIRST_CORRECT_POINTS, 20);
+assert.equal(FACTORY_RECOVERY_POINTS, 8);
+assert.equal(scoreFactoryOutcomes(Array(5).fill("first-correct")), 100, "Five first-correct decisions must total 100");
+assert.equal(scoreFactoryOutcomes(Array(5).fill("recovered")), 40, "Five recovered decisions must total 40");
+assert.equal(scoreFactoryOutcomes(["first-correct", "recovered", "failed", "first-correct", "recovered"]), 56, "Mixed outcomes must use the 20/8/0 scale");
 
 assert.equal(bossApproachPool.length, 24, "Week 4 Module 2 must have 24 questions");
 assert.equal(new Set(bossApproachPool.map((question) => question.id)).size, 24, "Week 4 Module 2 question IDs must be unique");
@@ -71,6 +76,11 @@ assert.equal(systemRound.filter((card) => card.target === "is").length, 4, "A Mo
 assert.equal(systemRound.filter((card) => card.target === "isNot").length, 4, "A Module 3 round must contain four unsuitable cards");
 assert.equal(new Set(systemRound.map((card) => card.id)).size, 8, "A Module 3 round must not repeat cards");
 assert.deepEqual(buildSystemProcessRound("content-validation"), systemRound, "Module 3 selection must be deterministic");
+const firstCheckSnapshot = Object.fromEntries(systemRound.map((card, index) => [card.id, index === 0 ? (card.target === "is" ? "isNot" : "is") : card.target]));
+assert.equal(countCorrectSystemProcessPlacements(systemRound, firstCheckSnapshot), 7, "The first placement snapshot must preserve its original wrong answer");
+const laterCorrected = Object.fromEntries(systemRound.map((card) => [card.id, card.target]));
+assert.equal(countCorrectSystemProcessPlacements(systemRound, firstCheckSnapshot), 7, "Later visual placement changes must not mutate the first-check snapshot");
+assert.equal(countCorrectSystemProcessPlacements(systemRound, laterCorrected), 8);
 
 const bossSource = await readFile(new URL("../src/components/modules/Week4_BossApproach/index.tsx", import.meta.url), "utf8");
 const portraitSource = await readFile(new URL("../src/components/modules/Week4_BossApproach/BossPortrait.tsx", import.meta.url), "utf8");
@@ -84,16 +94,16 @@ assert.match(factorySource, /recoveryWindowMs = 5000/, "Module 1 recovery must u
 assert.match(factorySource, /performance\.now\(\)/, "Module 1 recovery must use a monotonic in-page deadline");
 assert.match(factorySource, /deadlineEpoch/, "Module 1 recovery deadline must survive draft reloads");
 assert.match(factorySource, /clickedRepairZones/, "Module 1 must retain its legacy repair-zone payload for draft compatibility");
-assert.match(factorySource, /points: 10/, "Module 1 must award ten points for a first-correct answer");
-assert.match(factorySource, /points: 4/, "Module 1 must award four points for a successful recovery");
-assert.match(factorySource, /maxBaseScore: 50/, "Module 1 must report the five-decision 50-point base cap");
+assert.match(factorySource, /FACTORY_FIRST_CORRECT_POINTS/, "Module 1 must award twenty points for a first-correct answer");
+assert.match(factorySource, /FACTORY_RECOVERY_POINTS/, "Module 1 must award eight points for a successful recovery");
+assert.match(factorySource, /maxBaseScore: 100/, "Module 1 must report the five-decision 100-point base cap");
 assert.doesNotMatch(factorySource, /Math\.floor\(nextIndex \/ 3\)|index % 3|maxBaseScore: 90/, "Module 1 must not retain nine-decision stage arithmetic");
 assert.doesNotMatch(factorySource, /<Button onClick=\{advance\}/, "Module 1 must advance without an explicit next-decision action");
 assert.match(factorySource, /window\.setTimeout\(advance, delay\)/, "Module 1 must auto-advance after visual feedback");
 assert.doesNotMatch(factorySource, /className="factory-hud"|className="factory-metrics"/, "Module 1 gameplay must not expose live score or metric panels");
 assert.match(factorySource, /if \(phaseRef\.current !== "recovery-choice"\) return;/, "Module 1 stale timeout callbacks must be ignored after the recovery choice resolves");
 assert.match(factorySource, /if \(phase !== "recovery-choice" \|\| !inProgress\) return;/, "Module 1 timer must run only while the second choice is active");
-assert.match(factorySource, /if \(option\.isCorrect\) \{\s+activeDeadlineEpoch\.current = null;\s+deadlinePerf\.current = null;\s+setRemainingMs\(0\);[\s\S]*?recoveryOutcome: "recovered",\s+points: 4,/, "A correct second choice must stop the timer and recover four points immediately");
+assert.match(factorySource, /if \(option\.isCorrect\) \{\s+activeDeadlineEpoch\.current = null;\s+deadlinePerf\.current = null;\s+setRemainingMs\(0\);[\s\S]*?recoveryOutcome: "recovered",\s+points: FACTORY_RECOVERY_POINTS,/, "A correct second choice must stop the timer and recover eight points immediately");
 assert.doesNotMatch(factorySource, /type Phase = [^;]*recovery-repair|phaseRef\.current = "recovery-repair"/, "Module 1 must not enter the removed repair phase");
 assert.match(factorySource, /draftPayload\?\.phase === "recovery-repair"/, "Module 1 must migrate legacy repair-phase drafts safely");
 assert.match(factorySource, /const handleZone = useCallback\(\(zone: FactoryZone\) => \{[\s\S]*?setInspectedZone\(zone\);[\s\S]*?\},/, "Factory-zone taps must only inspect the selected component");
@@ -114,6 +124,8 @@ assert.match(systemSource, /onPointerMove/, "Module 3 must provide pointer dragg
 assert.match(systemSource, /onZoneKeyDown/, "Module 3 must retain a keyboard placement path");
 assert.match(systemSource, /system-trash-lid/, "Module 3 must render an animated trash lid");
 assert.match(systemSource, /submittedPlacements/, "Module 3 must preserve the first-check scoring snapshot");
+assert.match(systemSource, /correct-placement/, "Module 3 must visibly mark first-check correct placements");
+assert.match(systemSource, /aria-label=\{text\.correct\}/, "Module 3 correct markers must expose accessible text");
 assert.match(systemSource, /is: "Sistem Nedir\?"/, "Module 3 must use the exact requested positive target title");
 assert.match(systemSource, /isNot: "Sistem Ne Değildir\?"/, "Module 3 must use the exact requested negative target title");
 assert.doesNotMatch(systemSource, /<div className="system-accept-visual"|system-process-review|continueFeedback/, "Module 3 must not render the repeated accept label or an intermediate result/review screen");
@@ -133,6 +145,8 @@ assert.doesNotMatch(globalStyles, /\.factory-zone\.repair-target|factoryRepairTa
 assert.match(globalStyles, /\.factory-zone-hint/, "Factory inspection hints must have a responsive anchored visual");
 assert.match(globalStyles, /\.factory-zone-attention/, "Factory components must provide a non-blocking tap cue");
 assert.match(globalStyles, /\.factory-recovery-inline/, "The compact recovery timer must have dedicated styling");
+assert.match(globalStyles, /\.factory-decision-progress \{[^}]*grid-template-columns: repeat\(5,minmax\(0,1fr\)\)/, "The five progress segments must share the full available width");
+assert.match(globalStyles, /\.system-process-card\.correct-placement/, "Correct first-check placements must have a distinct non-color-only state");
 assert.doesNotMatch(globalStyles, /\.factory-notification|\.factory-recovery-timer|\.factory-zone-ping/, "Removed factory status and marker styles must be cleaned up");
 assert.match(globalStyles, /@media \(max-width: 700px\)[\s\S]*?\.factory-scene \{ min-height: clamp\(230px,68vw,280px\)/, "The factory must stay between 230 and 280 pixels tall on narrow screens");
 assert.doesNotMatch(globalStyles, /\.factory-scene \{ min-height: (?:365|385|455)px;/, "Legacy tall mobile factory heights must not remain in the cascade");

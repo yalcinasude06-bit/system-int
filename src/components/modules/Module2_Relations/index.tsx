@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion, useMotionValue, useTransform } from "framer-motion";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion, useMotionValue, useReducedMotion, useTransform } from "framer-motion";
 import { ArrowLeft, ArrowRight, Check, LockKeyhole, RotateCcw, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/common/Button";
-import type { LearningModuleProps, ModuleSubmission } from "@/types";
+import type { LearningModuleProps, ModuleDraft, ModuleSubmission } from "@/types";
 
 type SwipeDirection = "negative" | "positive";
 
@@ -156,8 +156,27 @@ const chain: ChainStep[] = [
 
 const pointsPerCard = 100 / chain.length;
 
-function delay(milliseconds: number) {
-  return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+function answersFromDraft(draft: ModuleDraft | null | undefined): Answer[] {
+  const value = (draft?.payload as { answers?: unknown } | undefined)?.answers;
+  if (!Array.isArray(value)) return [];
+  const seen = new Set<string>();
+  const restored: Answer[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object") break;
+    const candidate = item as Partial<Answer>;
+    const step = chain[restored.length];
+    if (!step || candidate.stepId !== step.id || seen.has(step.id) || (candidate.selected !== "negative" && candidate.selected !== "positive")) break;
+    seen.add(step.id);
+    restored.push({
+      stepId: step.id,
+      trigger: step.trigger,
+      variable: step.variable,
+      selected: candidate.selected,
+      expected: step.expected,
+      isCorrect: candidate.selected === step.expected,
+    });
+  }
+  return restored;
 }
 
 function submissionForAnswers(finalAnswers: Answer[], completionReason: "completed" | "teacher-ended" | "draft"): ModuleSubmission {
@@ -183,9 +202,11 @@ function submissionForAnswers(finalAnswers: Answer[], completionReason: "complet
   };
 }
 
-export function Module2Relations({ onSubmit, onDraft, existingSubmission, forceSubmit }: LearningModuleProps) {
-  const [stepIndex, setStepIndex] = useState(0);
-  const [answers, setAnswers] = useState<Answer[]>([]);
+export function Module2Relations({ onSubmit, onDraft, existingSubmission, existingDraft, forceSubmit }: LearningModuleProps) {
+  const initialAnswers = useMemo(() => answersFromDraft(existingDraft), [existingDraft]);
+  const initialStepIndex = Math.min(initialAnswers.length, chain.length - 1);
+  const [stepIndex, setStepIndex] = useState(initialStepIndex);
+  const [answers, setAnswers] = useState<Answer[]>(initialAnswers);
   const [busy, setBusy] = useState(false);
   const [phase, setPhase] = useState<"idle" | "shake" | "exit">("idle");
   const [direction, setDirection] = useState<SwipeDirection | null>(null);
@@ -196,7 +217,13 @@ export function Module2Relations({ onSubmit, onDraft, existingSubmission, forceS
   const [finalSubmission, setFinalSubmission] = useState<ModuleSubmission | null>(null);
   const interactionLocked = useRef(false);
   const submissionStarted = useRef(false);
-  const answersRef = useRef<Answer[]>([]);
+  const answersRef = useRef<Answer[]>(initialAnswers);
+  const transitionTimer = useRef<number | null>(null);
+  const transitionWatchdog = useRef<number | null>(null);
+  const transitionToken = useRef(0);
+  const pendingTransition = useRef<{ answers: Answer[]; stepIndex: number; token: number } | null>(null);
+  const dragActive = useRef(false);
+  const reduceMotion = Boolean(useReducedMotion());
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-240, 0, 240], [-13, 0, 13]);
   const negativeGlow = useTransform(x, [-150, -35, 0], [1, .18, 0]);
@@ -210,12 +237,36 @@ export function Module2Relations({ onSubmit, onDraft, existingSubmission, forceS
     setSubmitFailed(false);
     const accepted = await onSubmit(submission);
     setSubmitting(false);
-    if (accepted === false) setSubmitFailed(true);
+    if (accepted === false) {
+      submissionStarted.current = false;
+      setSubmitFailed(true);
+    }
   }, [onSubmit]);
+
+  const clearTransitionTimers = useCallback(() => {
+    if (transitionTimer.current !== null) window.clearTimeout(transitionTimer.current);
+    if (transitionWatchdog.current !== null) window.clearTimeout(transitionWatchdog.current);
+    transitionTimer.current = null;
+    transitionWatchdog.current = null;
+  }, []);
+
+  const resetCardVisual = useCallback(() => {
+    dragActive.current = false;
+    x.stop();
+    x.set(0);
+    if (!pendingTransition.current) {
+      interactionLocked.current = false;
+      setBusy(false);
+      setPhase("idle");
+      setDirection(null);
+    }
+  }, [x]);
 
   const finalize = useCallback(async (finalAnswers: Answer[], completionReason: "completed" | "teacher-ended") => {
     if (submissionStarted.current || existingSubmission) return;
     submissionStarted.current = true;
+    clearTransitionTimers();
+    pendingTransition.current = null;
     const submission = submissionForAnswers(finalAnswers, completionReason);
     setAnswers(finalAnswers);
     setFinalSubmission(submission);
@@ -225,9 +276,30 @@ export function Module2Relations({ onSubmit, onDraft, existingSubmission, forceS
     setDirection(null);
     x.set(0);
     await submitResult(submission);
-  }, [existingSubmission, submitResult, x]);
+  }, [clearTransitionTimers, existingSubmission, submitResult, x]);
 
-  const choose = useCallback(async (selected: SwipeDirection) => {
+  const completeTransition = useCallback((token: number) => {
+    const pending = pendingTransition.current;
+    if (!pending || pending.token !== token || submissionStarted.current) return;
+    clearTransitionTimers();
+    pendingTransition.current = null;
+    if (pending.stepIndex === chain.length - 1) {
+      void finalize(pending.answers, "completed");
+      return;
+    }
+    setAnswers(pending.answers);
+    answersRef.current = pending.answers;
+    x.stop();
+    x.set(0);
+    setStepIndex(pending.stepIndex + 1);
+    setPhase("idle");
+    setDirection(null);
+    setBusy(false);
+    interactionLocked.current = false;
+    window.setTimeout(() => setFeedback(null), reduceMotion ? 0 : 900);
+  }, [clearTransitionTimers, finalize, reduceMotion, x]);
+
+  const choose = useCallback((selected: SwipeDirection) => {
     if (interactionLocked.current || busy || completed || existingSubmission || forceSubmit) return;
     interactionLocked.current = true;
     const isCorrect = selected === current.expected;
@@ -250,33 +322,50 @@ export function Module2Relations({ onSubmit, onDraft, existingSubmission, forceS
       text: isCorrect ? `Doğru! ${current.explanation}` : `Yanlış! ${current.explanation}`,
     });
 
-    if (!isCorrect) {
-      setPhase("shake");
-      await delay(720);
-    }
-    setPhase("exit");
-    await delay(300);
-
-    if (submissionStarted.current) return;
-
-    if (stepIndex === chain.length - 1) {
-      await finalize(nextAnswers, "completed");
-      return;
-    }
-
-    setAnswers(nextAnswers);
-    x.set(0);
-    setStepIndex((index) => index + 1);
-    setPhase("idle");
-    setDirection(null);
-    setBusy(false);
-    interactionLocked.current = false;
-    window.setTimeout(() => setFeedback(null), 900);
-  }, [busy, completed, current, existingSubmission, finalize, forceSubmit, onDraft, stepIndex, x]);
+    const token = ++transitionToken.current;
+    pendingTransition.current = { answers: nextAnswers, stepIndex, token };
+    const shakeDuration = !isCorrect && !reduceMotion ? 720 : 0;
+    const exitDuration = reduceMotion ? 20 : 300;
+    if (!isCorrect && !reduceMotion) setPhase("shake");
+    transitionTimer.current = window.setTimeout(() => {
+      if (pendingTransition.current?.token !== token) return;
+      setPhase("exit");
+      transitionTimer.current = window.setTimeout(() => completeTransition(token), exitDuration);
+    }, shakeDuration);
+    // Mobile browsers may suppress animation callbacks/timers around cancelled
+    // gestures. The watchdog always releases the card and interaction lock.
+    transitionWatchdog.current = window.setTimeout(() => completeTransition(token), shakeDuration + exitDuration + 700);
+  }, [busy, completed, completeTransition, current, existingSubmission, forceSubmit, onDraft, reduceMotion, stepIndex]);
 
   useEffect(() => {
     if (forceSubmit && !completed && !existingSubmission) void finalize(answersRef.current, "teacher-ended");
   }, [completed, existingSubmission, finalize, forceSubmit]);
+
+  useEffect(() => {
+    if (initialAnswers.length === chain.length && !existingSubmission && !forceSubmit) void finalize(initialAnswers, "completed");
+  }, [existingSubmission, finalize, forceSubmit, initialAnswers]);
+
+  useEffect(() => {
+    const recoverInterruptedGesture = () => {
+      if (pendingTransition.current) completeTransition(pendingTransition.current.token);
+      else resetCardVisual();
+    };
+    const onVisibilityChange = () => {
+      if (document.hidden) recoverInterruptedGesture();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("orientationchange", recoverInterruptedGesture);
+    window.addEventListener("pagehide", recoverInterruptedGesture);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("orientationchange", recoverInterruptedGesture);
+      window.removeEventListener("pagehide", recoverInterruptedGesture);
+      clearTransitionTimers();
+      x.stop();
+      x.set(0);
+      interactionLocked.current = false;
+    };
+  }, [clearTransitionTimers, completeTransition, resetCardVisual, x]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -353,17 +442,24 @@ export function Module2Relations({ onSubmit, onDraft, existingSubmission, forceS
             key={current.id}
             className={`swipe-card active-card ${feedback?.correct === false ? "wrong" : ""}`}
             style={{ x, rotate, background: current.color, borderColor: current.accent }}
-            drag={busy ? false : "x"}
+            drag={busy || reduceMotion ? false : "x"}
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={.86}
             dragSnapToOrigin
+            dragMomentum={false}
+            onDragStart={() => { dragActive.current = true; }}
             initial={false}
             animate={cardAnimation}
             transition={phase === "shake" ? { duration: .65 } : phase === "exit" ? { duration: .28, ease: "easeOut" } : { type: "spring", stiffness: 260, damping: 24 }}
             onDragEnd={(_, info) => {
+              dragActive.current = false;
               if (info.offset.x > 90) void choose("positive");
               else if (info.offset.x < -90) void choose("negative");
+              else resetCardVisual();
             }}
+            onPointerCancel={resetCardVisual}
+            onLostPointerCapture={() => { if (dragActive.current && !busy) resetCardVisual(); }}
+            onTouchCancel={resetCardVisual}
           >
             <motion.div className="card-choice-glow negative" style={{ opacity: negativeGlow }}><X size={44} /></motion.div>
             <motion.div className="card-choice-glow positive" style={{ opacity: positiveGlow }}><Check size={44} /></motion.div>

@@ -2,6 +2,13 @@ import type { Locale } from "@/lib/i18n/dictionaries";
 
 export type LocalizedText = Record<Locale, string>;
 export type FactoryStageId = "mechanical" | "biological" | "sociocultural";
+
+export const FACTORY_FIRST_CORRECT_POINTS = 20;
+export const FACTORY_RECOVERY_POINTS = 8;
+
+export function scoreFactoryOutcomes(outcomes: ReadonlyArray<"first-correct" | "recovered" | "failed">) {
+  return Math.max(0, Math.min(100, outcomes.reduce((total, outcome) => total + (outcome === "first-correct" ? FACTORY_FIRST_CORRECT_POINTS : outcome === "recovered" ? FACTORY_RECOVERY_POINTS : 0), 0)));
+}
 export type FactoryZone = "machine" | "sensor" | "workers";
 export type FactoryEffectType = "organized" | "overdrive" | "jam" | "feedback" | "blind" | "shortage" | "cooperate" | "conflict" | "pollution" | "recover";
 export type FactoryMetrics = { production: number; adaptation: number; participation: number };

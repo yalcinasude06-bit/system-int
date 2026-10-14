@@ -41,7 +41,8 @@ assert.doesNotMatch(moduleFourSource, /matching-result-modal/, "The matching rev
 assert.doesNotMatch(moduleFourSource, /type-result-explanation|correctedTarget|matching-correct-target|showCorrections/, "Matching review must not reveal or highlight correct answers");
 
 assert.match(weekFourSource, /snapshotRef\.current \?\? snapshot/, "Week 4 Module 3 must score the immutable first snapshot");
-assert.match(weekFourSource, /wasInitiallyWrong/, "Initial mistakes must remain visibly marked throughout review");
+assert.match(weekFourSource, /evaluatedCardIsWrong/, "Initial mistakes must remain visibly marked throughout review");
+assert.match(weekFourSource, /evaluatedCardIsCorrect/, "Initial correct placements must remain visibly marked throughout review");
 assert.match(weekFourSource, /beginCheckedReview\(snapshot, startedAt, ANSWER_REVIEW_TOTAL_MS\)/, "Week 4 Module 3 must keep the scene visible for five seconds total");
 assert.doesNotMatch(weekFourSource, /finishCorrection|measureFlyers|flyers\.map|system-correction-log|corrected-placement/, "Week 4 Module 3 must not move or auto-correct cards after checking");
 

@@ -6,6 +6,7 @@ import {
   HUNTER_MAX_HIT_SCORE,
   HUNTER_TASK_TRANSITION_MS,
   HUNTER_TASK_WINDOW_MS,
+  HUNTER_TARGET_DURATION_MS,
   arcadeScoreFor,
   buildProblemHunterRound,
   normalizedHunterScore,
@@ -46,9 +47,14 @@ const repeatedRound = buildProblemHunterRound("session:student:5:2:1");
 const nextRun = buildProblemHunterRound("session:student:5:2:2");
 assert.deepEqual(round, repeatedRound, "The same technical run seed must be deterministic");
 assert.notDeepEqual(round.map((target) => target.id), nextRun.map((target) => target.id), "A new technical run must vary the target selection");
-assert.equal(round.length, 30, "A play must schedule 30 target appearances");
+assert.equal(HUNTER_LEVEL_DURATION_MS, 35_000, "Every level must provide 35 seconds of active play");
+assert.equal(HUNTER_TASK_WINDOW_MS, 10_000, "The shifting mission must change every ten active seconds");
+assert.equal(HUNTER_TASK_TRANSITION_MS, 1_500, "Mission changes must remain readable for 1.5 seconds");
+assert.deepEqual(HUNTER_TARGET_DURATION_MS, [4_500, 4_000, 3_500], "Target visibility must slow to the requested readable durations");
+assert.equal(round.length, 42, "A play must schedule the complete non-overlapping target calendar");
 assert.equal(new Set(round.map((target) => target.id)).size, round.length, "No target may repeat within one play");
-assert.deepEqual([0, 1, 2].map((level) => round.filter((target) => target.level === level).length), [8, 10, 12]);
+assert.deepEqual([0, 1, 2].map((level) => round.filter((target) => target.level === level).length), [7, 14, 21]);
+for (const target of round) assert.equal(target.durationMs, HUNTER_TARGET_DURATION_MS[target.level], `Level ${target.level + 1} uses the wrong visibility duration`);
 
 for (const [level, maximum] of [[0, 1], [1, 2], [2, 3]]) {
   for (let time = 0; time <= HUNTER_LEVEL_DURATION_MS; time += 50) {
@@ -62,12 +68,11 @@ for (let phase = 0; phase < 4; phase += 1) {
   const start = phase * HUNTER_TASK_WINDOW_MS;
   const end = start + HUNTER_TASK_WINDOW_MS;
   const phaseTargets = round.filter((target) => target.level === 2 && target.spawnAtMs >= start && target.spawnAtMs < end);
-  const task = taskForLevelTime(2, start + HUNTER_TASK_TRANSITION_MS);
+  const task = taskForLevelTime(2, start);
   assert.ok(phaseTargets.some((target) => target.category === task), `Phase ${phase + 1} must guarantee a correct target`);
-  assert.ok(phaseTargets.every((target) => target.spawnAtMs >= start + HUNTER_TASK_TRANSITION_MS), `Phase ${phase + 1} must preserve the penalty-free transition`);
   assert.ok(phaseTargets.every((target) => target.spawnAtMs + target.durationMs <= end), `Phase ${phase + 1} targets must clear before the next mission`);
 }
-assert.deepEqual([0, 1, 2, 3].map((phase) => taskForLevelTime(2, phase * HUNTER_TASK_WINDOW_MS + HUNTER_TASK_TRANSITION_MS)), ["event", "pattern", "structure", "event"]);
+assert.deepEqual([0, 1, 2, 3].map((phase) => taskForLevelTime(2, phase * HUNTER_TASK_WINDOW_MS)), ["event", "pattern", "structure", "event"]);
 
 const action = (outcome, points, targetId) => ({ targetId, level: 0, task: "structure", category: "structure", outcome, points, atMs: 0 });
 assert.equal(arcadeScoreFor([action("correct", 10, "a"), action("wrong", -5, "b"), action("miss", -2, "c")]), 3, "Correct, wrong, and missed scoring must be +10/-5/-2");
@@ -80,9 +85,11 @@ assert.equal(normalizedHunterScore([...perfect, action("correct", 10, "extra")])
 assert.match(component, /resolvedIds\.current\.has\(target\.id\)/, "Targets must be protected against duplicate clicks");
 assert.match(component, /document\.hidden/, "The game timer must pause in a background tab");
 assert.match(component, /setIsHidden\(hidden\);\s*lastTick\.current = performance\.now\(\);\s*saveDraft/, "Visibility changes must preserve progress before pausing or resuming");
+assert.match(component, /transitionRemainingRef\.current > 0[\s\S]*return;/, "Mission transition time must not consume active game time");
+assert.match(component, /taskTransitionRemainingMs/, "An in-progress mission transition must survive draft restore");
 assert.match(component, /forceSubmit[\s\S]*finalize\("teacher-ended"\)/, "Teacher finish must save a partial result");
 assert.match(component, /onDraft/, "Meaningful progress must be draftable");
-assert.doesNotMatch(component, /setElapsedMs\(nextElapsed\)[\s\S]{0,180}saveDraft/, "The high-frequency timer must not save a draft on every tick");
+assert.match(component, /const nextCheckpoint = Math\.floor\(nextElapsed \/ 5_000\);[\s\S]*if \(nextCheckpoint > draftCheckpoint\.current\)[\s\S]*saveDraft/, "The timer may checkpoint progress only at bounded five-second intervals");
 assert.match(studentPage, /session\.selected_week === 5 && session\.current_module === 2[\s\S]*<Week5ProblemHunter/);
 assert.match(teacherPage, /session\.selected_week === 5 && currentModule <= 3/);
 assert.match(selector, /id: 2, title: "Sorun Avcısı"/);
@@ -90,6 +97,7 @@ assert.match(countdown, /weekFiveModuleTwoBrief/);
 assert.match(demo, /WeekFiveProblemHunterDemo/);
 assert.match(css, /\.hunter-board[\s\S]*grid-template-columns: repeat\(3/);
 assert.match(css, /@media \(max-width: 760px\)[\s\S]*\.hunter-board[\s\S]*grid-template-columns: repeat\(3/, "The required 2×3 board must remain intact on mobile");
+assert.match(css, /@media \(max-width: 390px\)[\s\S]*\.hunter-hud \{ grid-template-columns: 1fr;/, "The HUD must stack safely at 320–390px and large system fonts");
 assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.hunter-target[^\{]*\{ animation: none/);
 
 assert.doesNotMatch(migration, /create table|alter table|drop table/i, "Module 2 enablement must not introduce a new table");
