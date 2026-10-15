@@ -1,4 +1,4 @@
-import { BarChart3, Boxes, CheckCircle2, Factory, Gauge, Layers3, ListChecks, Network, Play, RotateCcw, ScanSearch, Shapes, Square, Target, UsersRound, Workflow } from "lucide-react";
+import { BarChart3, Boxes, CheckCircle2, Factory, Gauge, History, Layers3, ListChecks, Network, Play, RotateCcw, ScanSearch, Shapes, Square, Target, UsersRound, Workflow } from "lucide-react";
 import type { ComponentType } from "react";
 import type { ModuleId } from "@/types";
 
@@ -31,7 +31,7 @@ const weekFourModules: typeof weekOneModules = [
 ];
 
 const weekFiveModules: typeof weekOneModules = [
-  { id: 1, title: "Zincirleme Kaos", subtitle: "3 bölüm · gecikmeli sistem etkileri", description: "Ürünleri yönlendir; yanlış kararların şikâyet, iade ve iş yüküne dönüşen zincirini yönet.", Icon: Workflow },
+  { id: 1, title: "Gecikmenin İzinde", subtitle: "5 aşama · 25 vakalık gecikme analizi", description: "Haziran'daki sonucu başlatan geçmiş kararı bul; gecikmiş etkilerin ay ay dönüşümünü izle.", Icon: History },
   { id: 2, title: "Sorun Avcısı", subtitle: "3 seviye · 90 hedeflik arcade", description: "Olay, davranış örüntüsü ve sistem yapısı hedeflerini doğru görevde yakala.", Icon: Target },
   { id: 3, title: "Denge Ustası", subtitle: "60 saniyelik sistem kontrol odası", description: "Sınırlı kaynak ve gecikmeli etkiler altında üretim sistemini dengede tut.", Icon: Gauge },
 ];

@@ -117,14 +117,14 @@ const weekFourModuleThreeBrief: Record<"tr" | "en", ModuleBrief> = {
 
 const weekFiveModuleOneBrief: Record<"tr" | "en", ModuleBrief> = {
   tr: {
-    icon: "🔀",
-    title: "Modül 1: Zincirleme Kaos",
-    description: "Sensörü izle, kapıyı çevir ve yanlış kararların sisteme nasıl geri döndüğünü yönet.",
+    icon: "🕰️",
+    title: "Modül 1: Gecikmenin İzinde",
+    description: "Haziran sorununu başlatan geçmiş kararı bul; gecikmiş etkilerin ay ay nasıl düzeldiğini izle.",
   },
   en: {
-    icon: "🔀",
-    title: "Module 1: Chain-Reaction Chaos",
-    description: "Watch the sensor, turn the gate, and manage how wrong choices return through the system.",
+    icon: "🕰️",
+    title: "Module 1: Tracing the Delay",
+    description: "Find the past decision behind June's problem and watch its delayed effects improve month by month.",
   },
 };
 

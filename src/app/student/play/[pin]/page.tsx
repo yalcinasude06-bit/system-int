@@ -19,7 +19,7 @@ import { Week3FlowchartSymbols } from "@/components/modules/Week3_FlowchartSymbo
 import { Week4FactoryTransform } from "@/components/modules/Week4_FactoryTransform";
 import { Week4BossApproach } from "@/components/modules/Week4_BossApproach";
 import { Week4SystemProcess } from "@/components/modules/Week4_SystemProcess";
-import { Week5ChainChaos } from "@/components/modules/Week5_ChainChaos";
+import { Week5DelayTrail } from "@/components/modules/Week5_DelayTrail";
 import { Week5ProblemHunter } from "@/components/modules/Week5_ProblemHunter";
 import { Week5BalanceMaster } from "@/components/modules/Week5_BalanceMaster";
 import { getRemainingCountdown } from "@/lib/moduleCountdown";
@@ -429,7 +429,7 @@ export default function StudentPlayPage() {
       : session.selected_week === 4 && session.current_module === 3
         ? <Week4SystemProcess key={activeModuleKey} seedKey={`${session.id}:${student.id}:4:3:${session.current_run_number}`} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onReviewStart={beginAnswerReview} onDraft={(draft) => saveDraft(3, draft)} onSubmit={(submission) => submit(3, submission)} />
       : session.selected_week === 5 && session.current_module === 1
-        ? <Week5ChainChaos key={activeModuleKey} seedKey={`${session.id}:${student.id}:5:1:${session.current_run_number}`} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(1, draft)} onSubmit={(submission) => submit(1, submission)} />
+        ? <Week5DelayTrail key={activeModuleKey} seedKey={`${session.id}:${student.id}:5:1:${session.current_run_number}`} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(1, draft)} onSubmit={(submission) => submit(1, submission)} />
       : session.selected_week === 5 && session.current_module === 2
         ? <Week5ProblemHunter key={activeModuleKey} seedKey={`${session.id}:${student.id}:5:2:${session.current_run_number}`} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(2, draft)} onSubmit={(submission) => submit(2, submission)} />
       : session.selected_week === 5 && session.current_module === 3

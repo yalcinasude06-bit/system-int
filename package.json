@@ -13,7 +13,7 @@
     "test:flowchart-responsive": "node --no-warnings --experimental-strip-types scripts/validate-flowchart-responsive.mjs",
     "test:week4-content": "node --no-warnings --experimental-strip-types scripts/validate-week4-content.mjs",
     "test:week4-module3-save": "node scripts/validate-week4-module3-save.mjs",
-    "test:week5-chain-chaos": "node --no-warnings --experimental-strip-types scripts/validate-week5-chain-chaos.mjs",
+    "test:week5-delay-trail": "node --no-warnings --experimental-strip-types scripts/validate-week5-delay-trail.mjs",
     "test:week5-problem-hunter": "node --no-warnings --experimental-strip-types scripts/validate-week5-problem-hunter.mjs",
     "test:week5-balance-master": "node --no-warnings --experimental-strip-types scripts/validate-week5-balance-master.mjs",
     "test:module-revisions": "node --no-warnings --experimental-strip-types scripts/validate-module-revisions.mjs",

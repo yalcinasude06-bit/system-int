@@ -392,31 +392,39 @@ function WeekFourSystemProcessDemo() {
   </div>;
 }
 
-function WeekFiveChainChaosDemo() {
+function WeekFiveDelayTrailDemo() {
   const { locale } = useI18n();
-  const text = locale === "tr" ? {
-    sensor: "Sensör: Hatalı",
-    shipping: "Sevkiyat",
-    recycle: "Geri dönüşüm",
-    complaint: "Şikâyet",
-    returned: "İade → Ek iş yükü",
-  } : {
-    sensor: "Sensor: Defective",
-    shipping: "Shipping",
-    recycle: "Recycling",
-    complaint: "Complaint",
-    returned: "Return → Extra workload",
-  };
-  const transition = { duration: 6.2, repeat: Infinity, ease: "easeInOut" as const, times: [0, .12, .28, .43, .56, .68, .82, 1] };
-  return <div className="module-demo week-five-chain-demo" aria-hidden="true">
-    <div className="week-five-demo-belt"><i /><i /><i /></div>
-    <div className="week-five-demo-sensor">◉<small>{text.sensor}</small></div>
-    <div className="week-five-demo-split">↗</div>
-    <span className="week-five-demo-target shipping">🚚 {text.shipping}</span>
-    <span className="week-five-demo-target recycling">♻ {text.recycle}</span>
-    <motion.span className="week-five-demo-product" animate={{ left: ["4%", "28%", "51%", "73%", "82%", "82%", "17%", "4%"], top: ["45%", "45%", "45%", "27%", "18%", "18%", "75%", "45%"], opacity: [1, 1, 1, 1, 0, 0, 1, 1] }} transition={transition}>📦<b>×</b></motion.span>
-    <motion.span className="week-five-demo-alert" animate={{ opacity: [0, 0, 0, 0, 1, 1, 0, 0], scale: [.8, .8, .8, .8, 1, 1, .8, .8] }} transition={transition}>! {text.complaint}</motion.span>
-    <motion.span className="week-five-demo-return" animate={{ opacity: [0, 0, 0, 0, 0, 1, 1, 0] }} transition={transition}>↩ {text.returned}</motion.span>
+  const demoCopy = {
+    tr: {
+      prompt: "Başlatan kararı bul",
+      months: ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran"],
+      before: ["Yeni hat açıldı", "Eğitim kısaltıldı", "Hatalar arttı", "Hatalı ürün arttı", "İadeler arttı", "Şikâyetler arttı"],
+      after: ["Yeni hat açıldı", "Eğitim tamamlandı", "Hatalar azaldı", "Kalite iyileşti", "İadeler azaldı", "Şikâyetler azaldı"],
+    },
+    en: {
+      prompt: "Find the starting decision",
+      months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+      before: ["New line opened", "Training shortened", "Errors increased", "Defects increased", "Returns increased", "Complaints increased"],
+      after: ["New line opened", "Training completed", "Errors decreased", "Quality improved", "Returns decreased", "Complaints decreased"],
+    },
+  } as const;
+  const text = demoCopy[locale];
+  const times = [0, .13, .24, .35, .46, .57, .78, 1];
+  const transition = { duration: 6.4, repeat: Infinity, ease: "easeInOut" as const, times };
+  return <div className="module-demo week-five-delay-demo" aria-hidden="true">
+    <b className="week-five-delay-demo-prompt">{text.prompt}</b>
+    <div className="week-five-delay-demo-grid">
+      {text.months.map((month, index) => {
+        const threshold = index === 0 ? 9 : index + 1;
+        const changed = times.map((_, point) => index > 0 && point >= threshold && point < 7 ? 1 : 0);
+        return <motion.span key={month} animate={{ backgroundColor: changed.map((value) => value ? "#dcfce7" : "#ffffff"), borderColor: changed.map((value) => value ? "#36a269" : "#c7d2fe") }} transition={transition}>
+          <small>{month}</small>
+          <motion.i animate={{ opacity: changed.map((value) => value ? 0 : 1) }} transition={transition}>{text.before[index]}</motion.i>
+          {index > 0 && <motion.i className="after" animate={{ opacity: changed }} transition={transition}>{text.after[index]}</motion.i>}
+        </motion.span>;
+      })}
+    </div>
+    <motion.span className="week-five-delay-demo-hand" animate={{ y: [8, 8, -3, 5, 5, 5, 5, 8], opacity: [1, 1, 1, 0, 0, 0, 0, 1], scale: [1, .82, 1, 1, 1, 1, 1, 1] }} transition={transition}>👆</motion.span>
   </div>;
 }
 
@@ -486,7 +494,7 @@ export function ModuleGameplayDemo({ moduleId, weekId = 1 }: { moduleId: ModuleI
       : weekId === 4 && moduleId === 3
         ? WeekFourSystemProcessDemo
       : weekId === 5 && moduleId === 1
-        ? WeekFiveChainChaosDemo
+        ? WeekFiveDelayTrailDemo
       : weekId === 5 && moduleId === 2
         ? WeekFiveProblemHunterDemo
       : weekId === 5 && moduleId === 3
