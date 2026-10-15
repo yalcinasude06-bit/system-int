@@ -26,6 +26,9 @@ export const DELAY_TRAIL_STAGE_SCORE = 20;
 export const DELAY_TRAIL_MAX_SCORE = 100;
 export const DELAY_TRAIL_SECOND_CHANCE_MS = 6_000;
 export const DELAY_TRAIL_REVEAL_STEP_MS = 450;
+export const DELAY_TRAIL_SUMMARY_PAUSE_MS = 800;
+export const DELAY_TRAIL_SUMMARY_READING_MS = 2_200;
+export const DELAY_TRAIL_STAGE_TRANSITION_MS = 250;
 
 const l = (tr: string, en: string): LocalizedText => ({ tr, en });
 const m = (trBefore: string, trAfter: string, enBefore: string, enAfter: string): DelayTrailMonth => ({

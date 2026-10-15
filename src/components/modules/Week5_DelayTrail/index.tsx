@@ -10,7 +10,10 @@ import {
   DELAY_TRAIL_MONTHS,
   DELAY_TRAIL_REVEAL_STEP_MS,
   DELAY_TRAIL_SECOND_CHANCE_MS,
+  DELAY_TRAIL_STAGE_TRANSITION_MS,
   DELAY_TRAIL_STAGES,
+  DELAY_TRAIL_SUMMARY_PAUSE_MS,
+  DELAY_TRAIL_SUMMARY_READING_MS,
   buildDelayTrailRound,
   validatedDelayTrailScore,
   type DelayTrailRecord,
@@ -40,8 +43,6 @@ const copy = {
     teachingDetail: "Bu dönüşüm öğretici olarak gösteriliyor; öğrenci başarısı sayılmadı.",
     feedback: "Geri besleme bağı",
     explanation: "Neden böyle oldu?",
-    next: "Sonraki aşama",
-    finish: "Modülü tamamla",
     completed: "Beş aşama tamamlandı",
     completedDetail: "Seçimlerin güvenle kaydedildi. Sonuçlar öğretmenin açıklamasına kadar gizli tutulacak.",
     partial: "Oynanış öğretmen tarafından sonlandırıldı",
@@ -65,8 +66,6 @@ const copy = {
     teachingDetail: "This transformation is shown for teaching and was not counted as student success.",
     feedback: "Feedback link",
     explanation: "Why did this happen?",
-    next: "Next stage",
-    finish: "Complete module",
     completed: "All five stages are complete",
     completedDetail: "Your choices were saved securely. Results will remain hidden until your teacher reveals them.",
     partial: "The teacher ended this play",
@@ -143,6 +142,8 @@ export function Week5DelayTrail({
   const [submitting, setSubmitting] = useState(false);
   const [submitFailed, setSubmitFailed] = useState(false);
   const [finalSubmission, setFinalSubmission] = useState<ModuleSubmission | null>(null);
+  const [summaryVisible, setSummaryVisible] = useState(false);
+  const [autoTransitioning, setAutoTransitioning] = useState(false);
 
   const stageRef = useRef(initialStage);
   const recordsRef = useRef(initialRecords);
@@ -300,13 +301,17 @@ export function Week5DelayTrail({
     if (forceSubmit && !completedRef.current && !existingSubmission) finalize("teacher-ended");
   }, [existingSubmission, finalize, forceSubmit]);
 
-  const advanceStage = () => {
-    if (!currentRecord || currentRecord.revealedThrough < 5) return;
-    if (stageIndex >= 4) {
+  const advanceStage = useCallback(() => {
+    const activeStage = stageRef.current;
+    const activeRecord = recordsRef.current[activeStage];
+    if (!activeRecord || activeRecord.revealedThrough < 5 || completedRef.current || existingSubmission || forceSubmit) return;
+    setAutoTransitioning(false);
+    setSummaryVisible(false);
+    if (activeStage >= 4) {
       finalize("completed");
       return;
     }
-    const nextStage = stageIndex + 1;
+    const nextStage = activeStage + 1;
     stageRef.current = nextStage;
     selectionsRef.current = [];
     deadlineRef.current = null;
@@ -315,7 +320,20 @@ export function Week5DelayTrail({
     setCorrectionDeadlineAt(null);
     setWrongFlash(null);
     saveDraft(recordsRef.current, nextStage, [], null);
-  };
+  }, [existingSubmission, finalize, forceSubmit, saveDraft]);
+
+  useEffect(() => {
+    if (!currentRecord || currentRecord.revealedThrough < 5 || completed || existingSubmission || forceSubmit) return;
+    const totalDelay = DELAY_TRAIL_SUMMARY_PAUSE_MS + DELAY_TRAIL_SUMMARY_READING_MS;
+    const summaryTimer = window.setTimeout(() => setSummaryVisible(true), DELAY_TRAIL_SUMMARY_PAUSE_MS);
+    const transitionTimer = window.setTimeout(() => setAutoTransitioning(true), totalDelay - DELAY_TRAIL_STAGE_TRANSITION_MS);
+    const advanceTimer = window.setTimeout(advanceStage, totalDelay);
+    return () => {
+      window.clearTimeout(summaryTimer);
+      window.clearTimeout(transitionTimer);
+      window.clearTimeout(advanceTimer);
+    };
+  }, [advanceStage, completed, currentRecord, existingSubmission, forceSubmit]);
 
   const handleCardKeyDown = (event: KeyboardEvent<HTMLButtonElement>, monthIndex: number) => {
     const delta = event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 : event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 0;
@@ -334,7 +352,7 @@ export function Week5DelayTrail({
 
   const remainingMs = clockNow === 0 ? DELAY_TRAIL_SECOND_CHANCE_MS : Math.max(0, (correctionDeadlineAt ?? clockNow) - clockNow);
   const isTeaching = currentRecord?.resolution === "teaching";
-  return <section className="panel module-shell delay-trail-shell">
+  return <section className={`panel module-shell delay-trail-shell ${autoTransitioning ? "is-advancing" : ""}`}>
     <header className="delay-trail-header">
       <div><h2>{text.eyebrow}</h2><p>{currentCase.title[locale]} <span>· {currentCase.context[locale]}</span></p><strong>{text.question}</strong></div>
       <div className="delay-trail-progress" aria-label={`${text.stage} ${stageIndex + 1}/5`}>
@@ -371,15 +389,14 @@ export function Week5DelayTrail({
       })}
     </div>
 
-    {phase !== "transforming" && <div className={`delay-trail-guidance ${phase} ${isTeaching ? "teaching" : ""}`} aria-live="polite">
+    {phase !== "transforming" && (phase !== "summary" || summaryVisible) && <div className={`delay-trail-guidance ${phase} ${isTeaching ? "teaching" : ""}`} aria-live="polite">
       {phase === "inspect" && <><Lightbulb size={20} /><strong>{text.instruction}</strong></>}
       {phase === "second-chance" && <><RefreshCw size={20} /><div><strong>{text.firstWrong}</strong><span>{text.secondChance}: {(remainingMs / 1000).toFixed(1)} sn</span></div></>}
       {phase === "summary" && <><CheckCircle2 size={20} /><div><strong>{isTeaching ? text.teaching : text.solved}</strong>{isTeaching && <span>{text.teachingDetail}</span>}</div></>}
     </div>}
 
-    {phase === "summary" && <div className="delay-trail-summary">
+    {phase === "summary" && summaryVisible && <div className="delay-trail-summary">
       <div><b>{text.explanation}</b><p>{currentCase.explanation[locale]}</p>{currentCase.feedbackLoop && <p><strong>{text.feedback}:</strong> {currentCase.feedbackLoop[locale]}</p>}</div>
-      <Button icon={stageIndex >= 4 ? <CheckCircle2 size={18} /> : <ArrowRight size={18} />} onClick={advanceStage}>{stageIndex >= 4 ? text.finish : text.next}</Button>
     </div>}
   </section>;
 }

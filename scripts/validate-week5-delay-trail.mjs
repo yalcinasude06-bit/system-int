@@ -4,7 +4,10 @@ import {
   DELAY_TRAIL_CASES,
   DELAY_TRAIL_MAX_SCORE,
   DELAY_TRAIL_SECOND_CHANCE_MS,
+  DELAY_TRAIL_STAGE_TRANSITION_MS,
   DELAY_TRAIL_STAGE_COUNT,
+  DELAY_TRAIL_SUMMARY_PAUSE_MS,
+  DELAY_TRAIL_SUMMARY_READING_MS,
   buildDelayTrailRound,
   pointsForDelayTrailRecord,
   validatedDelayTrailScore,
@@ -23,6 +26,10 @@ assert.equal(DELAY_TRAIL_CASES.length, 25, "The case bank must include all 25 ca
 assert.equal(DELAY_TRAIL_STAGE_COUNT, 5);
 assert.equal(DELAY_TRAIL_MAX_SCORE, 100);
 assert.equal(DELAY_TRAIL_SECOND_CHANCE_MS, 6_000);
+assert.equal(DELAY_TRAIL_SUMMARY_PAUSE_MS, 800, "The completed chain must remain unobstructed for 0.8 seconds");
+assert.equal(DELAY_TRAIL_SUMMARY_READING_MS, 2_200, "The explanation must remain readable for 2.2 seconds");
+assert.ok(DELAY_TRAIL_STAGE_TRANSITION_MS >= 200 && DELAY_TRAIL_STAGE_TRANSITION_MS <= 300, "The stage transition must last 200–300 ms");
+assert.equal(DELAY_TRAIL_SUMMARY_PAUSE_MS + DELAY_TRAIL_SUMMARY_READING_MS, 3_000, "Automatic advancement must occur three seconds after the final reveal");
 
 for (let stage = 0; stage < DELAY_TRAIL_STAGE_COUNT; stage += 1) {
   const stageCases = DELAY_TRAIL_CASES.filter((item) => item.stage === stage);
@@ -90,6 +97,12 @@ assert.match(component, /Bu zinciri başlatan geçmiş karara dokun\./);
 assert.doesNotMatch(component, /delay-trail-issue|text\.old|text\.improved|text\.order/, "The live screen must not repeat June, before/improved labels or layout guidance");
 assert.equal(component.match(/currentCase\.feedbackLoop &&/g)?.length, 1, "The feedback loop must be revealed only once in the result explanation");
 assert.match(component, /phase !== "transforming"/, "The interface must stay quiet while the month-by-month transformation runs");
+assert.match(component, /setSummaryVisible\(true\), DELAY_TRAIL_SUMMARY_PAUSE_MS/, "The summary must appear only after the completed-chain pause");
+assert.match(component, /setAutoTransitioning\(true\), totalDelay - DELAY_TRAIL_STAGE_TRANSITION_MS/, "The soft transition must begin shortly before automatic advancement");
+assert.match(component, /window\.setTimeout\(advanceStage, totalDelay\)/, "The next stage must start automatically after the reading period");
+assert.match(component, /if \(activeStage >= 4\) \{\s*finalize\("completed"\)/, "The fifth stage must automatically use the existing completion path");
+assert.doesNotMatch(component, /text\.next|text\.finish|onClick=\{advanceStage\}/, "No manual next-stage or complete-module control may remain");
+assert.match(component, /phase === "summary" && summaryVisible/, "The existing explanation must remain visible during the automatic reading period");
 
 assert.match(studentPage, /<Week5DelayTrail/);
 assert.doesNotMatch(studentPage, /Week5ChainChaos/);
