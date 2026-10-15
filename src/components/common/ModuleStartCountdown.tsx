@@ -154,6 +154,11 @@ const weekFiveModuleThreeBrief: Record<"tr" | "en", ModuleBrief> = {
   },
 };
 
+const weekSixModuleOneBrief: Record<"tr" | "en", ModuleBrief> = {
+  tr: { icon: "🏭", title: "1. Akış Operasyonu", description: "Beş mini oyunda stok, giriş, çıkış, zaman ve grafik ilişkisini çalıştır." },
+  en: { icon: "🏭", title: "1. Flow Operation", description: "Run stock, inflow, outflow, time, and graph relationships through five mini games." },
+};
+
 type ModuleStartCountdownProps = {
   weekId?: number;
   moduleId: ModuleId;
@@ -185,6 +190,8 @@ export function ModuleStartCountdown({ weekId = 1, moduleId, startedAt, onComple
         ? weekFiveModuleTwoBrief[locale]
       : weekId === 5 && moduleId === 3
         ? weekFiveModuleThreeBrief[locale]
+      : weekId === 6 && moduleId === 1
+        ? weekSixModuleOneBrief[locale]
       : moduleBriefs[moduleId];
 
   useEffect(() => {

@@ -36,6 +36,10 @@ const weekFiveModules: typeof weekOneModules = [
   { id: 3, title: "Denge Ustası", subtitle: "60 saniyelik sistem kontrol odası", description: "Sınırlı kaynak ve gecikmeli etkiler altında üretim sistemini dengede tut.", Icon: Gauge },
 ];
 
+const weekSixModules: typeof weekOneModules = [
+  { id: 1, title: "1. Akış Operasyonu", subtitle: "5 mini oyun · 30 stok-akış senaryosu", description: "Hedef depoyu yönet, taşmayı önle, kayıp akışı tamamla, zamanı ilerlet ve doğru grafiği yakala.", Icon: Workflow },
+];
+
 export function WeekSelector({ activeWeek, onChange, disabled }: { activeWeek: number; onChange: (week: number) => void; disabled?: boolean }) {
   return (
     <div className="week-tabs dashboard-week-tabs" role="tablist" aria-label="Ders haftası">
@@ -72,7 +76,7 @@ type ModuleSelectorProps = {
 };
 
 export function ModuleSelector({ activeWeek, activeModule, moduleStage, isModuleStarted, currentModuleTurn, moduleTurnCounters, submittedCount, totalStudents, disabled, onStart, onFinish, onViewResults }: ModuleSelectorProps) {
-  if (activeWeek !== 1 && activeWeek !== 3 && activeWeek !== 4 && activeWeek !== 5) {
+  if (activeWeek !== 1 && activeWeek !== 3 && activeWeek !== 4 && activeWeek !== 5 && activeWeek !== 6) {
     return (
       <div className="coming-soon-card" role="status">
         <span aria-hidden="true">🚧</span>
@@ -81,7 +85,7 @@ export function ModuleSelector({ activeWeek, activeModule, moduleStage, isModule
     );
   }
 
-  const modules = activeWeek === 1 ? weekOneModules : activeWeek === 3 ? weekThreeModules : activeWeek === 4 ? weekFourModules : weekFiveModules;
+  const modules = activeWeek === 1 ? weekOneModules : activeWeek === 3 ? weekThreeModules : activeWeek === 4 ? weekFourModules : activeWeek === 5 ? weekFiveModules : weekSixModules;
 
   return (
     <div className="dashboard-module-list" role="list" aria-label={`Hafta ${activeWeek} modülleri`}>

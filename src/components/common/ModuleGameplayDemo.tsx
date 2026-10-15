@@ -472,6 +472,26 @@ function WeekFiveBalanceMasterDemo() {
   </div>;
 }
 
+function WeekSixFlowOperationDemo() {
+  const { locale } = useI18n();
+  const demoCopy = {
+    tr: { title: "Hedef Depo", production: "Üretim", shipping: "Sevkiyat", target: "Hedef", day: "2 gün", unit: "/gün" },
+    en: { title: "Target Depot", production: "Production", shipping: "Shipping", target: "Target", day: "2 days", unit: "/day" },
+  } as const;
+  const text = demoCopy[locale];
+  const transition = { duration: 5.2, repeat: Infinity, ease: "easeInOut" as const, times: [0, .18, .3, .48, .66, .82, 1] };
+  return <div className="module-demo week-six-flow-demo" aria-hidden="true">
+    <div className="week-six-flow-demo-heading"><b>{text.title}</b><span>{text.shipping} 8{text.unit} · {text.day}</span></div>
+    <div className="week-six-flow-demo-factory"><i /><i /><i /><b>40</b></div>
+    <div className="week-six-flow-demo-belt"><motion.i animate={{ x: [-20, -20, 68, 132, 175, 175, -20] }} transition={transition} /><motion.i animate={{ x: [-48, -48, 34, 98, 150, 150, -48] }} transition={transition} /></div>
+    <div className="week-six-flow-demo-depot"><small>{text.target} 52</small><motion.b animate={{ opacity: [1, 1, 1, 0, 0, 0, 1] }} transition={transition}>40</motion.b><motion.b className="result" animate={{ opacity: [0, 0, 0, 1, 1, 1, 0], scale: [.8, .8, .8, 1.08, 1, 1, .8] }} transition={transition}>52 ✓</motion.b></div>
+    <div className="week-six-flow-demo-rates"><span>10{text.unit}</span><motion.span animate={{ color: ["#315c4d", "#315c4d", "#17643e", "#17643e", "#17643e", "#315c4d", "#315c4d"], backgroundColor: ["#fff", "#fff", "#dff2e6", "#dff2e6", "#dff2e6", "#fff", "#fff"], borderColor: ["#b9d8c4", "#b9d8c4", "#36a269", "#36a269", "#36a269", "#b9d8c4", "#b9d8c4"], scale: [1, 1, 1.06, 1.06, 1, 1, 1] }} transition={transition}>14{text.unit}</motion.span><span>18{text.unit}</span></div>
+    <motion.span className="week-six-flow-demo-hand" animate={{ y: [8, 8, -2, -2, 5, 8, 8], scale: [1, 1, .82, 1, 1, 1, 1], opacity: [1, 1, 1, 1, 0, 0, 1] }} transition={transition}>👆</motion.span>
+    <motion.div className="week-six-flow-demo-formula" animate={{ opacity: [0, 0, 0, .15, 1, 1, 0], y: [4, 4, 4, 4, 0, 0, 4] }} transition={transition}>40 + (14 − 8) × 2 = 52</motion.div>
+    <span className="week-six-flow-demo-label">{text.production}</span>
+  </div>;
+}
+
 const demos: Record<ModuleId, () => ReactNode> = {
   1: ModuleOneDemo,
   2: ModuleTwoDemo,
@@ -499,6 +519,8 @@ export function ModuleGameplayDemo({ moduleId, weekId = 1 }: { moduleId: ModuleI
         ? WeekFiveProblemHunterDemo
       : weekId === 5 && moduleId === 3
         ? WeekFiveBalanceMasterDemo
+      : weekId === 6 && moduleId === 1
+        ? WeekSixFlowOperationDemo
       : demos[moduleId];
   return <MotionConfig reducedMotion="user"><Demo /></MotionConfig>;
 }
