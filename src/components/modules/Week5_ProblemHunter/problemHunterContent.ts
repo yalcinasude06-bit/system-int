@@ -1,7 +1,7 @@
 import type { Locale } from "@/lib/i18n/dictionaries";
 
 export type TargetCategory = "event" | "pattern" | "structure";
-export type TargetContext = "production" | "logistics" | "sales" | "inventory" | "quality" | "service";
+export type TargetContext = "delivery" | "production" | "safety" | "inventory" | "sales" | "coordination";
 export type LocalizedText = Record<Locale, string>;
 
 export type TargetItem = {
@@ -32,140 +32,139 @@ export type HunterAction = {
   atMs: number;
 };
 
-export const HUNTER_LEVEL_DURATION_MS = 35_000;
-export const HUNTER_TASK_WINDOW_MS = 10_000;
-export const HUNTER_TASK_TRANSITION_MS = 1_500;
-export const HUNTER_TARGET_DURATION_MS = [4_500, 4_000, 3_500] as const;
+export const HUNTER_LEVEL_DURATION_MS = 45_000;
+export const HUNTER_TASK_WINDOW_MS = 15_000;
+export const HUNTER_TASK_TRANSITION_MS = 2_000;
+export const HUNTER_TARGET_DURATION_MS = [6_000, 5_500, 5_000] as const;
 export const HUNTER_CORRECT_POINTS = 10;
 
 const contextIcons: Record<TargetContext, string> = {
+  delivery: "🚚",
   production: "⚙️",
-  logistics: "🚚",
-  sales: "📈",
+  safety: "🦺",
   inventory: "📦",
-  quality: "🔎",
-  service: "🎧",
+  sales: "🤝",
+  coordination: "🔄",
 };
 
 const explanations: Record<TargetCategory, LocalizedText> = {
-  event: { tr: "Belirli bir anda gerçekleşmiş tekil bir sonucu anlatır.", en: "It describes a single outcome at a specific time." },
-  pattern: { tr: "Zaman içinde tekrar eden bir eğilim veya davranışı anlatır.", en: "It describes a trend or behavior repeated over time." },
-  structure: { tr: "Sonuçları üretebilen yerleşik kural, ilişki veya süreci anlatır.", en: "It describes an established rule, relationship, or process that can produce outcomes." },
+  event: { tr: "Belirli bir anda gerçekleşen tekil bir gözlemi anlatır.", en: "It describes a single observation at a specific time." },
+  pattern: { tr: "Zaman içinde tekrarlanan veya yön değiştiren bir eğilimi anlatır.", en: "It describes a repetition or trend observed over time." },
+  structure: { tr: "Davranışı üretebilecek bir kuralı, süreci veya ilişkiyi anlatır.", en: "It describes a rule, process, or relationship that could produce behavior." },
 };
 
-type ContentRow = [TargetContext, string, string];
+type ContentRow = [id: string, category: TargetCategory, context: TargetContext, tr: string, en: string];
 
-function buildItems(prefix: string, category: TargetCategory, rows: ContentRow[]): TargetItem[] {
-  return rows.map(([context, tr, en], index) => ({
-    id: `W5M2-${prefix}${String(index + 1).padStart(2, "0")}`,
-    text: { tr, en },
-    category,
-    context,
-    icon: contextIcons[context],
-    explanation: explanations[category],
-  }));
+function buildItems(_version: string, items: ContentRow[]) {
+  return items;
 }
 
-const eventItems = buildItems("E", "event", [
-  ["production", "Bugün paketleme hattı 18 dakika durdu.", "The packaging line stopped for 18 minutes today."],
-  ["production", "Bu sabah pres makinesi arıza verdi.", "The press machine failed this morning."],
-  ["production", "Dünkü vardiyada sekiz parça reddedildi.", "Eight parts were rejected during yesterday's shift."],
-  ["production", "Saat 14.00 üretim hedefi kaçırıldı.", "The production target was missed at 2 p.m."],
-  ["production", "Pazartesi montaj bandında bir kaza yaşandı.", "An accident occurred on the assembly line on Monday."],
-  ["logistics", "Bugün 12 sipariş geç teslim edildi.", "Twelve orders were delivered late today."],
-  ["logistics", "Bu sabah bir kamyon yanlış depoya gitti.", "A truck went to the wrong warehouse this morning."],
-  ["logistics", "Dünkü sevkiyatta iki koli hasar gördü.", "Two parcels were damaged in yesterday's shipment."],
-  ["logistics", "Saat 09.00 rotasındaki araç yolda kaldı.", "The vehicle on the 9 a.m. route broke down."],
-  ["logistics", "Bugünkü sevkiyatlardan biri yanlış adrese gitti.", "One of today's shipments went to the wrong address."],
-  ["sales", "Dün büyük bir müşteri siparişini iptal etti.", "A major customer canceled an order yesterday."],
-  ["sales", "Bu sabah çevrim içi satış sistemi kapandı.", "The online sales system went offline this morning."],
-  ["sales", "Bugün hedeflenen satışın yüzde 70'i gerçekleşti.", "Seventy percent of today's sales target was reached."],
-  ["sales", "Saat 16.00'da kampanya kodu çalışmadı.", "The campaign code failed at 4 p.m."],
-  ["sales", "Dünkü teklif müşteri tarafından reddedildi.", "Yesterday's proposal was rejected by the customer."],
-  ["inventory", "Akşam vardiyasında bir malzeme eksik çıktı.", "One material was missing during the evening shift."],
-  ["inventory", "Bugün A rafındaki ürün tükendi.", "The product on shelf A ran out today."],
-  ["inventory", "Dün sistemde 24 adet fazla stok göründü.", "The system showed 24 excess items yesterday."],
-  ["inventory", "Bu sabah sayımda üç koli bulunamadı.", "Three parcels were missing in this morning's count."],
-  ["inventory", "Saat 11.00'de acil malzeme talebi açıldı.", "An urgent material request was opened at 11 a.m."],
-  ["quality", "Dün bir müşteri hatalı ürün bildirdi.", "A customer reported a defective product yesterday."],
-  ["quality", "Bugün iki ürün kalite kontrolünden geçemedi.", "Two products failed quality control today."],
-  ["quality", "Bu sabah ölçüm cihazı yanlış değer verdi.", "The measuring device gave a wrong value this morning."],
-  ["quality", "Dünkü numunede yüzey çatlağı bulundu.", "A surface crack was found in yesterday's sample."],
-  ["quality", "Saat 13.00 partisinde etiket hatası görüldü.", "A labeling error was found in the 1 p.m. batch."],
-  ["service", "Bugün çağrı merkezine 38 şikâyet geldi.", "The call center received 38 complaints today."],
-  ["service", "Bu sabah bir müşteri 22 dakika bekledi.", "A customer waited for 22 minutes this morning."],
-  ["service", "Dünkü destek talebi yanlış ekibe aktarıldı.", "Yesterday's support request was sent to the wrong team."],
-  ["service", "Saat 10.00 randevusuna temsilci katılmadı.", "The representative missed the 10 a.m. appointment."],
-  ["service", "Bugün bir iade talebi yanıtsız kaldı.", "A return request went unanswered today."],
+const rows = buildItems("week-5-problem-hunter-v2", [
+  ["T01", "event", "delivery", "Bugün üç sipariş gecikti.", "Three orders were delayed today."],
+  ["T02", "event", "delivery", "Sabahki sevkiyat yetişmedi.", "The morning shipment did not arrive on time."],
+  ["T03", "event", "delivery", "Bir sipariş yanlış adrese gitti.", "One order went to the wrong address."],
+  ["T04", "event", "delivery", "Dün bir müşteri ürünü geç aldı.", "A customer received the product late yesterday."],
+  ["T05", "event", "delivery", "Bugün bir sevkiyat iptal edildi.", "A shipment was canceled today."],
+  ["T06", "pattern", "delivery", "Geciken sipariş sayısı üç aydır artıyor.", "The number of delayed orders has risen for three months."],
+  ["T07", "pattern", "delivery", "Cuma günleri teslimatlar sık aksıyor.", "Deliveries are often disrupted on Fridays."],
+  ["T08", "pattern", "delivery", "Yoğun dönemlerde gecikmeler tekrarlanıyor.", "Delays recur during busy periods."],
+  ["T09", "pattern", "delivery", "Son haftalarda sevkiyat süresi uzuyor.", "Shipment times have grown in recent weeks."],
+  ["T10", "pattern", "delivery", "Yanlış teslimatlar her ay artıyor.", "Incorrect deliveries increase every month."],
+  ["T11", "structure", "delivery", "Siparişler kapasite kontrolü olmadan alınıyor.", "Orders are accepted without checking capacity."],
+  ["T12", "structure", "delivery", "Sevkiyat görevleri açıkça tanımlanmamış.", "Shipping responsibilities are not clearly defined."],
+  ["T13", "structure", "delivery", "Satış planı üretim planına bağlanmamış.", "The sales plan is not linked to production planning."],
+  ["T14", "structure", "delivery", "Acil siparişler için öncelik kuralı yok.", "There is no priority rule for urgent orders."],
+  ["T15", "structure", "delivery", "Depo ile sevkiyatın ortak kayıt sistemi yok.", "Warehouse and shipping lack a shared record system."],
+
+  ["U01", "event", "production", "Bugün üretim makinesi bozuldu.", "A production machine broke down today."],
+  ["U02", "event", "production", "Sabah üretim hattı durdu.", "The production line stopped this morning."],
+  ["U03", "event", "production", "Dün bir parça hatalı üretildi.", "A part was produced incorrectly yesterday."],
+  ["U04", "event", "production", "Bir makine bugün aşırı ısındı.", "A machine overheated today."],
+  ["U05", "event", "production", "Gece vardiyasında üretim kesildi.", "Production stopped during the night shift."],
+  ["U06", "pattern", "production", "Makine arızaları son aylarda artıyor.", "Machine failures have increased in recent months."],
+  ["U07", "pattern", "production", "Yoğun vardiyalarda arızalar tekrarlanıyor.", "Failures recur during busy shifts."],
+  ["U08", "pattern", "production", "Hatalı ürün sayısı her hafta artıyor.", "The number of defective products rises every week."],
+  ["U09", "pattern", "production", "Üretim duruşları giderek uzuyor.", "Production stoppages are getting longer."],
+  ["U10", "pattern", "production", "Her ay benzer üretim aksaklıkları yaşanıyor.", "Similar production disruptions occur every month."],
+  ["U11", "structure", "production", "Makineler için bakım takvimi yok.", "There is no maintenance schedule for the machines."],
+  ["U12", "structure", "production", "Üretim planında makine kapasitesi kontrol edilmiyor.", "Machine capacity is not checked in production planning."],
+  ["U13", "structure", "production", "Hata bildirimleri bakım ekibine iletilmiyor.", "Failure reports are not sent to the maintenance team."],
+  ["U14", "structure", "production", "Makine kontrolü için sorumlu atanmamış.", "No one is assigned to inspect the machines."],
+  ["U15", "structure", "production", "Üretim öncesi kontrol adımı tanımlanmamış.", "No pre-production inspection step has been defined."],
+
+  ["G01", "event", "safety", "Bugün depoda yangın çıktı.", "A fire broke out in the warehouse today."],
+  ["G02", "event", "safety", "Dün bir çalışan yaralandı.", "An employee was injured yesterday."],
+  ["G03", "event", "safety", "Bir güvenlik alarmı bugün çalışmadı.", "A safety alarm failed today."],
+  ["G04", "event", "safety", "Bu sabah makinenin koruyucu kapağı yerinden çıktı.", "The machine's safety cover came off this morning."],
+  ["G05", "event", "safety", "Bir iş kazası dün bildirildi.", "A workplace accident was reported yesterday."],
+  ["G06", "pattern", "safety", "İş kazaları son üç ayda arttı.", "Workplace accidents increased over the last three months."],
+  ["G07", "pattern", "safety", "Aynı bölümde kazalar tekrar ediyor.", "Accidents keep recurring in the same department."],
+  ["G08", "pattern", "safety", "Güvenlik ihlalleri her hafta görülüyor.", "Safety violations are observed every week."],
+  ["G09", "pattern", "safety", "Vardiya sonlarında kazalar sıklaşıyor.", "Accidents become more frequent near shift endings."],
+  ["G10", "pattern", "safety", "Küçük yangınlar son dönemde artıyor.", "Small fires have increased recently."],
+  ["G11", "structure", "safety", "Güvenlik eğitimi programı tanımlanmamış.", "No safety training program has been defined."],
+  ["G12", "structure", "safety", "Riskli işler için yazılı prosedür yok.", "There is no written procedure for risky tasks."],
+  ["G13", "structure", "safety", "Güvenlik kontrolünden sorumlu kişi yok.", "No person is responsible for safety inspections."],
+  ["G14", "structure", "safety", "Acil çıkış yollarının kontrol planı yok.", "There is no inspection plan for emergency exits."],
+  ["G15", "structure", "safety", "Tehlike bildirimlerini izleyen bir süreç yok.", "There is no process for tracking hazard reports."],
+
+  ["S01", "event", "inventory", "Bugün bir ürün stokta kalmadı.", "A product ran out of stock today."],
+  ["S02", "event", "inventory", "Dün depo sayımında hata bulundu.", "An error was found in yesterday's warehouse count."],
+  ["S03", "event", "inventory", "Bir sipariş stoktan karşılanamadı.", "An order could not be filled from stock."],
+  ["S04", "event", "inventory", "Bugün depoya fazla mal geldi.", "Excess goods arrived at the warehouse today."],
+  ["S05", "event", "inventory", "Sabah bir ürün yanlış rafa kondu.", "A product was placed on the wrong shelf this morning."],
+  ["S06", "pattern", "inventory", "Stok eksikleri her ay tekrarlanıyor.", "Stock shortages recur every month."],
+  ["S07", "pattern", "inventory", "Yoğun dönemlerde ürünler tükeniyor.", "Products run out during busy periods."],
+  ["S08", "pattern", "inventory", "Fazla stok miktarı aylardır artıyor.", "Excess inventory has increased for months."],
+  ["S09", "pattern", "inventory", "Depo sayım farkları sık görülüyor.", "Warehouse count differences are frequently observed."],
+  ["S10", "pattern", "inventory", "Son haftalarda stok devir hızı düşüyor.", "Inventory turnover has fallen in recent weeks."],
+  ["S11", "structure", "inventory", "Yeniden sipariş verme kuralı yok.", "There is no reorder rule."],
+  ["S12", "structure", "inventory", "Stok hedefleri satış tahminine bağlanmamış.", "Inventory targets are not linked to sales forecasts."],
+  ["S13", "structure", "inventory", "Raf yerleşimi için standart düzen yok.", "There is no standard layout for shelves."],
+  ["S14", "structure", "inventory", "Depoya giriş kayıt kontrolü tanımlanmamış.", "No incoming inventory record check has been defined."],
+  ["S15", "structure", "inventory", "Satış ile depo arasında ortak stok ekranı yok.", "Sales and warehouse lack a shared inventory screen."],
+
+  ["M01", "event", "sales", "Bugün bir müşteri siparişini iptal etti.", "A customer canceled an order today."],
+  ["M02", "event", "sales", "Dün bir müşteri şikâyet yazdı.", "A customer submitted a complaint yesterday."],
+  ["M03", "event", "sales", "Bugün bir müşteri sipariş vermekten vazgeçti.", "A customer decided not to place an order today."],
+  ["M04", "event", "sales", "Bir müşteri bugün iade istedi.", "A customer requested a return today."],
+  ["M05", "event", "sales", "Dün bir fiyat teklifi reddedildi.", "A price quote was rejected yesterday."],
+  ["M06", "pattern", "sales", "Müşteri şikâyetleri üç aydır artıyor.", "Customer complaints have risen for three months."],
+  ["M07", "pattern", "sales", "Satışlar son haftalarda düşüyor.", "Sales have declined in recent weeks."],
+  ["M08", "pattern", "sales", "İadeler her ay daha sık yaşanıyor.", "Returns occur more often every month."],
+  ["M09", "pattern", "sales", "Tekrar satın alma oranı giderek azalıyor.", "The repeat purchase rate is steadily declining."],
+  ["M10", "pattern", "sales", "Kampanya bitince satışlar sık düşüyor.", "Sales often fall after campaigns end."],
+  ["M11", "structure", "sales", "Şikâyetleri ilgili ekibe aktaran süreç yok.", "There is no process for routing complaints to the relevant team."],
+  ["M12", "structure", "sales", "Satış hedefleri stok kapasitesine göre belirlenmiyor.", "Sales targets are not set according to inventory capacity."],
+  ["M13", "structure", "sales", "İade kararları için ortak kural yok.", "There is no shared rule for return decisions."],
+  ["M14", "structure", "sales", "Satış ve kalite ekipleri veri paylaşmıyor.", "Sales and quality teams do not share data."],
+  ["M15", "structure", "sales", "Müşteri taleplerini izleyen kayıt sistemi yok.", "There is no record system for tracking customer requests."],
+
+  ["K01", "event", "coordination", "Bugün iki ekip aynı işi yaptı.", "Two teams performed the same task today."],
+  ["K02", "event", "coordination", "Dün bir görev sahipsiz kaldı.", "A task had no owner yesterday."],
+  ["K03", "event", "coordination", "Bu sabah toplantı iptal edildi.", "This morning's meeting was canceled."],
+  ["K04", "event", "coordination", "Bir talep bugün yanlış ekibe gitti.", "A request went to the wrong team today."],
+  ["K05", "event", "coordination", "Dün bir karar geç bildirildi.", "A decision was communicated late yesterday."],
+  ["K06", "pattern", "coordination", "Görev karışıklıkları sık tekrarlanıyor.", "Task mix-ups recur frequently."],
+  ["K07", "pattern", "coordination", "Toplantılar her hafta uzuyor.", "Meetings run longer every week."],
+  ["K08", "pattern", "coordination", "Ekipler arası bekleme süresi artıyor.", "Waiting time between teams is increasing."],
+  ["K09", "pattern", "coordination", "Aynı işler her ay yeniden yapılıyor.", "The same tasks are redone every month."],
+  ["K10", "pattern", "coordination", "Yanlış ekibe giden talepler çoğalıyor.", "Requests sent to the wrong team are increasing."],
+  ["K11", "structure", "coordination", "Bölümlerin görev sınırları tanımlanmamış.", "Department responsibility boundaries are not defined."],
+  ["K12", "structure", "coordination", "Birimler için ortak iş akışı yok.", "There is no shared workflow across units."],
+  ["K13", "structure", "coordination", "Kararları paylaşacak sorumlu belirlenmemiş.", "No one is assigned to communicate decisions."],
+  ["K14", "structure", "coordination", "İş devri için standart süreç bulunmuyor.", "There is no standard process for work handoffs."],
+  ["K15", "structure", "coordination", "Ekipler ortak hedefle değerlendirilmiyor.", "Teams are not evaluated against a shared goal."],
 ]);
 
-const patternItems = buildItems("P", "pattern", [
-  ["production", "Son altı ayda plansız duruşlar sürekli arttı.", "Unplanned stoppages rose steadily over six months."],
-  ["production", "Her yoğun sezonda üretim arızaları artıyor.", "Production failures rise during every peak season."],
-  ["production", "Gece vardiyalarında üretim miktarı hep düşüyor.", "Production always drops during night shifts."],
-  ["production", "Her hat değişiminde bekleme süresi uzuyor.", "Waiting time grows with every line change."],
-  ["production", "Son dört haftadır günlük üretim dalgalanıyor.", "Daily production has fluctuated for four weeks."],
-  ["logistics", "Son altı ayda teslimat gecikmeleri sürekli arttı.", "Delivery delays rose steadily over six months."],
-  ["logistics", "Her ay sonunda sevkiyat yığılması oluşuyor.", "A shipment backlog forms at the end of every month."],
-  ["logistics", "Yağışlı günlerde teslimat süresi düzenli uzuyor.", "Delivery time regularly grows on rainy days."],
-  ["logistics", "Son haftalarda daha çok araç boş dönüyor.", "More vehicles return empty each week."],
-  ["logistics", "Pazartesi rotalarında gecikme sık tekrarlanıyor.", "Delays frequently recur on Monday routes."],
-  ["sales", "Satışlar üç çeyrektir düşüş eğiliminde.", "Sales have trended downward for three quarters."],
-  ["sales", "Her kampanya sonrası iadeler geçici olarak yükseliyor.", "Returns temporarily rise after every campaign."],
-  ["sales", "Ayın son haftasında indirim talebi artıyor.", "Discount requests rise in the last week of each month."],
-  ["sales", "Yeni müşterilerin tekrar alışveriş oranı düşüyor.", "Repeat purchases by new customers are declining."],
-  ["sales", "İnternet ziyaretçileri beş haftadır daha çok alışveriş yapıyor.", "Online visitors have bought more for five weeks."],
-  ["inventory", "Stok seviyeleri her ay sert biçimde dalgalanıyor.", "Inventory levels fluctuate sharply every month."],
-  ["inventory", "Kritik malzemeler her çeyrekte yeniden tükeniyor.", "Critical materials run out again every quarter."],
-  ["inventory", "Depodaki sayım farkları son haftalarda büyüyor.", "Warehouse count differences are growing each week."],
-  ["inventory", "Yoğun günlerde raf yenileme süresi uzuyor.", "Shelf replenishment takes longer on busy days."],
-  ["inventory", "Fazla stok miktarı üç aydır düzenli artıyor.", "Excess inventory has risen steadily for three months."],
-  ["quality", "Hatalı ürün oranı üç çeyrektir artıyor.", "The defect rate has risen for three quarters."],
-  ["quality", "Gece vardiyasında kontrol hataları tekrarlanıyor.", "Inspection errors recur during the night shift."],
-  ["quality", "Her yeni ürün geçişinde hata oranı yükseliyor.", "The defect rate rises with every new product changeover."],
-  ["quality", "Son altı üretimde ölçüm hataları arttı.", "Measurement errors increased across six production runs."],
-  ["quality", "Müşteri iadeleri her ayın sonunda yükseliyor.", "Customer returns rise at the end of every month."],
-  ["service", "Son haftalarda ortalama bekleme süresi uzuyor.", "Average waiting time has grown in recent weeks."],
-  ["service", "Müşteri şikâyetleri her ay sonunda yükseliyor.", "Customer complaints rise at the end of every month."],
-  ["service", "Pazartesi sabahları çağrı yoğunluğu tekrarlanıyor.", "Call volume repeatedly peaks on Monday mornings."],
-  ["service", "İlk aramada çözülen sorunlar dört aydır azalıyor.", "Fewer problems are solved on the first call."],
-  ["service", "Yoğun saatlerde müşteriler daha çok telefonu kapatıyor.", "More customers hang up during busy hours."],
-]);
-
-const structureItems = buildItems("S", "structure", [
-  ["production", "Bakım planı üretim takvimine bağlanmıyor.", "The maintenance plan is not linked to production."],
-  ["production", "Prim sistemi yalnızca üretim hızını ödüllendiriyor.", "The bonus system rewards production speed alone."],
-  ["production", "Vardiyalar arasında standart iş teslimi yok.", "There is no standard handoff between shifts."],
-  ["production", "Üretim planı makine kapasitesini dikkate almıyor.", "Production planning ignores machine capacity."],
-  ["production", "Arıza bilgisi planlama ekibine ulaşmıyor.", "Failure information does not reach the planning team."],
-  ["logistics", "Sevkiyat öncelikleri için yazılı karar kuralı yok.", "There is no written rule for shipment priorities."],
-  ["logistics", "Rota planı güncel trafik verisini kullanmıyor.", "Route planning does not use current traffic data."],
-  ["logistics", "Depo ve taşıyıcı ortak teslimat kaydı tutmuyor.", "Warehouse and carrier lack a shared delivery record."],
-  ["logistics", "Araç doluluğu sipariş kabulünde kontrol edilmiyor.", "Vehicle capacity is not checked when orders are accepted."],
-  ["logistics", "Gecikmeleri hangi ekibin çözeceği belli değil.", "No team is clearly responsible for delays."],
-  ["sales", "Siparişler kapasite kontrolü yapılmadan kabul ediliyor.", "Orders are accepted without a capacity check."],
-  ["sales", "Satış primi teslimat kalitesini hesaba katmıyor.", "Sales incentives ignore delivery quality."],
-  ["sales", "Kampanya kararı stok sistemiyle bağlantılı değil.", "Campaign decisions are not linked to inventory."],
-  ["sales", "Müşteri görüşleri ürün ekibine düzenli ulaşmıyor.", "Customer feedback does not regularly reach product teams."],
-  ["sales", "Teklifler onaylanırken kazanç kontrol edilmiyor.", "Profit is not checked before proposals are approved."],
-  ["inventory", "Depo ve satış arasında ortak stok kaydı yok.", "Sales and warehouse lack a shared inventory record."],
-  ["inventory", "Sipariş verme kuralı değişen talebe uymuyor.", "The ordering rule does not follow changing demand."],
-  ["inventory", "Her malzemeden kimin sorumlu olduğu belirsiz.", "Responsibility for each material is unclear."],
-  ["inventory", "Depodaki sayım düzeltmelerinin nedeni kaydedilmiyor.", "Reasons for warehouse count corrections are not recorded."],
-  ["inventory", "Teslim süresi stok planına eklenmiyor.", "Delivery time is not included in stock planning."],
-  ["quality", "Kalite kontrol adımı paketleme sürecinde bulunmuyor.", "The packaging process lacks a quality-control step."],
-  ["quality", "Kalite ve üretim ekiplerinin hedefleri uyuşmuyor.", "Quality and production teams have conflicting goals."],
-  ["quality", "Ürün hataları tedarikçi değerlendirmesine eklenmiyor.", "Product defects are not included in supplier reviews."],
-  ["quality", "Ölçüm cihazları için ortak kontrol takvimi yok.", "There is no shared inspection schedule for measuring devices."],
-  ["quality", "Kalite sorunlarını kimin düzelteceği belli değil.", "No one is clearly responsible for quality fixes."],
-  ["service", "Müşteri çağrıları uzmanlığa göre yönlendirilmiyor.", "Customer calls are not routed according to expertise."],
-  ["service", "Temsilci primi kısa görüşme süresini ödüllendiriyor.", "Agent incentives reward short call duration."],
-  ["service", "Şikâyet kayıtları ürün ekibiyle paylaşılmıyor.", "Complaint records are not shared with the product team."],
-  ["service", "İade kararını kimin vereceği belli değil.", "No one is clearly responsible for return decisions."],
-  ["service", "Tekrarlanan müşteri taleplerinin nedeni araştırılmıyor.", "The cause of repeated customer requests is not investigated."],
-]);
-
-export const problemHunterPool: TargetItem[] = [...eventItems, ...patternItems, ...structureItems];
+export const problemHunterPool: TargetItem[] = rows.map(([id, category, context, tr, en]) => ({
+  id,
+  category,
+  context,
+  text: { tr, en },
+  icon: contextIcons[context],
+  explanation: explanations[category],
+}));
 
 function hashSeed(value: string) {
   let hash = 2166136261;
@@ -198,38 +197,21 @@ function shuffle<T>(items: readonly T[], random: () => number) {
 
 type Slot = { level: number; task: TargetCategory; category: TargetCategory; spawnAtMs: number; durationMs: number };
 
-const taskCycle: TargetCategory[] = ["event", "pattern", "structure", "event"];
+const taskCycle: TargetCategory[] = ["event", "pattern", "structure"];
+const levelOneTimes = [1_000, 4_700, 8_400, 12_100, 15_800, 19_500, 23_200, 26_900, 30_600, 34_300, 38_000];
+const levelTwoTimes = [1_000, 4_700, 8_400, 12_100, 15_800, 19_500, 23_200, 26_900, 30_600, 34_300, 38_000];
+const phaseOffsets = [1_000, 4_000, 7_000, 10_000];
 
 function scheduleSlots(random: () => number = () => .5): Slot[] {
-  const levelOneTimes = [500, 5_000, 9_500, 14_000, 18_500, 23_000, 27_500];
-  const levelOneCategories = shuffle<TargetCategory>(["structure", "structure", "structure", "event", "event", "pattern", "pattern"], random);
-  const levelTwoTimes = [500, 5_000, 9_500, 14_000, 18_500, 23_000, 28_000];
-  const levelTwoTraps = shuffle<TargetCategory>(["event", "structure", "event", "structure", "event", "structure", "event"], random);
-  const slots: Slot[] = levelOneTimes.map((spawnAtMs, index) => ({
-    level: 0,
-    task: "structure" as const,
-    category: levelOneCategories[index]!,
-    spawnAtMs,
-    durationMs: HUNTER_TARGET_DURATION_MS[0],
-  }));
-  levelTwoTimes.forEach((spawnAtMs, index) => {
-    const categories = shuffle<TargetCategory>(["pattern", levelTwoTraps[index]!], random);
-    categories.forEach((category) => slots.push({ level: 1, task: "pattern", category, spawnAtMs, durationMs: HUNTER_TARGET_DURATION_MS[1] }));
-  });
-  for (let phase = 0; phase < taskCycle.length; phase += 1) {
-    const task = taskCycle[phase]!;
+  const levelOneCategories = shuffle<TargetCategory>(["structure", "structure", "structure", "structure", "structure", "structure", "event", "event", "event", "pattern", "pattern"], random);
+  const levelTwoCategories = shuffle<TargetCategory>(["pattern", "pattern", "pattern", "pattern", "pattern", "pattern", "event", "event", "event", "structure", "structure"], random);
+  const slots: Slot[] = levelOneTimes.map((spawnAtMs, index) => ({ level: 0, task: "structure", category: levelOneCategories[index]!, spawnAtMs, durationMs: HUNTER_TARGET_DURATION_MS[0] }));
+  levelTwoTimes.forEach((spawnAtMs, index) => slots.push({ level: 1, task: "pattern", category: levelTwoCategories[index]!, spawnAtMs, durationMs: HUNTER_TARGET_DURATION_MS[1] }));
+  taskCycle.forEach((task, phase) => {
     const traps = (["event", "pattern", "structure"] as TargetCategory[]).filter((category) => category !== task);
-    const batchOffsets = phase === taskCycle.length - 1 ? [500] : [500, 5_000];
-    batchOffsets.forEach((offset) => {
-      shuffle<TargetCategory>([task, traps[0]!, traps[1]!], random).forEach((category) => slots.push({
-        level: 2,
-        task,
-        category,
-        spawnAtMs: phase * HUNTER_TASK_WINDOW_MS + offset,
-        durationMs: HUNTER_TARGET_DURATION_MS[2],
-      }));
-    });
-  }
+    const phaseCategories = shuffle<TargetCategory>([task, task, traps[0]!, traps[1]!], random);
+    phaseOffsets.forEach((offset, index) => slots.push({ level: 2, task, category: phaseCategories[index]!, spawnAtMs: phase * HUNTER_TASK_WINDOW_MS + offset, durationMs: HUNTER_TARGET_DURATION_MS[2] }));
+  });
   return slots;
 }
 
@@ -245,36 +227,30 @@ export function taskForLevelTime(level: number, elapsedMs: number): TargetCatego
 
 export function buildProblemHunterRound(seedKey: string): ScheduledTarget[] {
   const random = seededRandom(hashSeed(`week-5-problem-hunter:${seedKey}`));
-  const pools = {
-    event: shuffle(problemHunterPool.filter((item) => item.category === "event"), random),
-    pattern: shuffle(problemHunterPool.filter((item) => item.category === "pattern"), random),
-    structure: shuffle(problemHunterPool.filter((item) => item.category === "structure"), random),
-  };
+  const practiceAdjacentIds = new Set(["T01", "T06", "T11"]);
+  const pools = Object.fromEntries((["event", "pattern", "structure"] as TargetCategory[]).map((category) => {
+    const shuffled = shuffle(problemHunterPool.filter((item) => item.category === category), random);
+    return [category, [...shuffled.filter((item) => !practiceAdjacentIds.has(item.id)), ...shuffled.filter((item) => practiceAdjacentIds.has(item.id))]];
+  })) as Record<TargetCategory, TargetItem[]>;
   const cursors: Record<TargetCategory, number> = { event: 0, pattern: 0, structure: 0 };
   const slots = scheduleSlots(random);
   const holeCycles = Array.from({ length: Math.ceil(slots.length / 6) }, () => shuffle([0, 1, 2, 3, 4, 5], random)).flat();
   let previousHole = -1;
-  const occupiedByTime = new Map<string, Set<number>>();
   return slots.map((slot, index) => {
     const item = pools[slot.category][cursors[slot.category]++]!;
     let hole = holeCycles[index]!;
-    const timeKey = `${slot.level}:${slot.spawnAtMs}`;
-    const occupied = occupiedByTime.get(timeKey) ?? new Set<number>();
-    while (hole === previousHole || occupied.has(hole)) hole = (hole + 1) % 6;
-    occupied.add(hole);
-    occupiedByTime.set(timeKey, occupied);
+    while (hole === previousHole) hole = (hole + 1) % 6;
     previousHole = hole;
     return { ...item, ...slot, hole };
   });
 }
 
 export function arcadeScoreFor(actions: readonly HunterAction[]) {
-  return actions.reduce((score, action) => Math.max(0, score + action.points), 0);
+  return Math.max(0, actions.reduce((score, action) => score + action.points, 0));
 }
 
-// The schedule contains exactly 13 hittable task targets. Dividing the
-// penalty-aware arcade score by their fixed 130-point maximum prevents faster
-// devices or repeated clicking from creating extra module-score opportunities.
+// The maximum is derived from the schedule's actual hittable targets, so pace
+// changes cannot silently change the value of a perfect 100-point play.
 export function normalizedHunterScore(actions: readonly HunterAction[]) {
   return Math.max(0, Math.min(100, Math.round(arcadeScoreFor(actions) / HUNTER_MAX_HIT_SCORE * 100)));
 }

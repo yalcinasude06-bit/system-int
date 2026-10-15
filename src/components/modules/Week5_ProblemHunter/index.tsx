@@ -2,12 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "framer-motion";
-import { AlarmClock, Check, Crosshair, Eye, LockKeyhole, RotateCcw, Sparkles, Target, X } from "lucide-react";
+import { AlarmClock, Check, Crosshair, Eye, HelpCircle, LockKeyhole, Play, RotateCcw, Sparkles, Target, X } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { useI18n } from "@/lib/i18n/I18nContext";
 import type { LearningModuleProps, ModuleSubmission } from "@/types";
 import {
   HUNTER_LEVEL_DURATION_MS,
+  HUNTER_CORRECT_OPPORTUNITIES,
+  HUNTER_MAX_HIT_SCORE,
   HUNTER_TASK_TRANSITION_MS,
   HUNTER_TASK_WINDOW_MS,
   arcadeScoreFor,
@@ -30,6 +32,8 @@ type HunterDraftPayload = {
 };
 
 type Feedback = { outcome: HunterOutcome; target: ScheduledTarget };
+type TutorialState = "checking" | "open" | "closed";
+type TutorialChoice = TargetCategory | null;
 
 const copy = {
   tr: {
@@ -39,15 +43,18 @@ const copy = {
     catchPattern: "ÖRÜNTÜYÜ YAKALA!",
     catchStructure: "YAPIYI YAKALA!",
     taskChanged: "GÖREV DEĞİŞTİ!",
-    eventDefinition: "Belirli bir anda gerçekleşen tekil sonucu bul.",
-    patternDefinition: "Zaman içinde tekrar eden eğilim veya davranışı bul.",
-    structureDefinition: "Sonuçları üretebilen kural, ilişki veya süreci bul.",
+    eventDefinition: "Ne oldu? Tek bir olay anlatan cümleye dokun.",
+    patternDefinition: "Zaman içinde tekrar eden veya artıp azalan durumu anlatan cümleye dokun.",
+    structureDefinition: "Sorunu üreten kuralı, süreci veya ilişkiyi anlatan cümleye dokun.",
+    eventExample: "Örnek: Bugün makine durdu.",
+    patternExample: "Örnek: Arızalar her ay artıyor.",
+    structureExample: "Örnek: Bakım planı yok.",
     level: "Seviye",
     time: "Kalan süre",
     seconds: "sn",
-    slow: "Tek hedef · okunabilir tempo",
-    medium: "İki hedef · orta tempo",
-    shifting: "Değişen görev · hızlı tempo",
+    slow: "En fazla iki hedef · okunabilir tempo",
+    medium: "En fazla iki hedef · orta tempo",
+    shifting: "Dönüşümlü görev · en fazla üç hedef",
     waiting: "Yeni hedef bekleniyor…",
     correct: "Doğru",
     wrong: "Bu örnek",
@@ -68,6 +75,24 @@ const copy = {
     locked: "Bu oynanış tamamlandı",
     lockedDetail: "Sonucun bir kez kaydedildi. Öğretmenin sonraki yönlendirmesini bekle.",
     paused: "Sekme arka plandayken oyun duraklatıldı",
+    howTo: "Nasıl Oynanır?",
+    tutorialTitle: "Önce kısa bir deneme",
+    tutorialIntro: "Aynı duruma üç farklı derinlikten bak. Bu deneme puansız ve süresizdir.",
+    tutorialRule: "Üstteki göreve uyan cümlelere dokun. Diğerlerine dokunma.",
+    tutorialMission: "YAPIYI YAKALA!",
+    tutorialPrompt: "Hangi cümle sorunu üretebilecek ilişkiyi veya süreci anlatıyor?",
+    tutorialEvent: "OLAYLAR · Ne oldu?",
+    tutorialPattern: "DAVRANIŞ ÖRÜNTÜLERİ · Zaman içinde ne tekrar ediyor?",
+    tutorialStructure: "SİSTEM YAPISI · Hangi ilişkiler bunu üretiyor?",
+    tutorialEventText: "Bugün üç sipariş gecikti.",
+    tutorialPatternText: "Gecikmeler üç aydır artıyor.",
+    tutorialStructureText: "Siparişler kapasiteye göre planlanmıyor.",
+    tutorialWrongHint: "Bu cümle sonuç veya tekrar eden davranışı anlatıyor. Kuralı, süreci ya da ilişkiyi anlatanı seç.",
+    tutorialCorrect: "Doğru! Bu cümle olayın arkasındaki planlama ilişkisini anlatıyor.",
+    startGame: "Oyuna Başla",
+    returnGame: "Oyuna Dön",
+    skipTutorial: "Denemeyi Geç",
+    preparing: "Deneme hazırlanıyor…",
   },
   en: {
     title: "Week 5 · Module 2: Problem Hunter",
@@ -76,15 +101,18 @@ const copy = {
     catchPattern: "CATCH THE PATTERN!",
     catchStructure: "CATCH THE STRUCTURE!",
     taskChanged: "MISSION CHANGED!",
-    eventDefinition: "Find a single outcome that happened at a specific time.",
-    patternDefinition: "Find a trend or behavior that repeats over time.",
-    structureDefinition: "Find a rule, relationship, or process that can produce outcomes.",
+    eventDefinition: "What happened? Tap the sentence that describes one event.",
+    patternDefinition: "Tap the sentence describing something that repeats, rises, or falls over time.",
+    structureDefinition: "Tap the sentence describing a rule, process, or relationship that produces the problem.",
+    eventExample: "Example: The machine stopped today.",
+    patternExample: "Example: Failures increase every month.",
+    structureExample: "Example: There is no maintenance plan.",
     level: "Level",
     time: "Time left",
     seconds: "sec",
-    slow: "One target · readable pace",
-    medium: "Two targets · medium pace",
-    shifting: "Shifting mission · fast pace",
+    slow: "Up to two targets · readable pace",
+    medium: "Up to two targets · medium pace",
+    shifting: "Rotating mission · up to three targets",
     waiting: "Waiting for a new target…",
     correct: "Correct",
     wrong: "This example is",
@@ -105,6 +133,24 @@ const copy = {
     locked: "This play is complete",
     lockedDetail: "Your result was recorded once. Wait for your teacher's next instruction.",
     paused: "The game pauses while this tab is in the background",
+    howTo: "How to Play",
+    tutorialTitle: "Try a short practice first",
+    tutorialIntro: "Look at the same situation at three different depths. This practice is untimed and unscored.",
+    tutorialRule: "Tap sentences that match the mission above. Do not tap the others.",
+    tutorialMission: "CATCH THE STRUCTURE!",
+    tutorialPrompt: "Which sentence describes a relationship or process that could produce the problem?",
+    tutorialEvent: "EVENTS · What happened?",
+    tutorialPattern: "BEHAVIOR PATTERNS · What repeats over time?",
+    tutorialStructure: "SYSTEM STRUCTURE · Which relationships produce it?",
+    tutorialEventText: "Three orders were delayed today.",
+    tutorialPatternText: "Delays have increased for three months.",
+    tutorialStructureText: "Orders are not planned according to capacity.",
+    tutorialWrongHint: "This sentence describes an outcome or repeated behavior. Choose the rule, process, or relationship.",
+    tutorialCorrect: "Correct! This sentence describes the planning relationship behind the event.",
+    startGame: "Start Game",
+    returnGame: "Return to Game",
+    skipTutorial: "Skip Practice",
+    preparing: "Preparing practice…",
   },
 } as const;
 
@@ -160,8 +206,9 @@ export function Week5ProblemHunter({
   const initialActions = useMemo(() => hydrateActions(draftPayload, schedule), [draftPayload, schedule]);
   const initialLevel = typeof draftPayload?.levelIndex === "number" ? Math.max(0, Math.min(2, Math.floor(draftPayload.levelIndex))) : 0;
   const initialElapsed = typeof draftPayload?.levelElapsedMs === "number" ? Math.max(0, Math.min(HUNTER_LEVEL_DURATION_MS - 1, draftPayload.levelElapsedMs)) : 0;
-  const restoredTransitionIndex = typeof draftPayload?.taskTransitionIndex === "number" ? Math.max(-1, Math.min(3, Math.floor(draftPayload.taskTransitionIndex))) : null;
+  const restoredTransitionIndex = typeof draftPayload?.taskTransitionIndex === "number" ? Math.max(-1, Math.min(2, Math.floor(draftPayload.taskTransitionIndex))) : null;
   const initialTransitionRemaining = typeof draftPayload?.taskTransitionRemainingMs === "number" ? Math.max(0, Math.min(HUNTER_TASK_TRANSITION_MS, draftPayload.taskTransitionRemainingMs)) : 0;
+  const tutorialStorageKey = useMemo(() => `system-int:week5-problem-hunter-tutorial:${seedKey.replace(/:\d+$/, "")}`, [seedKey]);
 
   const [actions, setActions] = useState<HunterAction[]>(initialActions);
   const [levelIndex, setLevelIndex] = useState(initialLevel);
@@ -174,6 +221,10 @@ export function Week5ProblemHunter({
   const [finalSubmission, setFinalSubmission] = useState<ModuleSubmission | null>(null);
   const [isHidden, setIsHidden] = useState(false);
   const [transitionRemainingMs, setTransitionRemainingMs] = useState(initialTransitionRemaining);
+  const [tutorialState, setTutorialState] = useState<TutorialState>(existingDraft || existingSubmission ? "closed" : "checking");
+  const [tutorialChoice, setTutorialChoice] = useState<TutorialChoice>(null);
+  const [tutorialSolved, setTutorialSolved] = useState(false);
+  const [tutorialReplay, setTutorialReplay] = useState(false);
 
   const actionsRef = useRef(initialActions);
   const resolvedIds = useRef(new Set(initialActions.map((action) => action.targetId)));
@@ -183,7 +234,7 @@ export function Week5ProblemHunter({
   const submissionStarted = useRef(false);
   const lastTick = useRef<number | null>(null);
   const transitionRemainingRef = useRef(initialTransitionRemaining);
-  const announcedTaskIndex = useRef(restoredTransitionIndex ?? (initialLevel === 2 && initialElapsed === 0 ? -1 : Math.floor(initialElapsed / HUNTER_TASK_WINDOW_MS)));
+  const announcedTaskIndex = useRef(restoredTransitionIndex ?? (initialLevel === 2 && initialElapsed === 0 ? -1 : Math.min(2, Math.floor(initialElapsed / HUNTER_TASK_WINDOW_MS))));
   const draftCheckpoint = useRef(Math.floor(initialElapsed / 5_000));
 
   const submissionFor = useCallback((nextActions: HunterAction[], reason: "completed" | "teacher-ended" | "draft", nextLevel = levelRef.current, nextElapsed = elapsedRef.current): ModuleSubmission => ({
@@ -207,6 +258,8 @@ export function Week5ProblemHunter({
       missedCount: nextActions.filter((action) => action.outcome === "miss").length,
       answeredCount: nextActions.filter((action) => action.outcome !== "ignored").length,
       targetCount: schedule.length,
+      correctOpportunityCount: HUNTER_CORRECT_OPPORTUNITIES,
+      maxArcadeScore: HUNTER_MAX_HIT_SCORE,
       categoryStats: Object.fromEntries(categories.map((category) => [category, categoryStats(nextActions, category)])),
       completionReason: reason,
       completionStatus: reason === "completed" ? "completed" : reason === "teacher-ended" ? "incomplete" : "draft",
@@ -216,6 +269,44 @@ export function Week5ProblemHunter({
   const saveDraft = useCallback((nextActions: HunterAction[], nextLevel = levelRef.current, nextElapsed = elapsedRef.current) => {
     void onDraft?.(submissionFor(nextActions, "draft", nextLevel, nextElapsed));
   }, [onDraft, submissionFor]);
+
+  useEffect(() => {
+    if (existingDraft || existingSubmission) return;
+    const timer = window.setTimeout(() => {
+      try {
+        setTutorialState(window.localStorage.getItem(tutorialStorageKey) === "seen" ? "closed" : "open");
+      } catch {
+        setTutorialState("open");
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [existingDraft, existingSubmission, tutorialStorageKey]);
+
+  const rememberTutorial = useCallback(() => {
+    try {
+      window.localStorage.setItem(tutorialStorageKey, "seen");
+    } catch {
+      // Storage can be unavailable in private browsing; the game remains usable.
+    }
+  }, [tutorialStorageKey]);
+
+  const closeTutorial = useCallback(() => {
+    rememberTutorial();
+    setTutorialState("closed");
+    setTutorialChoice(null);
+    setTutorialSolved(false);
+    setTutorialReplay(false);
+    lastTick.current = performance.now();
+  }, [rememberTutorial]);
+
+  const openTutorial = useCallback(() => {
+    saveDraft(actionsRef.current);
+    setTutorialChoice(null);
+    setTutorialSolved(false);
+    setTutorialReplay(true);
+    setTutorialState("open");
+    lastTick.current = performance.now();
+  }, [saveDraft]);
 
   const submitResult = useCallback(async (submission: ModuleSubmission) => {
     setSubmitting(true);
@@ -260,9 +351,9 @@ export function Week5ProblemHunter({
     setLevelIndex(nextLevel);
     setElapsedMs(0);
     setFeedback(null);
-    transitionRemainingRef.current = 0;
-    setTransitionRemainingMs(0);
-    announcedTaskIndex.current = nextLevel === 2 ? -1 : 0;
+    transitionRemainingRef.current = HUNTER_TASK_TRANSITION_MS;
+    setTransitionRemainingMs(HUNTER_TASK_TRANSITION_MS);
+    announcedTaskIndex.current = 0;
     draftCheckpoint.current = 0;
     saveDraft(actionsRef.current, nextLevel, 0);
     lastTick.current = performance.now();
@@ -283,7 +374,7 @@ export function Week5ProblemHunter({
   useEffect(() => {
     if (completed || existingSubmission || forceSubmit) return;
     const tick = () => {
-      if (document.hidden || completedRef.current) {
+      if (document.hidden || completedRef.current || tutorialState !== "closed") {
         lastTick.current = performance.now();
         return;
       }
@@ -293,7 +384,7 @@ export function Week5ProblemHunter({
       const activeLevel = levelRef.current;
       const tickDelta = Math.min(250, now - previous);
       if (activeLevel === 2) {
-        const taskIndex = Math.min(3, Math.floor(elapsedRef.current / HUNTER_TASK_WINDOW_MS));
+        const taskIndex = Math.min(2, Math.floor(elapsedRef.current / HUNTER_TASK_WINDOW_MS));
         if (announcedTaskIndex.current < taskIndex) {
           announcedTaskIndex.current = taskIndex;
           transitionRemainingRef.current = HUNTER_TASK_TRANSITION_MS;
@@ -301,12 +392,12 @@ export function Week5ProblemHunter({
           setFeedback(null);
           saveDraft(actionsRef.current, activeLevel, elapsedRef.current);
         }
-        if (transitionRemainingRef.current > 0) {
-          const remaining = Math.max(0, transitionRemainingRef.current - tickDelta);
-          transitionRemainingRef.current = remaining;
-          setTransitionRemainingMs(remaining);
-          return;
-        }
+      }
+      if (transitionRemainingRef.current > 0) {
+        const remaining = Math.max(0, transitionRemainingRef.current - tickDelta);
+        transitionRemainingRef.current = remaining;
+        setTransitionRemainingMs(remaining);
+        return;
       }
       const nextElapsed = Math.min(HUNTER_LEVEL_DURATION_MS, elapsedRef.current + tickDelta);
       elapsedRef.current = nextElapsed;
@@ -340,7 +431,7 @@ export function Week5ProblemHunter({
     lastTick.current = performance.now();
     const timer = window.setInterval(tick, reduceMotion ? 120 : 60);
     return () => window.clearInterval(timer);
-  }, [advanceLevel, completed, existingSubmission, forceSubmit, recordActions, reduceMotion, saveDraft, schedule]);
+  }, [advanceLevel, completed, existingSubmission, forceSubmit, recordActions, reduceMotion, saveDraft, schedule, tutorialState]);
 
   useEffect(() => {
     const onVisibilityChange = () => {
@@ -371,22 +462,76 @@ export function Week5ProblemHunter({
     return <section className="panel module-shell problem-hunter-shell"><div className="module-title-chip">{text.title}</div><div className="module-complete-card hunter-complete"><Sparkles size={44} /><h2>{completionReason === "completed" ? text.completed : text.partial}</h2><p>{text.completedDetail}</p><div className="hunter-summary" aria-label={text.categorySummary}>{statRows.map((row) => <div key={row.category}><strong>{text[row.category]}</strong><small>{row.category === "event" ? text.eventDefinition : row.category === "pattern" ? text.patternDefinition : text.structureDefinition}</small><span className="correct">{row.correct} {text.categoryCorrect}</span><span>{row.wrong} {text.categoryWrong}</span><span>{row.missed} {text.categoryMissed}</span></div>)}</div>{submitting && <div className="notice">{text.saving}</div>}{submitFailed && finalSubmission && <><div className="notice error">{text.saveError}</div><Button loading={submitting} icon={<RotateCcw size={17} />} onClick={() => { if (submissionStarted.current) return; submissionStarted.current = true; void submitResult(finalSubmission); }}>{text.retry}</Button></>}</div></section>;
   }
 
+  if (tutorialState === "checking") {
+    return <section className="panel module-shell problem-hunter-shell"><div className="module-title-chip">{text.title}</div><div className="hunter-tutorial-loading">{text.preparing}</div></section>;
+  }
+
+  if (tutorialState === "open") {
+    const tutorialOptions: Array<{ category: TargetCategory; label: string; value: string; icon: string }> = [
+      { category: "event", label: text.tutorialEvent, value: text.tutorialEventText, icon: "🚚" },
+      { category: "pattern", label: text.tutorialPattern, value: text.tutorialPatternText, icon: "📈" },
+      { category: "structure", label: text.tutorialStructure, value: text.tutorialStructureText, icon: "⚙️" },
+    ];
+    return <section className="panel module-shell problem-hunter-shell hunter-tutorial">
+      <div className="hunter-topline"><div className="module-title-chip">{text.title}</div><span>{text.tutorialTitle}</span></div>
+      <div className="hunter-tutorial-intro"><strong>{text.tutorialTitle}</strong><p>{text.tutorialIntro}</p><b>{text.tutorialRule}</b></div>
+      <div className="hunter-mission structure hunter-practice-mission">
+        <div className="hunter-mission-kicker"><Crosshair size={20} /><span>{text.mission}</span></div>
+        <strong>{text.tutorialMission}</strong>
+        <p>{text.tutorialPrompt}</p>
+      </div>
+      <div className="hunter-practice-options" role="group" aria-label={text.tutorialPrompt}>
+        {tutorialOptions.map((option) => {
+          const selected = tutorialChoice === option.category;
+          const correct = selected && option.category === "structure";
+          const wrong = selected && option.category !== "structure";
+          return <button
+            type="button"
+            key={option.category}
+            className={`hunter-practice-option ${correct ? "correct" : wrong ? "wrong" : ""}`}
+            aria-pressed={selected}
+            disabled={tutorialSolved && option.category !== "structure"}
+            onClick={() => {
+              setTutorialChoice(option.category);
+              setTutorialSolved(option.category === "structure");
+            }}
+          >
+            <span aria-hidden="true">{option.icon}</span>
+            <small>{option.label}</small>
+            <b data-i18n-skip>{option.value}</b>
+            {correct && <Check aria-hidden="true" size={20} />}
+            {wrong && <X aria-hidden="true" size={20} />}
+          </button>;
+        })}
+      </div>
+      <div className={`hunter-practice-feedback ${tutorialSolved ? "correct" : tutorialChoice ? "wrong" : "idle"}`} aria-live="polite">
+        {tutorialSolved ? <><Check size={19} /><span>{text.tutorialCorrect}</span></> : tutorialChoice ? <><HelpCircle size={19} /><span>{text.tutorialWrongHint}</span></> : <><Target size={18} /><span>{text.tutorialPrompt}</span></>}
+      </div>
+      <div className="hunter-tutorial-actions">
+        {tutorialSolved && <Button icon={<Play size={17} />} onClick={closeTutorial}>{tutorialReplay ? text.returnGame : text.startGame}</Button>}
+        <button type="button" className="hunter-tutorial-skip" onClick={closeTutorial}>{tutorialReplay ? text.returnGame : text.skipTutorial}</button>
+      </div>
+    </section>;
+  }
+
   const currentTask = taskForLevelTime(levelIndex, elapsedMs);
-  const changingTask = levelIndex === 2 && transitionRemainingMs > 0;
+  const changingTask = transitionRemainingMs > 0;
   const resolvedTargetIds = new Set(actions.map((action) => action.targetId));
   const activeTargets = changingTask ? [] : schedule.filter((target) => target.level === levelIndex && !resolvedTargetIds.has(target.id) && elapsedMs >= target.spawnAtMs && elapsedMs < target.spawnAtMs + target.durationMs);
   const targetByHole = new Map(activeTargets.map((target) => [target.hole, target]));
   const secondsLeft = Math.max(0, Math.ceil((HUNTER_LEVEL_DURATION_MS - elapsedMs) / 1000));
   const missionLabel = currentTask === "event" ? text.catchEvent : currentTask === "pattern" ? text.catchPattern : text.catchStructure;
   const missionDefinition = currentTask === "event" ? text.eventDefinition : currentTask === "pattern" ? text.patternDefinition : text.structureDefinition;
+  const missionExample = currentTask === "event" ? text.eventExample : currentTask === "pattern" ? text.patternExample : text.structureExample;
   const levelDescription = [text.slow, text.medium, text.shifting][levelIndex];
 
   return <section className="panel module-shell problem-hunter-shell">
-    <div className="hunter-topline"><div className="module-title-chip">{text.title}</div><span>{text.level} {levelIndex + 1}/3 · {levelDescription}</span></div>
+    <div className="hunter-topline"><div className="module-title-chip">{text.title}</div><div className="hunter-topline-actions"><span>{text.level} {levelIndex + 1}/3 · {levelDescription}</span><button type="button" onClick={openTutorial}><HelpCircle size={16} />{text.howTo}</button></div></div>
     <div className={`hunter-mission ${currentTask} ${changingTask ? "changing" : ""}`}>
       <div className="hunter-mission-kicker"><Crosshair size={20} /><span>{changingTask ? text.taskChanged : text.mission}</span></div>
       <strong>{missionLabel}</strong>
       <p>{missionDefinition}</p>
+      <small>{missionExample}</small>
     </div>
     <div className="hunter-timer" aria-label={`${text.time}: ${secondsLeft} ${text.seconds}`}>
       <div><AlarmClock size={18} /><span>{text.time}</span><strong>{secondsLeft} {text.seconds}</strong></div>
@@ -396,7 +541,7 @@ export function Week5ProblemHunter({
         const target = targetByHole.get(hole);
         return <div className={`hunter-hole ${target ? "occupied" : ""}`} key={hole}>
           <span className="hunter-hole-shadow" />
-          {target && <button type="button" className={`hunter-target ${target.category}`} onClick={() => hitTarget(target)} aria-label={`${target.text[locale]}. ${text[target.category]}`}>
+          {target && <button type="button" className="hunter-target" onClick={() => hitTarget(target)} aria-label={target.text[locale]}>
             <span aria-hidden="true">{target.icon}</span>
             <b data-i18n-skip>{target.text[locale]}</b>
           </button>}
