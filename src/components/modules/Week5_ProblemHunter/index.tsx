@@ -2,18 +2,18 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "framer-motion";
-import { AlarmClock, Check, Crosshair, Eye, HelpCircle, LockKeyhole, Play, RotateCcw, Sparkles, Target, X } from "lucide-react";
+import { AlarmClock, Check, Crosshair, Eye, HelpCircle, LockKeyhole, Play, RotateCcw, Target, X } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { useI18n } from "@/lib/i18n/I18nContext";
 import type { LearningModuleProps, ModuleSubmission } from "@/types";
 import {
   HUNTER_LEVEL_DURATION_MS,
-  HUNTER_CORRECT_OPPORTUNITIES,
-  HUNTER_MAX_HIT_SCORE,
+  HUNTER_CORRECT_POINTS,
   HUNTER_TASK_TRANSITION_MS,
   HUNTER_TASK_WINDOW_MS,
   arcadeScoreFor,
   buildProblemHunterRound,
+  isHunterLevelComplete,
   normalizedHunterScore,
   taskForLevelTime,
   type HunterAction,
@@ -45,10 +45,10 @@ const copy = {
     taskChanged: "GÖREV DEĞİŞTİ!",
     eventDefinition: "Ne oldu? Tek bir olay anlatan cümleye dokun.",
     patternDefinition: "Zaman içinde tekrar eden veya artıp azalan durumu anlatan cümleye dokun.",
-    structureDefinition: "Sorunu üreten kuralı, süreci veya ilişkiyi anlatan cümleye dokun.",
+    structureDefinition: "Sorunun arkasındaki kuralı, planlama eksikliğini veya birimler arasındaki bağlantı sorununu anlatan cümlelere dokun.",
     eventExample: "Örnek: Bugün makine durdu.",
     patternExample: "Örnek: Arızalar her ay artıyor.",
-    structureExample: "Örnek: Bakım planı yok.",
+    structureExample: "“Bakım planı yok.” → Bu, arızaların tekrarlanmasına yol açabilecek bir sistem eksikliğidir.",
     level: "Seviye",
     time: "Kalan süre",
     seconds: "sn",
@@ -62,13 +62,6 @@ const copy = {
     event: "Olay",
     pattern: "Davranış örüntüsü",
     structure: "Sistem yapısı",
-    completed: "Sorun avı tamamlandı",
-    partial: "Oyun öğretmen tarafından sonlandırıldı",
-    completedDetail: "Olay, örüntü ve sistem yapısını ayıran seçimlerin kaydedildi.",
-    categorySummary: "Kategori özeti",
-    categoryCorrect: "doğru",
-    categoryWrong: "yanlış",
-    categoryMissed: "kaçan",
     saving: "Sonuç kaydediliyor…",
     saveError: "Sonuç kaydedilemedi. İlerlemen korunuyor.",
     retry: "Kaydı tekrar dene",
@@ -80,7 +73,7 @@ const copy = {
     tutorialIntro: "Aynı duruma üç farklı derinlikten bak. Bu deneme puansız ve süresizdir.",
     tutorialRule: "Üstteki göreve uyan cümlelere dokun. Diğerlerine dokunma.",
     tutorialMission: "YAPIYI YAKALA!",
-    tutorialPrompt: "Hangi cümle sorunu üretebilecek ilişkiyi veya süreci anlatıyor?",
+    tutorialPrompt: "Sorunun arkasındaki kuralı, planlama eksikliğini veya birimler arasındaki bağlantı sorununu anlatan cümleye dokun.",
     tutorialEvent: "OLAYLAR · Ne oldu?",
     tutorialPattern: "DAVRANIŞ ÖRÜNTÜLERİ · Zaman içinde ne tekrar ediyor?",
     tutorialStructure: "SİSTEM YAPISI · Hangi ilişkiler bunu üretiyor?",
@@ -88,11 +81,12 @@ const copy = {
     tutorialPatternText: "Gecikmeler üç aydır artıyor.",
     tutorialStructureText: "Siparişler kapasiteye göre planlanmıyor.",
     tutorialWrongHint: "Bu cümle sonuç veya tekrar eden davranışı anlatıyor. Kuralı, süreci ya da ilişkiyi anlatanı seç.",
-    tutorialCorrect: "Doğru! Bu cümle olayın arkasındaki planlama ilişkisini anlatıyor.",
+    tutorialCorrect: "Doğru! Bu cümle, gecikmelere katkıda bulunabilecek planlama ilişkisini anlatıyor.",
     startGame: "Oyuna Başla",
     returnGame: "Oyuna Dön",
     skipTutorial: "Denemeyi Geç",
     preparing: "Deneme hazırlanıyor…",
+    redirecting: "Yanıt kaydedildi. Geri bildirim ekranı açılıyor…",
   },
   en: {
     title: "Week 5 · Module 2: Problem Hunter",
@@ -103,10 +97,10 @@ const copy = {
     taskChanged: "MISSION CHANGED!",
     eventDefinition: "What happened? Tap the sentence that describes one event.",
     patternDefinition: "Tap the sentence describing something that repeats, rises, or falls over time.",
-    structureDefinition: "Tap the sentence describing a rule, process, or relationship that produces the problem.",
+    structureDefinition: "Tap sentences describing the rule behind the problem, a planning gap, or a connection problem between units.",
     eventExample: "Example: The machine stopped today.",
     patternExample: "Example: Failures increase every month.",
-    structureExample: "Example: There is no maintenance plan.",
+    structureExample: "“There is no maintenance plan.” → This is a system gap that could contribute to repeated failures.",
     level: "Level",
     time: "Time left",
     seconds: "sec",
@@ -120,13 +114,6 @@ const copy = {
     event: "Event",
     pattern: "Behavior pattern",
     structure: "System structure",
-    completed: "Problem hunt complete",
-    partial: "The teacher ended the game",
-    completedDetail: "Your choices distinguishing events, patterns, and system structures were saved.",
-    categorySummary: "Category summary",
-    categoryCorrect: "correct",
-    categoryWrong: "wrong",
-    categoryMissed: "missed",
     saving: "Saving result…",
     saveError: "The result could not be saved. Your progress is preserved.",
     retry: "Try saving again",
@@ -138,7 +125,7 @@ const copy = {
     tutorialIntro: "Look at the same situation at three different depths. This practice is untimed and unscored.",
     tutorialRule: "Tap sentences that match the mission above. Do not tap the others.",
     tutorialMission: "CATCH THE STRUCTURE!",
-    tutorialPrompt: "Which sentence describes a relationship or process that could produce the problem?",
+    tutorialPrompt: "Tap the sentence describing the rule behind the problem, a planning gap, or a connection problem between units.",
     tutorialEvent: "EVENTS · What happened?",
     tutorialPattern: "BEHAVIOR PATTERNS · What repeats over time?",
     tutorialStructure: "SYSTEM STRUCTURE · Which relationships produce it?",
@@ -146,11 +133,12 @@ const copy = {
     tutorialPatternText: "Delays have increased for three months.",
     tutorialStructureText: "Orders are not planned according to capacity.",
     tutorialWrongHint: "This sentence describes an outcome or repeated behavior. Choose the rule, process, or relationship.",
-    tutorialCorrect: "Correct! This sentence describes the planning relationship behind the event.",
+    tutorialCorrect: "Correct! This sentence describes a planning relationship that could contribute to delays.",
     startGame: "Start Game",
     returnGame: "Return to Game",
     skipTutorial: "Skip Practice",
     preparing: "Preparing practice…",
+    redirecting: "Answer saved. Opening the feedback screen…",
   },
 } as const;
 
@@ -202,6 +190,7 @@ export function Week5ProblemHunter({
   const text = copy[locale];
   const reduceMotion = Boolean(useReducedMotion());
   const schedule = useMemo(() => buildProblemHunterRound(seedKey), [seedKey]);
+  const correctOpportunityCount = useMemo(() => schedule.filter((target) => target.category === target.task).length, [schedule]);
   const draftPayload = existingDraft?.payload as HunterDraftPayload | undefined;
   const initialActions = useMemo(() => hydrateActions(draftPayload, schedule), [draftPayload, schedule]);
   const initialLevel = typeof draftPayload?.levelIndex === "number" ? Math.max(0, Math.min(2, Math.floor(draftPayload.levelIndex))) : 0;
@@ -215,7 +204,6 @@ export function Week5ProblemHunter({
   const [elapsedMs, setElapsedMs] = useState(initialElapsed);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [completed, setCompleted] = useState(false);
-  const [completionReason, setCompletionReason] = useState<"completed" | "teacher-ended">("completed");
   const [submitting, setSubmitting] = useState(false);
   const [submitFailed, setSubmitFailed] = useState(false);
   const [finalSubmission, setFinalSubmission] = useState<ModuleSubmission | null>(null);
@@ -239,7 +227,7 @@ export function Week5ProblemHunter({
 
   const submissionFor = useCallback((nextActions: HunterAction[], reason: "completed" | "teacher-ended" | "draft", nextLevel = levelRef.current, nextElapsed = elapsedRef.current): ModuleSubmission => ({
     stage: Math.min(3, nextLevel + 1),
-    score: normalizedHunterScore(nextActions),
+    score: normalizedHunterScore(nextActions, correctOpportunityCount),
     payload: {
       mode: "problem-hunter-arcade",
       gameId: "week-5-problem-hunter-v1",
@@ -252,19 +240,19 @@ export function Week5ProblemHunter({
       taskTransitionIndex: announcedTaskIndex.current,
       taskTransitionRemainingMs: Math.round(transitionRemainingRef.current),
       arcadeScore: arcadeScoreFor(nextActions),
-      normalizedScore: normalizedHunterScore(nextActions),
+      normalizedScore: normalizedHunterScore(nextActions, correctOpportunityCount),
       correctCount: nextActions.filter((action) => action.outcome === "correct").length,
       wrongCount: nextActions.filter((action) => action.outcome === "wrong").length,
       missedCount: nextActions.filter((action) => action.outcome === "miss").length,
       answeredCount: nextActions.filter((action) => action.outcome !== "ignored").length,
       targetCount: schedule.length,
-      correctOpportunityCount: HUNTER_CORRECT_OPPORTUNITIES,
-      maxArcadeScore: HUNTER_MAX_HIT_SCORE,
+      correctOpportunityCount,
+      maxArcadeScore: correctOpportunityCount * HUNTER_CORRECT_POINTS,
       categoryStats: Object.fromEntries(categories.map((category) => [category, categoryStats(nextActions, category)])),
       completionReason: reason,
       completionStatus: reason === "completed" ? "completed" : reason === "teacher-ended" ? "incomplete" : "draft",
     },
-  }), [schedule, seedKey]);
+  }), [correctOpportunityCount, schedule, seedKey]);
 
   const saveDraft = useCallback((nextActions: HunterAction[], nextLevel = levelRef.current, nextElapsed = elapsedRef.current) => {
     void onDraft?.(submissionFor(nextActions, "draft", nextLevel, nextElapsed));
@@ -323,7 +311,6 @@ export function Week5ProblemHunter({
     if (submissionStarted.current || existingSubmission) return;
     submissionStarted.current = true;
     completedRef.current = true;
-    setCompletionReason(reason);
     setCompleted(true);
     const submission = submissionFor(nextActions, reason);
     setFinalSubmission(submission);
@@ -426,7 +413,8 @@ export function Week5ProblemHunter({
           if (target) setFeedback({ outcome: "miss", target });
         }
       }
-      if (nextElapsed >= HUNTER_LEVEL_DURATION_MS && levelRef.current === activeLevel) advanceLevel();
+      const levelFinished = isHunterLevelComplete(schedule, resolvedIds.current, activeLevel);
+      if ((levelFinished || nextElapsed >= HUNTER_LEVEL_DURATION_MS) && levelRef.current === activeLevel) advanceLevel();
     };
     lastTick.current = performance.now();
     const timer = window.setInterval(tick, reduceMotion ? 120 : 60);
@@ -457,9 +445,8 @@ export function Week5ProblemHunter({
     return <section className="panel module-shell problem-hunter-shell"><div className="module-title-chip">{text.title}</div><div className="module-complete-card"><LockKeyhole size={42} /><h2>{text.locked}</h2><p>{text.lockedDetail}</p></div></section>;
   }
 
-  const statRows = categories.map((category) => ({ category, ...categoryStats(actions, category) }));
   if (completed) {
-    return <section className="panel module-shell problem-hunter-shell"><div className="module-title-chip">{text.title}</div><div className="module-complete-card hunter-complete"><Sparkles size={44} /><h2>{completionReason === "completed" ? text.completed : text.partial}</h2><p>{text.completedDetail}</p><div className="hunter-summary" aria-label={text.categorySummary}>{statRows.map((row) => <div key={row.category}><strong>{text[row.category]}</strong><small>{row.category === "event" ? text.eventDefinition : row.category === "pattern" ? text.patternDefinition : text.structureDefinition}</small><span className="correct">{row.correct} {text.categoryCorrect}</span><span>{row.wrong} {text.categoryWrong}</span><span>{row.missed} {text.categoryMissed}</span></div>)}</div>{submitting && <div className="notice">{text.saving}</div>}{submitFailed && finalSubmission && <><div className="notice error">{text.saveError}</div><Button loading={submitting} icon={<RotateCcw size={17} />} onClick={() => { if (submissionStarted.current) return; submissionStarted.current = true; void submitResult(finalSubmission); }}>{text.retry}</Button></>}</div></section>;
+    return <section className="panel module-shell problem-hunter-shell"><div className="module-title-chip">{text.title}</div><div className="module-complete-card hunter-submit-state">{submitting ? <div className="notice">{text.saving}</div> : submitFailed && finalSubmission ? <><div className="notice error">{text.saveError}</div><Button loading={submitting} icon={<RotateCcw size={17} />} onClick={() => { if (submissionStarted.current) return; submissionStarted.current = true; void submitResult(finalSubmission); }}>{text.retry}</Button></> : <div className="notice success">{text.redirecting}</div>}</div></section>;
   }
 
   if (tutorialState === "checking") {

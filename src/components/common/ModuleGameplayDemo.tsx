@@ -433,13 +433,13 @@ function WeekFiveProblemHunterDemo() {
   const copy = {
     tr: {
     mission: "YAPIYI YAKALA",
-    definition: "Sonuçları üreten kural veya süreci bul.",
-    target: "Bakım planı üretime bağlanmıyor.",
+    definition: "Kuralı, planlama eksikliğini veya bağlantı sorununu yakala.",
+    target: "Düzenli bakım planı yok.",
     },
     en: {
     mission: "CATCH THE STRUCTURE",
-    definition: "Find the rule or process producing outcomes.",
-    target: "Maintenance is not linked to production.",
+    definition: "Catch the rule, planning gap, or connection problem.",
+    target: "There is no regular maintenance plan.",
     },
   } as const;
   const text = copy[locale];

@@ -9,6 +9,7 @@ import {
   HUNTER_TARGET_DURATION_MS,
   arcadeScoreFor,
   buildProblemHunterRound,
+  isHunterLevelComplete,
   normalizedHunterScore,
   problemHunterPool,
   taskForLevelTime,
@@ -52,6 +53,14 @@ assert.equal(byId.get("U12")?.text.tr, "Üretim planında makine kapasitesi kont
 assert.equal(byId.get("M12")?.text.tr, "Satış hedefleri stok kapasitesine göre belirlenmiyor.");
 assert.equal(byId.get("M03")?.text.tr, "Bugün bir müşteri sipariş vermekten vazgeçti.");
 assert.equal(byId.get("G04")?.text.tr, "Bu sabah makinenin koruyucu kapağı yerinden çıktı.");
+assert.equal(byId.get("U11")?.text.tr, "Düzenli bakım planı yok.");
+assert.equal(byId.get("T11")?.text.tr, "Siparişler kapasiteye göre planlanmıyor.");
+assert.equal(byId.get("G11")?.text.tr, "İş güvenliği kuralları belirlenmemiş.");
+assert.equal(byId.get("T13")?.text.tr, "Satış ve üretim arasında bilgi paylaşımı yok.");
+assert.equal(byId.get("U01")?.text.tr, "Bugün makine bozuldu.");
+assert.equal(byId.get("G02")?.text.tr, "Sabah iş kazası yaşandı.");
+assert.equal(byId.get("T07")?.text.tr, "Siparişler her hafta gecikiyor.");
+assert.equal(byId.get("U06")?.text.tr, "Son aylarda arızalar artıyor.");
 assert.ok(problemHunterPool.every((item) => !item.text.tr.includes("Depo kayıtları sık sık güncellenmiyor")), "Known category-ambiguous wording must not return");
 
 const round = buildProblemHunterRound("session:student:5:2:1");
@@ -59,13 +68,17 @@ const repeatedRound = buildProblemHunterRound("session:student:5:2:1");
 const nextRun = buildProblemHunterRound("session:student:5:2:2");
 assert.deepEqual(round, repeatedRound, "The same technical run seed must be deterministic");
 assert.notDeepEqual(round.map((target) => target.id), nextRun.map((target) => target.id), "A new technical run must vary the target selection");
-assert.equal(HUNTER_LEVEL_DURATION_MS, 45_000, "Every level must provide 45 seconds of active play");
-assert.equal(HUNTER_TASK_WINDOW_MS, 15_000, "The shifting mission must change every fifteen active seconds");
+assert.equal(HUNTER_LEVEL_DURATION_MS, 36_000, "The maximum level timer must cover the complete short schedule");
+assert.equal(HUNTER_TASK_WINDOW_MS, 12_000, "The shifting mission must complete three readable windows without idle padding");
 assert.equal(HUNTER_TASK_TRANSITION_MS, 2_000, "Mission changes must remain readable for two seconds");
 assert.deepEqual(HUNTER_TARGET_DURATION_MS, [6_000, 5_500, 5_000], "Target visibility must use the requested readable durations");
-assert.equal(round.length, 34, "A play must schedule the complete readable target calendar");
+assert.equal(round.length, 21, "A play must schedule exactly 21 targets");
 assert.equal(new Set(round.map((target) => target.id)).size, round.length, "No target may repeat within one play");
-assert.deepEqual([0, 1, 2].map((level) => round.filter((target) => target.level === level).length), [11, 11, 12]);
+assert.deepEqual([0, 1, 2].map((level) => round.filter((target) => target.level === level).length), [6, 6, 9]);
+assert.deepEqual(categories.map((category) => round.filter((target) => target.category === category).length), [7, 7, 7], "The short round must remain category-balanced");
+assert.deepEqual([0, 1, 2].map((level) => round.filter((target) => target.level === level && target.category === target.task).length), [3, 3, 3], "Every level must balance hittable targets and distractors");
+const levelOnePreferred = new Set(["U01", "G02", "T07", "U06", "U11", "G11", "T13", "S11"]);
+assert.ok(round.filter((target) => target.level === 0).every((target) => levelOnePreferred.has(target.id)), "Level one must use only the reviewed, unambiguous starter set");
 for (const target of round) assert.equal(target.durationMs, HUNTER_TARGET_DURATION_MS[target.level], `Level ${target.level + 1} uses the wrong visibility duration`);
 
 for (const [level, maximum] of [[0, 2], [1, 2], [2, 3]]) {
@@ -91,7 +104,8 @@ for (let phase = 0; phase < 3; phase += 1) {
   const end = start + HUNTER_TASK_WINDOW_MS;
   const phaseTargets = round.filter((target) => target.level === 2 && target.spawnAtMs >= start && target.spawnAtMs < end);
   const task = taskForLevelTime(2, start);
-  assert.ok(phaseTargets.some((target) => target.category === task), `Phase ${phase + 1} must guarantee a correct target`);
+  assert.equal(phaseTargets.length, 3, `Phase ${phase + 1} must contain exactly three targets`);
+  assert.equal(phaseTargets.filter((target) => target.category === task).length, 1, `Phase ${phase + 1} must contain exactly one hittable target`);
   assert.ok(phaseTargets.every((target) => target.spawnAtMs + target.durationMs <= end), `Phase ${phase + 1} targets must clear before the next mission`);
 }
 assert.deepEqual([0, 1, 2].map((phase) => taskForLevelTime(2, phase * HUNTER_TASK_WINDOW_MS)), ["event", "pattern", "structure"]);
@@ -101,8 +115,13 @@ for (let seed = 0; seed < 100; seed += 1) {
   assert.equal(new Set(seededRound.map((target) => target.id)).size, seededRound.length, `Seed ${seed} repeated a target`);
   assert.equal(seededRound.filter((target) => target.category === target.task).length, HUNTER_CORRECT_OPPORTUNITIES, `Seed ${seed} changed the scoring opportunity count`);
   assert.ok(seededRound.every((target) => !["T01", "T06", "T11"].includes(target.id)), `Seed ${seed} immediately reused a practice-adjacent delivery example`);
-  for (const category of categories) assert.ok(seededRound.filter((target) => target.category === category).length >= 9, `Seed ${seed} underrepresented ${category}`);
+  assert.deepEqual(categories.map((category) => seededRound.filter((target) => target.category === category).length), [7, 7, 7], `Seed ${seed} changed category balance`);
+  assert.deepEqual([0, 1, 2].map((level) => seededRound.filter((target) => target.level === level && target.category === target.task).length), [3, 3, 3], `Seed ${seed} changed correct-opportunity balance`);
 }
+
+const firstLevelIds = round.filter((target) => target.level === 0).map((target) => target.id);
+assert.equal(isHunterLevelComplete(round, new Set(firstLevelIds.slice(0, -1)), 0), false, "A level must not end while one target remains unresolved");
+assert.equal(isHunterLevelComplete(round, new Set(firstLevelIds), 0), true, "A level must end once all of its targets are resolved");
 
 const action = (outcome, points, targetId) => ({ targetId, level: 0, task: "structure", category: "structure", outcome, points, atMs: 0 });
 assert.equal(arcadeScoreFor([action("correct", 10, "a"), action("wrong", -5, "b"), action("miss", -2, "c")]), 3, "Correct, wrong, and missed scoring must be +10/-5/-2");
@@ -110,7 +129,7 @@ assert.equal(arcadeScoreFor([action("wrong", -5, "a"), action("miss", -2, "b")])
 assert.equal(arcadeScoreFor([action("wrong", -5, "a"), action("correct", 10, "b")]), 5, "A wrong early tap must still reduce the final score");
 const perfect = Array.from({ length: HUNTER_CORRECT_OPPORTUNITIES }, (_, index) => action("correct", 10, String(index)));
 assert.equal(HUNTER_MAX_HIT_SCORE, HUNTER_CORRECT_OPPORTUNITIES * 10);
-assert.equal(normalizedHunterScore(perfect), 100, "The fixed correct-opportunity cap must normalize a perfect play to 100");
+assert.equal(normalizedHunterScore(perfect, round.filter((target) => target.category === target.task).length), 100, "The generated round's correct opportunities must normalize a perfect play to 100");
 assert.equal(normalizedHunterScore([...perfect, action("correct", 10, "extra")]), 100, "The module score must be capped at 100");
 const idle = round.filter((target) => target.category === target.task).map((target) => action("miss", -2, target.id));
 assert.equal(normalizedHunterScore(idle), 0, "An idle player must not gain score");
@@ -122,6 +141,8 @@ assert.match(component, /transitionRemainingRef\.current > 0[\s\S]*return;/, "Mi
 assert.match(component, /tutorialState !== "closed"/, "Practice/help must pause the scored timer");
 assert.match(component, /taskTransitionRemainingMs/, "An in-progress mission transition must survive draft restore");
 assert.match(component, /forceSubmit[\s\S]*finalize\("teacher-ended"\)/, "Teacher finish must save a partial result");
+assert.match(component, /isHunterLevelComplete\(schedule, resolvedIds\.current, activeLevel\)/, "A level must advance as soon as every scheduled target is resolved");
+assert.match(component, /normalizedHunterScore\(nextActions, correctOpportunityCount\)/, "The module score must use the generated round's actual correct-opportunity count");
 assert.match(component, /onDraft/, "Meaningful progress must be draftable");
 assert.match(component, /const nextCheckpoint = Math\.floor\(nextElapsed \/ 5_000\);[\s\S]*if \(nextCheckpoint > draftCheckpoint\.current\)[\s\S]*saveDraft/, "The timer may checkpoint progress only at bounded five-second intervals");
 assert.match(studentPage, /session\.selected_week === 5 && session\.current_module === 2[\s\S]*<Week5ProblemHunter/);
@@ -138,12 +159,16 @@ assert.match(component, /className="hunter-timer"/, "Only the time HUD must rema
 assert.match(component, /Bugün üç sipariş gecikti\./);
 assert.match(component, /Gecikmeler üç aydır artıyor\./);
 assert.match(component, /Siparişler kapasiteye göre planlanmıyor\./);
+assert.match(component, /Sorunun arkasındaki kuralı, planlama eksikliğini veya birimler arasındaki bağlantı sorununu anlatan cümlelere dokun\./);
 assert.match(component, /Oyuna Başla/);
 assert.match(component, /Nasıl Oynanır\?/);
 assert.match(component, /localStorage\.setItem\(tutorialStorageKey, "seen"\)/, "Completed or skipped practice must not be forced on re-entry");
 assert.match(component, /tutorialSolved[\s\S]*setTutorialSolved\(option\.category === "structure"\)/, "Practice must require choosing the structure example");
 assert.doesNotMatch(component, /aria-label=\{`\$\{target\.text\[locale\]\}\. \$\{text\[target\.category\]\}`\}/, "Scored targets must not reveal their category in an accessible label");
 assert.doesNotMatch(component, /hunter-hud|Doğru hedef|Arcade ilerlemesi|TrendingUp/, "Correct-target and arcade-progress HUD cards must be removed without touching score calculations");
+assert.doesNotMatch(component, /hunter-summary|categorySummary|categoryCorrect|categoryWrong|categoryMissed/, "The module-specific analysis screen must not delay the general feedback flow");
+assert.match(component, /hunter-submit-state/, "Only a transient save/retry state may remain after the game ends");
+assert.match(studentPage, /if \(shouldShowFeedback && activeSubmission\)[\s\S]*ModuleFeedbackSurvey/, "A successful submit must continue into the shared feedback flow");
 assert.match(css, /\.hunter-mission \{[^}]*height: auto;[^}]*display: grid;[^}]*grid-template-rows: auto auto auto auto;/, "The mission layout must use normal four-row grid flow");
 assert.match(css, /\.hunter-mission-kicker span \{[^}]*overflow-wrap: anywhere;/, "Long mission labels must wrap instead of overlapping their icon");
 assert.doesNotMatch(css, /\.hunter-mission[^\{]*\{[^}]*position: absolute/, "Mission rows must not use absolute positioning");

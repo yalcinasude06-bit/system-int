@@ -32,8 +32,8 @@ export type HunterAction = {
   atMs: number;
 };
 
-export const HUNTER_LEVEL_DURATION_MS = 45_000;
-export const HUNTER_TASK_WINDOW_MS = 15_000;
+export const HUNTER_LEVEL_DURATION_MS = 36_000;
+export const HUNTER_TASK_WINDOW_MS = 12_000;
 export const HUNTER_TASK_TRANSITION_MS = 2_000;
 export const HUNTER_TARGET_DURATION_MS = [6_000, 5_500, 5_000] as const;
 export const HUNTER_CORRECT_POINTS = 10;
@@ -66,34 +66,34 @@ const rows = buildItems("week-5-problem-hunter-v2", [
   ["T04", "event", "delivery", "Dün bir müşteri ürünü geç aldı.", "A customer received the product late yesterday."],
   ["T05", "event", "delivery", "Bugün bir sevkiyat iptal edildi.", "A shipment was canceled today."],
   ["T06", "pattern", "delivery", "Geciken sipariş sayısı üç aydır artıyor.", "The number of delayed orders has risen for three months."],
-  ["T07", "pattern", "delivery", "Cuma günleri teslimatlar sık aksıyor.", "Deliveries are often disrupted on Fridays."],
+  ["T07", "pattern", "delivery", "Siparişler her hafta gecikiyor.", "Orders are delayed every week."],
   ["T08", "pattern", "delivery", "Yoğun dönemlerde gecikmeler tekrarlanıyor.", "Delays recur during busy periods."],
   ["T09", "pattern", "delivery", "Son haftalarda sevkiyat süresi uzuyor.", "Shipment times have grown in recent weeks."],
   ["T10", "pattern", "delivery", "Yanlış teslimatlar her ay artıyor.", "Incorrect deliveries increase every month."],
-  ["T11", "structure", "delivery", "Siparişler kapasite kontrolü olmadan alınıyor.", "Orders are accepted without checking capacity."],
+  ["T11", "structure", "delivery", "Siparişler kapasiteye göre planlanmıyor.", "Orders are not planned according to capacity."],
   ["T12", "structure", "delivery", "Sevkiyat görevleri açıkça tanımlanmamış.", "Shipping responsibilities are not clearly defined."],
-  ["T13", "structure", "delivery", "Satış planı üretim planına bağlanmamış.", "The sales plan is not linked to production planning."],
+  ["T13", "structure", "delivery", "Satış ve üretim arasında bilgi paylaşımı yok.", "Sales and production do not share information."],
   ["T14", "structure", "delivery", "Acil siparişler için öncelik kuralı yok.", "There is no priority rule for urgent orders."],
   ["T15", "structure", "delivery", "Depo ile sevkiyatın ortak kayıt sistemi yok.", "Warehouse and shipping lack a shared record system."],
 
-  ["U01", "event", "production", "Bugün üretim makinesi bozuldu.", "A production machine broke down today."],
+  ["U01", "event", "production", "Bugün makine bozuldu.", "The machine broke down today."],
   ["U02", "event", "production", "Sabah üretim hattı durdu.", "The production line stopped this morning."],
   ["U03", "event", "production", "Dün bir parça hatalı üretildi.", "A part was produced incorrectly yesterday."],
   ["U04", "event", "production", "Bir makine bugün aşırı ısındı.", "A machine overheated today."],
   ["U05", "event", "production", "Gece vardiyasında üretim kesildi.", "Production stopped during the night shift."],
-  ["U06", "pattern", "production", "Makine arızaları son aylarda artıyor.", "Machine failures have increased in recent months."],
+  ["U06", "pattern", "production", "Son aylarda arızalar artıyor.", "Failures have increased in recent months."],
   ["U07", "pattern", "production", "Yoğun vardiyalarda arızalar tekrarlanıyor.", "Failures recur during busy shifts."],
   ["U08", "pattern", "production", "Hatalı ürün sayısı her hafta artıyor.", "The number of defective products rises every week."],
   ["U09", "pattern", "production", "Üretim duruşları giderek uzuyor.", "Production stoppages are getting longer."],
   ["U10", "pattern", "production", "Her ay benzer üretim aksaklıkları yaşanıyor.", "Similar production disruptions occur every month."],
-  ["U11", "structure", "production", "Makineler için bakım takvimi yok.", "There is no maintenance schedule for the machines."],
+  ["U11", "structure", "production", "Düzenli bakım planı yok.", "There is no regular maintenance plan."],
   ["U12", "structure", "production", "Üretim planında makine kapasitesi kontrol edilmiyor.", "Machine capacity is not checked in production planning."],
   ["U13", "structure", "production", "Hata bildirimleri bakım ekibine iletilmiyor.", "Failure reports are not sent to the maintenance team."],
   ["U14", "structure", "production", "Makine kontrolü için sorumlu atanmamış.", "No one is assigned to inspect the machines."],
   ["U15", "structure", "production", "Üretim öncesi kontrol adımı tanımlanmamış.", "No pre-production inspection step has been defined."],
 
   ["G01", "event", "safety", "Bugün depoda yangın çıktı.", "A fire broke out in the warehouse today."],
-  ["G02", "event", "safety", "Dün bir çalışan yaralandı.", "An employee was injured yesterday."],
+  ["G02", "event", "safety", "Sabah iş kazası yaşandı.", "A workplace accident occurred this morning."],
   ["G03", "event", "safety", "Bir güvenlik alarmı bugün çalışmadı.", "A safety alarm failed today."],
   ["G04", "event", "safety", "Bu sabah makinenin koruyucu kapağı yerinden çıktı.", "The machine's safety cover came off this morning."],
   ["G05", "event", "safety", "Bir iş kazası dün bildirildi.", "A workplace accident was reported yesterday."],
@@ -102,7 +102,7 @@ const rows = buildItems("week-5-problem-hunter-v2", [
   ["G08", "pattern", "safety", "Güvenlik ihlalleri her hafta görülüyor.", "Safety violations are observed every week."],
   ["G09", "pattern", "safety", "Vardiya sonlarında kazalar sıklaşıyor.", "Accidents become more frequent near shift endings."],
   ["G10", "pattern", "safety", "Küçük yangınlar son dönemde artıyor.", "Small fires have increased recently."],
-  ["G11", "structure", "safety", "Güvenlik eğitimi programı tanımlanmamış.", "No safety training program has been defined."],
+  ["G11", "structure", "safety", "İş güvenliği kuralları belirlenmemiş.", "Workplace safety rules have not been defined."],
   ["G12", "structure", "safety", "Riskli işler için yazılı prosedür yok.", "There is no written procedure for risky tasks."],
   ["G13", "structure", "safety", "Güvenlik kontrolünden sorumlu kişi yok.", "No person is responsible for safety inspections."],
   ["G14", "structure", "safety", "Acil çıkış yollarının kontrol planı yok.", "There is no inspection plan for emergency exits."],
@@ -198,18 +198,18 @@ function shuffle<T>(items: readonly T[], random: () => number) {
 type Slot = { level: number; task: TargetCategory; category: TargetCategory; spawnAtMs: number; durationMs: number };
 
 const taskCycle: TargetCategory[] = ["event", "pattern", "structure"];
-const levelOneTimes = [1_000, 4_700, 8_400, 12_100, 15_800, 19_500, 23_200, 26_900, 30_600, 34_300, 38_000];
-const levelTwoTimes = [1_000, 4_700, 8_400, 12_100, 15_800, 19_500, 23_200, 26_900, 30_600, 34_300, 38_000];
-const phaseOffsets = [1_000, 4_000, 7_000, 10_000];
+const levelOneTimes = [500, 4_200, 7_900, 11_600, 15_300, 19_000];
+const levelTwoTimes = [500, 4_200, 7_900, 11_600, 15_300, 19_000];
+const phaseOffsets = [500, 3_500, 6_500];
 
 function scheduleSlots(random: () => number = () => .5): Slot[] {
-  const levelOneCategories = shuffle<TargetCategory>(["structure", "structure", "structure", "structure", "structure", "structure", "event", "event", "event", "pattern", "pattern"], random);
-  const levelTwoCategories = shuffle<TargetCategory>(["pattern", "pattern", "pattern", "pattern", "pattern", "pattern", "event", "event", "event", "structure", "structure"], random);
+  const levelOneCategories = shuffle<TargetCategory>(["structure", "structure", "structure", "event", "event", "pattern"], random);
+  const levelTwoCategories = shuffle<TargetCategory>(["pattern", "pattern", "pattern", "event", "event", "structure"], random);
   const slots: Slot[] = levelOneTimes.map((spawnAtMs, index) => ({ level: 0, task: "structure", category: levelOneCategories[index]!, spawnAtMs, durationMs: HUNTER_TARGET_DURATION_MS[0] }));
   levelTwoTimes.forEach((spawnAtMs, index) => slots.push({ level: 1, task: "pattern", category: levelTwoCategories[index]!, spawnAtMs, durationMs: HUNTER_TARGET_DURATION_MS[1] }));
   taskCycle.forEach((task, phase) => {
     const traps = (["event", "pattern", "structure"] as TargetCategory[]).filter((category) => category !== task);
-    const phaseCategories = shuffle<TargetCategory>([task, task, traps[0]!, traps[1]!], random);
+    const phaseCategories = shuffle<TargetCategory>([task, traps[0]!, traps[1]!], random);
     phaseOffsets.forEach((offset, index) => slots.push({ level: 2, task, category: phaseCategories[index]!, spawnAtMs: phase * HUNTER_TASK_WINDOW_MS + offset, durationMs: HUNTER_TARGET_DURATION_MS[2] }));
   });
   return slots;
@@ -225,6 +225,11 @@ export function taskForLevelTime(level: number, elapsedMs: number): TargetCatego
   return taskCycle[Math.min(taskCycle.length - 1, Math.floor(elapsedMs / HUNTER_TASK_WINDOW_MS))]!;
 }
 
+export function isHunterLevelComplete(schedule: readonly ScheduledTarget[], resolvedTargetIds: ReadonlySet<string>, level: number) {
+  const levelTargets = schedule.filter((target) => target.level === level);
+  return levelTargets.length > 0 && levelTargets.every((target) => resolvedTargetIds.has(target.id));
+}
+
 export function buildProblemHunterRound(seedKey: string): ScheduledTarget[] {
   const random = seededRandom(hashSeed(`week-5-problem-hunter:${seedKey}`));
   const practiceAdjacentIds = new Set(["T01", "T06", "T11"]);
@@ -232,12 +237,27 @@ export function buildProblemHunterRound(seedKey: string): ScheduledTarget[] {
     const shuffled = shuffle(problemHunterPool.filter((item) => item.category === category), random);
     return [category, [...shuffled.filter((item) => !practiceAdjacentIds.has(item.id)), ...shuffled.filter((item) => practiceAdjacentIds.has(item.id))]];
   })) as Record<TargetCategory, TargetItem[]>;
+  const preferredIds: Record<TargetCategory, string[]> = {
+    event: ["U01", "G02"],
+    pattern: ["T07", "U06"],
+    structure: ["U11", "G11", "T13", "S11"],
+  };
+  const preferredPools = Object.fromEntries((Object.keys(preferredIds) as TargetCategory[]).map((category) => [
+    category,
+    shuffle(preferredIds[category].map((id) => problemHunterPool.find((item) => item.id === id)!), random),
+  ])) as Record<TargetCategory, TargetItem[]>;
   const cursors: Record<TargetCategory, number> = { event: 0, pattern: 0, structure: 0 };
+  const usedIds = new Set<string>();
   const slots = scheduleSlots(random);
   const holeCycles = Array.from({ length: Math.ceil(slots.length / 6) }, () => shuffle([0, 1, 2, 3, 4, 5], random)).flat();
   let previousHole = -1;
   return slots.map((slot, index) => {
-    const item = pools[slot.category][cursors[slot.category]++]!;
+    let item = slot.level === 0 ? preferredPools[slot.category].find((candidate) => !usedIds.has(candidate.id)) : undefined;
+    while (!item) {
+      const candidate = pools[slot.category][cursors[slot.category]++]!;
+      if (!usedIds.has(candidate.id)) item = candidate;
+    }
+    usedIds.add(item.id);
     let hole = holeCycles[index]!;
     while (hole === previousHole) hole = (hole + 1) % 6;
     previousHole = hole;
@@ -251,6 +271,7 @@ export function arcadeScoreFor(actions: readonly HunterAction[]) {
 
 // The maximum is derived from the schedule's actual hittable targets, so pace
 // changes cannot silently change the value of a perfect 100-point play.
-export function normalizedHunterScore(actions: readonly HunterAction[]) {
-  return Math.max(0, Math.min(100, Math.round(arcadeScoreFor(actions) / HUNTER_MAX_HIT_SCORE * 100)));
+export function normalizedHunterScore(actions: readonly HunterAction[], correctOpportunityCount = HUNTER_CORRECT_OPPORTUNITIES) {
+  const maximumScore = Math.max(1, correctOpportunityCount * HUNTER_CORRECT_POINTS);
+  return Math.max(0, Math.min(100, Math.round(arcadeScoreFor(actions) / maximumScore * 100)));
 }
