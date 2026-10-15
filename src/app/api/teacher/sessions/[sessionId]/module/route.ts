@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { broadcastModuleStarted } from "@/lib/moduleStartBroadcastServer";
 import { ownedSession, teacherFromRequest } from "@/lib/teacherApiServer";
 import { isSupabaseAdminConfigured, requireSupabaseAdmin } from "@/lib/supabaseAdmin";
 
@@ -51,6 +52,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     if (error) throw error;
+    if (action === "start") await broadcastModuleStarted(client, sessionId, data);
     return NextResponse.json({ session: data });
   } catch (error) {
     console.error("Teacher module action failed", error);

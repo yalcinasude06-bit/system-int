@@ -23,7 +23,9 @@ import { Week5DelayTrail } from "@/components/modules/Week5_DelayTrail";
 import { Week5ProblemHunter } from "@/components/modules/Week5_ProblemHunter";
 import { Week5BalanceMaster } from "@/components/modules/Week5_BalanceMaster";
 import { getRemainingCountdown } from "@/lib/moduleCountdown";
+import { MODULE_STARTED_EVENT, moduleStartedEventKey, moduleStartChannelTopic, parseModuleStartedPayload, shouldRefreshForModuleStart } from "@/lib/moduleStartRealtime";
 import { getStudentGameState, getStudentSessionStatus, saveModuleDraft, saveSubmission, submitModuleFeedback } from "@/lib/session";
+import { requireSupabase } from "@/lib/supabase";
 import type { ModuleDraft, ModuleId, ModuleSubmission, Session, Student, StudentProfile, Submission } from "@/types";
 
 type AnswerReviewState = { key: string; until: number };
@@ -52,6 +54,7 @@ export default function StudentPlayPage() {
   const sessionSnapshot = useRef<Session | null>(null);
   const fullLoadInFlight = useRef<Promise<void> | null>(null);
   const statusLoadInFlight = useRef<Promise<void> | null>(null);
+  const lastModuleStartEventKey = useRef("");
 
   useEffect(() => {
     // Yenilenen sekmenin revision aralığını önceki tarayıcı örneğinin ilerisine taşı.
@@ -217,6 +220,34 @@ export default function StudentPlayPage() {
       window.removeEventListener("focus", refreshNow);
     };
   }, [loadStatus]);
+
+  useEffect(() => {
+    if (!session?.id || !student?.id) return;
+    const client = requireSupabase();
+    let disposed = false;
+    lastModuleStartEventKey.current = "";
+    const channel = client
+      .channel(moduleStartChannelTopic(session.id))
+      .on("broadcast", { event: MODULE_STARTED_EVENT }, (message) => {
+        const payload = parseModuleStartedPayload(message.payload);
+        const current = sessionSnapshot.current;
+        if (!payload || !current || !shouldRefreshForModuleStart(payload, current, lastModuleStartEventKey.current)) return;
+        lastModuleStartEventKey.current = moduleStartedEventKey(payload);
+        void loadStatus();
+      })
+      .subscribe((status) => {
+        // İlk bağlantıda ve otomatik yeniden bağlantıda, bağlantı aralığında
+        // kaçmış olabilecek olayı güvenli durum RPC'siyle telafi et.
+        if (!disposed && status === "SUBSCRIBED") void loadStatus();
+      });
+
+    return () => {
+      disposed = true;
+      void client.removeChannel(channel).catch((error) => {
+        console.warn("Module start Realtime channel cleanup failed.", error);
+      });
+    };
+  }, [loadStatus, session?.id, student?.id]);
 
   useEffect(() => {
     if (isModuleStarted) return;
