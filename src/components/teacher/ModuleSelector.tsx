@@ -1,4 +1,4 @@
-import { BarChart3, Boxes, BriefcaseBusiness, CheckCircle2, Factory, FlaskConical, Gauge, History, Layers3, ListChecks, Network, Play, RotateCcw, ScanSearch, Shapes, Square, Target, UsersRound, Workflow } from "lucide-react";
+import { BarChart3, Boxes, CheckCircle2, Factory, Gauge, History, Layers3, ListChecks, Network, Play, RotateCcw, ScanSearch, Shapes, Square, Target, UsersRound, Workflow } from "lucide-react";
 import type { ComponentType } from "react";
 import type { ModuleId } from "@/types";
 
@@ -34,12 +34,6 @@ const weekFiveModules: typeof weekOneModules = [
   { id: 1, title: "Gecikmenin İzinde", subtitle: "5 aşama · 25 vakalık gecikme analizi", description: "Haziran'daki sonucu başlatan geçmiş kararı bul; gecikmiş etkilerin ay ay dönüşümünü izle.", Icon: History },
   { id: 2, title: "Sorun Avcısı", subtitle: "3 seviye · 90 hedeflik arcade", description: "Olay, davranış örüntüsü ve sistem yapısı hedeflerini doğru görevde yakala.", Icon: Target },
   { id: 3, title: "Denge Ustası", subtitle: "60 saniyelik sistem kontrol odası", description: "Sınırlı kaynak ve gecikmeli etkiler altında üretim sistemini dengede tut.", Icon: Gauge },
-];
-
-const weekSixModules: typeof weekOneModules = [
-  { id: 1, title: "Akış Operasyonu", subtitle: "5 görev · 30 stok-akış vakası", description: "Stokları, giriş ve çıkışları yönet; hedefe ulaş, taşmayı önle ve davranışı tahmin et.", Icon: Workflow },
-  { id: 2, title: "Simülasyon Tamircisi", subtitle: "5 görev · 24 model arızası", description: "Model uyarısını teşhis et; işaret, zaman adımı, gecikme ve davranış hatalarını onar.", Icon: FlaskConical },
-  { id: 3, title: "Model Ajansı", subtitle: "5 müşteri · 24 proje brifi", description: "Müşterinin ihtiyacına en uygun fiziksel, analog, şematik veya matematiksel modeli seç.", Icon: BriefcaseBusiness },
 ];
 
 export function WeekSelector({ activeWeek, onChange, disabled }: { activeWeek: number; onChange: (week: number) => void; disabled?: boolean }) {
@@ -78,7 +72,7 @@ type ModuleSelectorProps = {
 };
 
 export function ModuleSelector({ activeWeek, activeModule, moduleStage, isModuleStarted, currentModuleTurn, moduleTurnCounters, submittedCount, totalStudents, disabled, onStart, onFinish, onViewResults }: ModuleSelectorProps) {
-  if (activeWeek !== 1 && activeWeek !== 3 && activeWeek !== 4 && activeWeek !== 5 && activeWeek !== 6) {
+  if (activeWeek !== 1 && activeWeek !== 3 && activeWeek !== 4 && activeWeek !== 5) {
     return (
       <div className="coming-soon-card" role="status">
         <span aria-hidden="true">🚧</span>
@@ -87,7 +81,7 @@ export function ModuleSelector({ activeWeek, activeModule, moduleStage, isModule
     );
   }
 
-  const modules = activeWeek === 1 ? weekOneModules : activeWeek === 3 ? weekThreeModules : activeWeek === 4 ? weekFourModules : activeWeek === 5 ? weekFiveModules : weekSixModules;
+  const modules = activeWeek === 1 ? weekOneModules : activeWeek === 3 ? weekThreeModules : activeWeek === 4 ? weekFourModules : weekFiveModules;
 
   return (
     <div className="dashboard-module-list" role="list" aria-label={`Hafta ${activeWeek} modülleri`}>

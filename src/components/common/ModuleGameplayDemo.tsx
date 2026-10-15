@@ -472,40 +472,6 @@ function WeekFiveBalanceMasterDemo() {
   </div>;
 }
 
-function WeekSixFlowOperationDemo() {
-  const { locale } = useI18n();
-  const text = { tr: { stock: "Stok", target: "Hedef", action: "Çıkışı artır", done: "Dengelendi" }, en: { stock: "Stock", target: "Target", action: "Increase outflow", done: "Balanced" } }[locale];
-  const transition = { duration: 4.6, repeat: Infinity, ease: "easeInOut" as const, times: [0, .18, .42, .66, .82, 1] };
-  return <div className="module-demo week-six-flow-demo" aria-hidden="true">
-    <div className="week-six-demo-factory">🏭<motion.span animate={{ x: [0, 0, 52, 104, 104, 0] }} transition={transition}>📦</motion.span></div>
-    <div className="week-six-demo-tank"><motion.i animate={{ height: ["88%","88%","88%","65%","65%","88%"] }} transition={transition} /><b>{text.stock}</b></div>
-    <div className="week-six-demo-readout"><span>{text.target}: 65</span><motion.strong animate={{ backgroundColor: ["#fff","#dcfce7","#dcfce7","#dcfce7","#dcfce7","#fff"], scale: [1,.96,1,1,1,1] }} transition={transition}>{text.action}</motion.strong><motion.small animate={{ opacity: [0,0,0,1,1,0] }} transition={transition}>✓ {text.done}</motion.small></div>
-    <motion.span className="week-six-demo-hand" animate={{ y: [8,-2,-2,8,8,8], scale: [1,.82,1,1,1,1], opacity: [1,1,1,0,0,1] }} transition={transition}>👆</motion.span>
-  </div>;
-}
-
-function WeekSixRepairDemo() {
-  const { locale } = useI18n();
-  const text = { tr: { alert: "İşaret hatası", repair: "İlişkiyi negatif yap", fixed: "MODEL ONARILDI" }, en: { alert: "Sign error", repair: "Make relation negative", fixed: "MODEL REPAIRED" } }[locale];
-  const transition = { duration: 4.6, repeat: Infinity, ease: "easeInOut" as const, times: [0, .18, .42, .66, .82, 1] };
-  return <div className="module-demo week-six-repair-demo" aria-hidden="true">
-    <div className="week-six-demo-console"><motion.b animate={{ color: ["#ef4444","#ef4444","#ef4444","#34d399","#34d399","#ef4444"] }} transition={transition}>⌁╱╲⌁</motion.b><span>⚠ {text.alert}</span></div>
-    <motion.div className="week-six-demo-repair" animate={{ backgroundColor: ["#fff","#dcfce7","#dcfce7","#dcfce7","#dcfce7","#fff"], borderColor: ["#cbd5e1","#34d399","#34d399","#34d399","#34d399","#cbd5e1"] }} transition={transition}>{text.repair}</motion.div>
-    <motion.small animate={{ opacity: [0,0,0,1,1,0] }} transition={transition}>✓ {text.fixed}</motion.small><motion.span className="week-six-demo-hand" animate={{ y: [8,-2,-2,8,8,8], scale: [1,.82,1,1,1,1] }} transition={transition}>👆</motion.span>
-  </div>;
-}
-
-function WeekSixAgencyDemo() {
-  const { locale } = useI18n();
-  const text = { tr: { brief: "Adımları tek diyagramda göster.", physical: "Fiziksel", analog: "Analog", schematic: "Şematik", mathematical: "Matematiksel" }, en: { brief: "Show the steps in one diagram.", physical: "Physical", analog: "Analog", schematic: "Schematic", mathematical: "Mathematical" } }[locale];
-  const transition = { duration: 4.6, repeat: Infinity, ease: "easeInOut" as const, times: [0, .18, .42, .66, .82, 1] };
-  return <div className="module-demo week-six-agency-demo" aria-hidden="true">
-    <div className="week-six-demo-client"><BossPortrait variant={6} /><span>“{text.brief}”</span></div>
-    <div className="week-six-demo-tools"><span>{text.physical}</span><span>{text.analog}</span><motion.span animate={{ backgroundColor: ["#fff","#dcfce7","#dcfce7","#dcfce7","#dcfce7","#fff"], borderColor: ["#d6b56d","#34d399","#34d399","#34d399","#34d399","#d6b56d"] }} transition={transition}>✓ {text.schematic}</motion.span><span>{text.mathematical}</span></div>
-    <motion.span className="week-six-demo-hand" animate={{ y: [8,-2,-2,8,8,8], scale: [1,.82,1,1,1,1] }} transition={transition}>👆</motion.span>
-  </div>;
-}
-
 const demos: Record<ModuleId, () => ReactNode> = {
   1: ModuleOneDemo,
   2: ModuleTwoDemo,
@@ -533,12 +499,6 @@ export function ModuleGameplayDemo({ moduleId, weekId = 1 }: { moduleId: ModuleI
         ? WeekFiveProblemHunterDemo
       : weekId === 5 && moduleId === 3
         ? WeekFiveBalanceMasterDemo
-      : weekId === 6 && moduleId === 1
-        ? WeekSixFlowOperationDemo
-      : weekId === 6 && moduleId === 2
-        ? WeekSixRepairDemo
-      : weekId === 6 && moduleId === 3
-        ? WeekSixAgencyDemo
       : demos[moduleId];
   return <MotionConfig reducedMotion="user"><Demo /></MotionConfig>;
 }

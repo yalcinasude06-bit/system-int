@@ -16,7 +16,6 @@
     "test:week5-delay-trail": "node --no-warnings --experimental-strip-types scripts/validate-week5-delay-trail.mjs",
     "test:week5-problem-hunter": "node --no-warnings --experimental-strip-types scripts/validate-week5-problem-hunter.mjs",
     "test:week5-balance-master": "node --no-warnings --experimental-strip-types scripts/validate-week5-balance-master.mjs",
-    "test:week6-modules": "node --no-warnings --experimental-strip-types scripts/validate-week6-modules.mjs",
     "test:module-revisions": "node --no-warnings --experimental-strip-types scripts/validate-module-revisions.mjs",
     "test:run-replay": "node --no-warnings --experimental-strip-types scripts/validate-run-replay.mjs",
     "test:run-load": "node scripts/report-run-load.mjs"
