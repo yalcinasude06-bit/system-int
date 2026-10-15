@@ -38,6 +38,10 @@ for (const item of problemHunterPool) {
   assert.ok(item.text.tr && item.text.en && item.explanation.tr && item.explanation.en, `${item.id} must be bilingual`);
   assert.ok(item.icon, `${item.id} must include an icon`);
   assert.ok(item.text.tr.length <= 70 && item.text.en.length <= 70, `${item.id} must remain readable on a short-lived target`);
+  const trWords = item.text.tr.replace(/[.,!?]/g, "").trim().split(/\s+/).length;
+  const enWords = item.text.en.replace(/[.,!?]/g, "").trim().split(/\s+/).length;
+  assert.ok(trWords >= 5 && trWords <= 10, `${item.id} Turkish text must stay within the requested 5–10 word reading range`);
+  assert.ok(enWords >= 5 && enWords <= 12, `${item.id} English text must stay concise enough for the same target`);
 }
 assert.equal(new Set(problemHunterPool.map((item) => item.text.tr)).size, 90, "Turkish target text must be unique");
 assert.equal(new Set(problemHunterPool.map((item) => item.text.en)).size, 90, "English target text must be unique");
@@ -97,7 +101,18 @@ assert.match(countdown, /weekFiveModuleTwoBrief/);
 assert.match(demo, /WeekFiveProblemHunterDemo/);
 assert.match(css, /\.hunter-board[\s\S]*grid-template-columns: repeat\(3/);
 assert.match(css, /@media \(max-width: 760px\)[\s\S]*\.hunter-board[\s\S]*grid-template-columns: repeat\(3/, "The required 2×3 board must remain intact on mobile");
-assert.match(css, /@media \(max-width: 390px\)[\s\S]*\.hunter-hud \{ grid-template-columns: 1fr;/, "The HUD must stack safely at 320–390px and large system fonts");
+assert.match(component, /hunter-mission-kicker[\s\S]*taskChanged[\s\S]*missionLabel[\s\S]*missionDefinition/, "The mission must render as three explicit content rows, including the change announcement");
+assert.match(component, /ŞU ANKİ GÖREVİN — ÖNCE BURAYI OKU/);
+assert.match(component, /GÖREV DEĞİŞTİ!/);
+assert.match(component, /className="hunter-timer"/, "Only the time HUD must remain in the student play screen");
+assert.doesNotMatch(component, /hunter-hud|Doğru hedef|Arcade ilerlemesi|TrendingUp/, "Correct-target and arcade-progress HUD cards must be removed without touching score calculations");
+assert.match(css, /\.hunter-mission \{[^}]*height: auto;[^}]*display: grid;[^}]*grid-template-rows: auto auto auto;/, "The mission layout must use normal three-row grid flow");
+assert.match(css, /\.hunter-mission-kicker span \{[^}]*overflow-wrap: anywhere;/, "Long mission labels must wrap instead of overlapping their icon");
+assert.doesNotMatch(css, /\.hunter-mission[^\{]*\{[^}]*position: absolute/, "Mission rows must not use absolute positioning");
+for (const viewport of [320, 360, 375, 390, 414, 430]) {
+  const horizontalPadding = viewport <= 460 ? 18 : 32;
+  assert.ok(viewport - horizontalPadding >= 302, `${viewport}px viewport must retain a usable mission content width`);
+}
 assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.hunter-target[^\{]*\{ animation: none/);
 
 assert.doesNotMatch(migration, /create table|alter table|drop table/i, "Module 2 enablement must not introduce a new table");

@@ -359,14 +359,14 @@ function shuffle<T>(items: readonly T[], random: () => number) {
 export function buildControlRoomScenario(seedKey: string): ControlRoomScenario {
   const random = seededRandom(hashSeed(`week-5-balance-master:${seedKey}`));
   const eventTemplates: Array<Omit<ControlRoomEvent, "id" | "atMs" | "intensity"> & { baseAtMs: number }> = [
-    { type: "order-surge", baseAtMs: 12_000, durationMs: 7_000, title: text("Hafif sipariş artışı", "Light order increase"), message: text("Yeni siparişler kuyruğu yavaşça büyütüyor.", "New orders are gradually growing the queue."), effect: { ordersReceived: 5, backlog: 4, delay: 2 } },
-    { type: "machine-warning", baseAtMs: 24_000, durationMs: 6_500, title: text("Erken bakım sinyali", "Early maintenance signal"), message: text("Makinede hafif titreşim algılandı.", "Mild machine vibration was detected."), effect: { health: -3, failureRisk: 6 } },
-    { type: "order-surge", baseAtMs: 34_000, durationMs: 8_000, title: text("Talep dalgası", "Demand wave"), message: text("Sipariş girişi kapasiteyi zorluyor.", "Incoming orders are testing capacity."), effect: { ordersReceived: 8, backlog: 7, delay: 4 } },
-    { type: "machine-warning", baseAtMs: 46_000, durationMs: 8_000, title: text("Bakım uyarısı", "Maintenance warning"), message: text("Makine yük altında; sağlık ve riski birlikte izle.", "The machine is under load; watch health and risk together."), effect: { health: -5, failureRisk: 10 } },
-    { type: "quality-alarm", baseAtMs: 56_000, durationMs: 7_500, title: text("Kalite baskısı", "Quality pressure"), message: text("Yeniden iş olasılığı yükseliyor.", "The likelihood of rework is rising."), effect: { qualityRisk: 10, backlog: 3 } },
-    { type: "staff-shortage", baseAtMs: 66_000, durationMs: 8_500, title: text("Kapasite daralması", "Capacity squeeze"), message: text("İç kapasite geçici olarak daraldı.", "Internal capacity temporarily narrowed."), effect: { team: -9, production: -4, fatigue: 4 } },
-    { type: "order-surge", baseAtMs: 75_000, durationMs: 8_000, title: text("Kritik teslimat dalgası", "Critical delivery wave"), message: text("Son aşamada teslimat dengesi zorlanıyor.", "Delivery balance is under pressure in the final phase."), effect: { ordersReceived: 9, backlog: 8, delay: 5 } },
-    { type: "machine-warning", baseAtMs: 83_000, durationMs: 6_000, title: text("Son makine uyarısı", "Final machine warning"), message: text("Kapanışa kadar makine dengesini koru.", "Protect machine balance through the finish."), effect: { health: -4, failureRisk: 8 } },
+    { type: "order-surge", baseAtMs: 12_000, durationMs: 7_000, title: text("Hafif sipariş artışı", "Light order increase"), message: text("Siparişler birikiyor; gecikme artmaya başladı.", "Orders are accumulating; delivery delay has started to rise."), effect: { ordersReceived: 5, backlog: 4, delay: 2 } },
+    { type: "machine-warning", baseAtMs: 24_000, durationMs: 6_500, title: text("Erken bakım sinyali", "Early maintenance signal"), message: text("Bakım sinyali geldi; arıza riski yükseliyor.", "A maintenance signal appeared; failure risk is rising."), effect: { health: -3, failureRisk: 6 } },
+    { type: "order-surge", baseAtMs: 34_000, durationMs: 8_000, title: text("Talep dalgası", "Demand wave"), message: text("Talep kapasiteyi aştı; sipariş kuyruğu büyüyor.", "Demand exceeded capacity; the order queue is growing."), effect: { ordersReceived: 8, backlog: 7, delay: 4 } },
+    { type: "machine-warning", baseAtMs: 46_000, durationMs: 8_000, title: text("Bakım uyarısı", "Maintenance warning"), message: text("Bakım gecikti; sağlık düşerken arıza riski artıyor.", "Maintenance is overdue; health is falling as failure risk rises."), effect: { health: -5, failureRisk: 10 } },
+    { type: "quality-alarm", baseAtMs: 56_000, durationMs: 7_500, title: text("Kalite baskısı", "Quality pressure"), message: text("Kalite hataları yeniden iş kuyruğunu büyütüyor.", "Quality defects are growing the rework queue."), effect: { qualityRisk: 10, backlog: 3 } },
+    { type: "staff-shortage", baseAtMs: 66_000, durationMs: 8_500, title: text("Kapasite daralması", "Capacity squeeze"), message: text("Ekip kapasitesi düştü; üretim yavaşlıyor.", "Team capacity fell; production is slowing."), effect: { team: -9, production: -4, fatigue: 4 } },
+    { type: "order-surge", baseAtMs: 75_000, durationMs: 8_000, title: text("Kritik teslimat dalgası", "Critical delivery wave"), message: text("Yeni sipariş dalgası teslimat gecikmesini büyütüyor.", "A new order wave is increasing delivery delay."), effect: { ordersReceived: 9, backlog: 8, delay: 5 } },
+    { type: "machine-warning", baseAtMs: 83_000, durationMs: 6_000, title: text("Son makine uyarısı", "Final machine warning"), message: text("Makine yıprandı; kapanışta arıza riski yükseliyor.", "The machine is worn; failure risk is rising near the finish."), effect: { health: -4, failureRisk: 8 } },
   ];
   const events = eventTemplates.map((event, index) => {
     const jitter = Math.round(random() * 900);
@@ -384,15 +384,30 @@ export function buildControlRoomScenario(seedKey: string): ControlRoomScenario {
     ["cross-train", "double-target"],
     ["reserve-capacity", "prioritize-orders"],
   ];
-  const pairs = shuffle(pairSource, random).map((pair) => shuffle(pair, random));
-  const pairAt = (index: number) => pairs[index % pairs.length]!;
+  const orientPair = (pair: readonly InterventionId[]) => shuffle(pair, random);
+  // Alternate the left and right pair so two cards keep their tap position.
+  // The incoming pair follows the next staged risk, which always leaves at
+  // least one causally useful response on screen without making the choice
+  // deterministic or removing the trade-off card beside it.
+  const incomingPairs: InterventionId[][] = [
+    pairSource[0]!,
+    pairSource[3]!,
+    pairSource[7]!,
+    pairSource[6]!,
+    pairSource[4]!,
+    ["quality-boost", "balance-workload"],
+    pairSource[2]!,
+    pairSource[5]!,
+    pairSource[4]!,
+  ];
   const cardWindows: InterventionId[][] = [];
-  let left = pairAt(0);
-  let right = pairAt(1);
+  let left = orientPair(pairSource[6]!);
+  let right = orientPair(pairSource[5]!);
   cardWindows.push([left[0]!, left[1]!, right[0]!, right[1]!]);
   for (let index = 1; index < Math.ceil(CONTROL_ROOM_CONFIG.durationMs / CONTROL_ROOM_CONFIG.cardWindowMs); index += 1) {
-    if (index % 2 === 1) left = pairAt(index + 1);
-    else right = pairAt(index + 1);
+    const incoming = orientPair(incomingPairs[index - 1]!);
+    if (index % 2 === 1) left = incoming;
+    else right = incoming;
     cardWindows.push([left[0]!, left[1]!, right[0]!, right[1]!]);
   }
   const initialState = {

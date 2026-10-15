@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Activity, AlertTriangle, Boxes, Clock3, Cog, Factory, Gauge, HeartPulse, LockKeyhole, PackageCheck, RotateCcw, ShieldCheck, Sparkles, Timer, Truck, Wrench } from "lucide-react";
+import { Activity, AlertTriangle, Boxes, Clock3, Cog, Factory, Gauge, HeartPulse, LockKeyhole, PackageCheck, RotateCcw, ShieldCheck, Sparkles, Truck, Wrench } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { useI18n } from "@/lib/i18n/I18nContext";
 import type { LearningModuleProps, ModuleSubmission } from "@/types";
@@ -42,8 +42,6 @@ const copy = {
     higherBetter: "yüksek olması daha iyi",
     lowerBetter: "düşük olması daha iyi",
     time: "Kalan süre",
-    safeTime: "Güvenli dengede",
-    progress: "Tur ilerlemesi",
     calm: "Sistem sakin; göstergeleri okuyup sonraki hamleyi planla.",
     interventions: "Aktif müdahaleler",
     cardsChanged: "2 yeni müdahale geldi",
@@ -51,10 +49,6 @@ const copy = {
     ready: "Uygula",
     majorReason: "Büyük müdahale sürüyor",
     conditionReason: "Makine uyarısı veya yüksek arıza riski gerekir",
-    phase: "Aşama",
-    phaseLow: "Düşük baskı",
-    phaseWave: "Talep / arıza dalgası",
-    phaseCritical: "Kritik denge",
     criticalWarning: "Kritik eşik sürüyor — sistemi birkaç saniye içinde dengele!",
     paused: "Sekme arka plandayken simülasyon duraklatıldı",
     complete: "Kontrol odası turu tamamlandı",
@@ -90,8 +84,6 @@ const copy = {
     higherBetter: "higher is better",
     lowerBetter: "lower is better",
     time: "Time left",
-    safeTime: "Time safely balanced",
-    progress: "Round progress",
     calm: "The system is calm; read the indicators and plan your next move.",
     interventions: "Active interventions",
     cardsChanged: "2 new interventions arrived",
@@ -99,10 +91,6 @@ const copy = {
     ready: "Apply",
     majorReason: "A major intervention is active",
     conditionReason: "Requires a machine warning or elevated failure risk",
-    phase: "Phase",
-    phaseLow: "Low pressure",
-    phaseWave: "Demand / failure wave",
-    phaseCritical: "Critical balance",
     criticalWarning: "Critical threshold continues — rebalance the system within seconds!",
     paused: "The simulation pauses while this tab is in the background",
     complete: "Control-room round complete",
@@ -358,7 +346,7 @@ export function Week5BalanceMaster({ onSubmit, onDraft, existingSubmission, exis
   const justChanged = state.elapsedMs > CONTROL_ROOM_CONFIG.cardWindowMs && state.elapsedMs % CONTROL_ROOM_CONFIG.cardWindowMs < 1_200;
   const safe = isSafeState(state);
   const remainingSeconds = Math.max(0, Math.ceil((CONTROL_ROOM_CONFIG.durationMs - state.elapsedMs) / 1_000));
-  const progress = state.elapsedMs / CONTROL_ROOM_CONFIG.durationMs * 100;
+  const remainingTime = `${String(Math.floor(remainingSeconds / 60)).padStart(2, "0")}:${String(remainingSeconds % 60).padStart(2, "0")}`;
   const criticalProgress = Math.min(100, state.criticalMs / CONTROL_ROOM_CONFIG.criticalGraceMs * 100);
   const metricLabels = { good: text.good, watch: text.watch, critical: text.critical, higherBetter: text.higherBetter, lowerBetter: text.lowerBetter };
   const latestLog = state.effectLog.at(-1);
@@ -367,7 +355,6 @@ export function Week5BalanceMaster({ onSubmit, onDraft, existingSubmission, exis
     : latestLog && state.elapsedMs - latestLog.atMs <= 5_000
       ? latestLog.message[locale]
       : text.calm;
-  const phaseLabel = state.elapsedMs < 30_000 ? text.phaseLow : state.elapsedMs < 60_000 ? text.phaseWave : text.phaseCritical;
 
   return <section className="panel module-shell balance-master-shell">
     <div className="balance-header"><div><div className="module-title-chip">{text.title}</div><h1>{text.subtitle}</h1><small>{text.modelNote}</small></div><span className={`balance-status ${safe ? "safe" : "pressure"}`}><i />{safe ? text.safeNow : text.unstableNow}</span></div>
@@ -380,13 +367,13 @@ export function Week5BalanceMaster({ onSubmit, onDraft, existingSubmission, exis
     <div className="balance-control-grid">
       <div className="balance-scene-column">
         <ControlFactory state={state} />
-      </div>
-      <aside className="balance-live-panel">
-        <div className="balance-round-status"><div><Timer /><span>{text.time}</span><strong>{remainingSeconds} {text.seconds}</strong></div><div><ShieldCheck /><span>{text.safeTime}</span><strong>{Math.round(state.safeMs / 1_000)} {text.seconds}</strong></div><div><Activity /><span>{text.phase}</span><strong>{phaseLabel}</strong></div><i><b style={{ width: `${progress}%` }} /></i></div>
         {state.criticalMs > 0 && <div className="balance-critical" style={{ "--critical-progress": `${criticalProgress}%` } as React.CSSProperties}><AlertTriangle /><span>{text.criticalWarning}</span><i><b /></i></div>}
-      </aside>
+      </div>
     </div>
-    <div className="balance-transient-notice" aria-live="polite"><Activity /> <span data-i18n-skip>{transientMessage}</span></div>
+    <div className="balance-transient-row">
+      <div className="balance-transient-notice" aria-live="polite"><Activity /> <span data-i18n-skip>{transientMessage}</span></div>
+      <div className="balance-time" role="timer" aria-label={`${text.time}: ${remainingTime}`}><span aria-hidden="true">⏱</span><strong>{remainingTime}</strong></div>
+    </div>
     <div className="balance-actions-heading"><div><strong>{text.interventions}</strong><span>{currentWindow + 1}/{scenario.cardWindows.length}</span></div>{justChanged && <b><Sparkles />{text.cardsChanged}</b>}</div>
     <div className="balance-action-grid">{cards.map((intervention) => <InterventionCard key={intervention.id} intervention={intervention} state={state} scenario={scenario} onApply={applyAction} labels={text} locale={locale} />)}</div>
     {isHidden && <div className="balance-paused"><Clock3 />{text.paused}</div>}

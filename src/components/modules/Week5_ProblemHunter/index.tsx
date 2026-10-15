@@ -2,12 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "framer-motion";
-import { AlarmClock, Check, Crosshair, Eye, LockKeyhole, RotateCcw, Sparkles, Target, TrendingUp, X } from "lucide-react";
+import { AlarmClock, Check, Crosshair, Eye, LockKeyhole, RotateCcw, Sparkles, Target, X } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { useI18n } from "@/lib/i18n/I18nContext";
 import type { LearningModuleProps, ModuleSubmission } from "@/types";
 import {
-  HUNTER_CORRECT_OPPORTUNITIES,
   HUNTER_LEVEL_DURATION_MS,
   HUNTER_TASK_TRANSITION_MS,
   HUNTER_TASK_WINDOW_MS,
@@ -35,22 +34,20 @@ type Feedback = { outcome: HunterOutcome; target: ScheduledTarget };
 const copy = {
   tr: {
     title: "Hafta 5 · Modül 2: Sorun Avcısı",
-    mission: "ŞU ANKİ GÖREVİN",
-    catchEvent: "OLAYI YAKALA",
-    catchPattern: "ÖRÜNTÜYÜ YAKALA",
-    catchStructure: "YAPIYI YAKALA",
+    mission: "ŞU ANKİ GÖREVİN — ÖNCE BURAYI OKU",
+    catchEvent: "OLAYI YAKALA!",
+    catchPattern: "ÖRÜNTÜYÜ YAKALA!",
+    catchStructure: "YAPIYI YAKALA!",
+    taskChanged: "GÖREV DEĞİŞTİ!",
     eventDefinition: "Belirli bir anda gerçekleşen tekil sonucu bul.",
     patternDefinition: "Zaman içinde tekrar eden eğilim veya davranışı bul.",
     structureDefinition: "Sonuçları üretebilen kural, ilişki veya süreci bul.",
     level: "Seviye",
     time: "Kalan süre",
     seconds: "sn",
-    hits: "Doğru hedef",
-    arcade: "Arcade ilerlemesi",
     slow: "Tek hedef · okunabilir tempo",
     medium: "İki hedef · orta tempo",
     shifting: "Değişen görev · hızlı tempo",
-    taskChanging: "Görev değişiyor… Hedefler cezasız temizlendi.",
     waiting: "Yeni hedef bekleniyor…",
     correct: "Doğru",
     wrong: "Bu örnek",
@@ -74,22 +71,20 @@ const copy = {
   },
   en: {
     title: "Week 5 · Module 2: Problem Hunter",
-    mission: "YOUR CURRENT MISSION",
-    catchEvent: "CATCH THE EVENT",
-    catchPattern: "CATCH THE PATTERN",
-    catchStructure: "CATCH THE STRUCTURE",
+    mission: "YOUR CURRENT MISSION — READ THIS FIRST",
+    catchEvent: "CATCH THE EVENT!",
+    catchPattern: "CATCH THE PATTERN!",
+    catchStructure: "CATCH THE STRUCTURE!",
+    taskChanged: "MISSION CHANGED!",
     eventDefinition: "Find a single outcome that happened at a specific time.",
     patternDefinition: "Find a trend or behavior that repeats over time.",
     structureDefinition: "Find a rule, relationship, or process that can produce outcomes.",
     level: "Level",
     time: "Time left",
     seconds: "sec",
-    hits: "Correct targets",
-    arcade: "Arcade progress",
     slow: "One target · readable pace",
     medium: "Two targets · medium pace",
     shifting: "Shifting mission · fast pace",
-    taskChanging: "Mission changing… Targets cleared without penalty.",
     waiting: "Waiting for a new target…",
     correct: "Correct",
     wrong: "This example is",
@@ -382,7 +377,6 @@ export function Week5ProblemHunter({
   const activeTargets = changingTask ? [] : schedule.filter((target) => target.level === levelIndex && !resolvedTargetIds.has(target.id) && elapsedMs >= target.spawnAtMs && elapsedMs < target.spawnAtMs + target.durationMs);
   const targetByHole = new Map(activeTargets.map((target) => [target.hole, target]));
   const secondsLeft = Math.max(0, Math.ceil((HUNTER_LEVEL_DURATION_MS - elapsedMs) / 1000));
-  const correctHits = actions.filter((action) => action.outcome === "correct").length;
   const missionLabel = currentTask === "event" ? text.catchEvent : currentTask === "pattern" ? text.catchPattern : text.catchStructure;
   const missionDefinition = currentTask === "event" ? text.eventDefinition : currentTask === "pattern" ? text.patternDefinition : text.structureDefinition;
   const levelDescription = [text.slow, text.medium, text.shifting][levelIndex];
@@ -390,14 +384,12 @@ export function Week5ProblemHunter({
   return <section className="panel module-shell problem-hunter-shell">
     <div className="hunter-topline"><div className="module-title-chip">{text.title}</div><span>{text.level} {levelIndex + 1}/3 · {levelDescription}</span></div>
     <div className={`hunter-mission ${currentTask} ${changingTask ? "changing" : ""}`}>
-      <div><Crosshair size={27} /><span>{text.mission}</span></div>
-      <strong>{changingTask ? text.taskChanging : missionLabel}</strong>
-      <p>{changingTask ? "" : missionDefinition}</p>
+      <div className="hunter-mission-kicker"><Crosshair size={20} /><span>{changingTask ? text.taskChanged : text.mission}</span></div>
+      <strong>{missionLabel}</strong>
+      <p>{missionDefinition}</p>
     </div>
-    <div className="hunter-hud">
+    <div className="hunter-timer" aria-label={`${text.time}: ${secondsLeft} ${text.seconds}`}>
       <div><AlarmClock size={18} /><span>{text.time}</span><strong>{secondsLeft} {text.seconds}</strong></div>
-      <div><Target size={18} /><span>{text.hits}</span><strong>{correctHits}/{HUNTER_CORRECT_OPPORTUNITIES}</strong></div>
-      <div><TrendingUp size={18} /><span>{text.arcade}</span><strong>{arcadeScoreFor(actions)}</strong></div>
     </div>
     <div className={`hunter-board level-${levelIndex + 1}`} aria-label={missionLabel}>
       {Array.from({ length: 6 }, (_, hole) => {

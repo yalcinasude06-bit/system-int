@@ -30,9 +30,13 @@ assert.match(systemProcess, /evaluatedCardIsWrong/);
 assert.doesNotMatch(systemProcess, /correctedPlacements: (?!null)/, "Evaluation must not auto-move wrong cards");
 
 assert.match(hunter, /taskTransitionRemainingMs/);
-assert.match(css, /@media \(max-width: 390px\)[\s\S]*\.hunter-hud \{ grid-template-columns: 1fr;/);
+assert.match(hunter, /className="hunter-timer"/);
+assert.doesNotMatch(hunter, /hunter-hud|Doğru hedef|Arcade ilerlemesi/);
+assert.match(css, /@media \(max-width: 390px\)[\s\S]*\.hunter-mission \{ min-height: 136px;/);
 assert.doesNotMatch(balance, /balance-resources|balance-event-band|balance-effect-log|state\.budget|teamCost/);
 assert.match(balance, /balance-transient-notice/);
+assert.match(balance, /balance-transient-row[\s\S]*balance-time/);
+assert.doesNotMatch(balance, /balance-round-status/);
 assert.match(balance, /direction === "high" \? "↑" : "↓"/);
 
 console.log("Cross-module revision validation passed");
