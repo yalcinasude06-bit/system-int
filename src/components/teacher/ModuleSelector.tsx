@@ -37,7 +37,7 @@ const weekFiveModules: typeof weekOneModules = [
 ];
 
 const weekSixModules: typeof weekOneModules = [
-  { id: 1, title: "1. Akış Operasyonu", subtitle: "5 mini oyun · 30 stok-akış senaryosu", description: "Hedef depoyu yönet, taşmayı önle, kayıp akışı tamamla, zamanı ilerlet ve doğru grafiği yakala.", Icon: Workflow },
+  { id: 1, title: "1. Akış Operasyonu", subtitle: "5 soru · 30 stok-akış senaryosu", description: "Aynı fabrika akışında üretim, sevkiyat, son stok, süre ve başlangıç değerlerini bul.", Icon: Workflow },
   { id: 2, title: "2. Simülasyon Tamircisi", subtitle: "5 vaka · teşhis, onarım ve görsel test", description: "Kod hatasıyla model varsayımını ayır; sekiz farklı araçla bozuk simülasyonu doğrudan onar.", Icon: Wrench },
 ];
 

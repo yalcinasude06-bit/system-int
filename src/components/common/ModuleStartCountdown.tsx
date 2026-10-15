@@ -155,8 +155,8 @@ const weekFiveModuleThreeBrief: Record<"tr" | "en", ModuleBrief> = {
 };
 
 const weekSixModuleOneBrief: Record<"tr" | "en", ModuleBrief> = {
-  tr: { icon: "🏭", title: "1. Akış Operasyonu", description: "Beş mini oyunda stok, giriş, çıkış, zaman ve grafik ilişkisini çalıştır." },
-  en: { icon: "🏭", title: "1. Flow Operation", description: "Run stock, inflow, outflow, time, and graph relationships through five mini games." },
+  tr: { icon: "🏭", title: "1. Akış Operasyonu", description: "Aynı fabrika akışında beş değişkenden eksik olanı bul ve sistemi çalıştır." },
+  en: { icon: "🏭", title: "1. Flow Operation", description: "Find the missing one of five variables in the same factory flow and run the system." },
 };
 
 const weekSixModuleTwoBrief: Record<"tr" | "en", ModuleBrief> = {
