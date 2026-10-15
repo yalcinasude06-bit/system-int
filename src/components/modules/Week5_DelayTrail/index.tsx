@@ -363,7 +363,7 @@ export function Week5DelayTrail({
     <div className="delay-trail-grid" role="group" aria-label={text.instruction}>
       <svg className="delay-trail-mobile-turn" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
         <defs><marker id="delay-trail-turn-head" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" /></marker></defs>
-        <path d="M99,25 H99.5 V50 H0.5 V75 H4" markerEnd="url(#delay-trail-turn-head)" />
+        <path d="M83.333,46.7 V50 H16.667 V53.3" markerEnd="url(#delay-trail-turn-head)" />
       </svg>
       {currentCase.months.map((month, monthIndex) => {
         const changed = Boolean(currentRecord && monthIndex >= currentCase.initiatorIndex && monthIndex <= currentRecord.revealedThrough);

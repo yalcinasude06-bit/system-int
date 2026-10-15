@@ -38,14 +38,14 @@ type TutorialChoice = TargetCategory | null;
 const copy = {
   tr: {
     title: "Hafta 5 · Modül 2: Sorun Avcısı",
-    mission: "ŞU ANKİ GÖREVİN — ÖNCE BURAYI OKU",
+    mission: "ŞU ANDA NEYİ YAKALAMALISIN?",
     catchEvent: "OLAYI YAKALA!",
     catchPattern: "ÖRÜNTÜYÜ YAKALA!",
     catchStructure: "YAPIYI YAKALA!",
     taskChanged: "GÖREV DEĞİŞTİ!",
-    eventDefinition: "Ne oldu? Tek bir olay anlatan cümleye dokun.",
-    patternDefinition: "Zaman içinde tekrar eden veya artıp azalan durumu anlatan cümleye dokun.",
-    structureDefinition: "Sorunun arkasındaki kuralı, planlama eksikliğini veya birimler arasındaki bağlantı sorununu anlatan cümlelere dokun.",
+    eventDefinition: "Tek bir anda olan olayı anlatan cümleyi bul.",
+    patternDefinition: "Zaman içinde tekrarlanan veya değişen durumu bul.",
+    structureDefinition: "Kuralı, planlama açığını veya birimler arası ilişkiyi bul.",
     eventExample: "Örnek: Bugün makine durdu.",
     patternExample: "Örnek: Arızalar her ay artıyor.",
     structureExample: "“Bakım planı yok.” → Bu, arızaların tekrarlanmasına yol açabilecek bir sistem eksikliğidir.",
@@ -90,14 +90,14 @@ const copy = {
   },
   en: {
     title: "Week 5 · Module 2: Problem Hunter",
-    mission: "YOUR CURRENT MISSION — READ THIS FIRST",
+    mission: "WHAT SHOULD YOU CATCH RIGHT NOW?",
     catchEvent: "CATCH THE EVENT!",
     catchPattern: "CATCH THE PATTERN!",
     catchStructure: "CATCH THE STRUCTURE!",
     taskChanged: "MISSION CHANGED!",
-    eventDefinition: "What happened? Tap the sentence that describes one event.",
-    patternDefinition: "Tap the sentence describing something that repeats, rises, or falls over time.",
-    structureDefinition: "Tap sentences describing the rule behind the problem, a planning gap, or a connection problem between units.",
+    eventDefinition: "Find the sentence describing one event.",
+    patternDefinition: "Find what repeats or changes over time.",
+    structureDefinition: "Find the rule, planning gap, or connection between units.",
     eventExample: "Example: The machine stopped today.",
     patternExample: "Example: Failures increase every month.",
     structureExample: "“There is no maintenance plan.” → This is a system gap that could contribute to repeated failures.",
@@ -509,16 +509,14 @@ export function Week5ProblemHunter({
   const secondsLeft = Math.max(0, Math.ceil((HUNTER_LEVEL_DURATION_MS - elapsedMs) / 1000));
   const missionLabel = currentTask === "event" ? text.catchEvent : currentTask === "pattern" ? text.catchPattern : text.catchStructure;
   const missionDefinition = currentTask === "event" ? text.eventDefinition : currentTask === "pattern" ? text.patternDefinition : text.structureDefinition;
-  const missionExample = currentTask === "event" ? text.eventExample : currentTask === "pattern" ? text.patternExample : text.structureExample;
   const levelDescription = [text.slow, text.medium, text.shifting][levelIndex];
 
   return <section className="panel module-shell problem-hunter-shell">
-    <div className="hunter-topline"><div className="module-title-chip">{text.title}</div><div className="hunter-topline-actions"><span>{text.level} {levelIndex + 1}/3 · {levelDescription}</span><button type="button" onClick={openTutorial}><HelpCircle size={16} />{text.howTo}</button></div></div>
+    <div className="hunter-topline"><div className="module-title-chip">{text.title}</div><div className="hunter-topline-actions"><span>{text.level} {levelIndex + 1}/3 <i>· {levelDescription}</i></span><button type="button" onClick={openTutorial}><HelpCircle size={16} />{text.howTo}</button></div></div>
     <div className={`hunter-mission ${currentTask} ${changingTask ? "changing" : ""}`}>
       <div className="hunter-mission-kicker"><Crosshair size={20} /><span>{changingTask ? text.taskChanged : text.mission}</span></div>
       <strong>{missionLabel}</strong>
       <p>{missionDefinition}</p>
-      <small>{missionExample}</small>
     </div>
     <div className="hunter-timer" aria-label={`${text.time}: ${secondsLeft} ${text.seconds}`}>
       <div><AlarmClock size={18} /><span>{text.time}</span><strong>{secondsLeft} {text.seconds}</strong></div>

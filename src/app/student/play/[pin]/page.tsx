@@ -342,7 +342,8 @@ export default function StudentPlayPage() {
   if (loading) return <><Navbar /><main className="container page"><div className="empty">Canlı sınıfa bağlanılıyor…</div></main></>;
   if (!session || !student) return <><Navbar /><main className="container page"><div className="notice error">{error || "Katılımcı kaydı bulunamadı."}</div></main></>;
 
-  const scoreEarned = (activeSubmission?.score ?? 0) + (activeSubmission?.speed_bonus ?? 0);
+  const speedBonusEligible = !(session.selected_week === 5 && (session.current_module === 2 || session.current_module === 3));
+  const scoreEarned = (activeSubmission?.score ?? 0) + (speedBonusEligible ? activeSubmission?.speed_bonus ?? 0 : 0);
   const firstCheckCorrect = session.selected_week === 4
     && session.current_module === 3
     && activeSubmission?.payload.isChecked === true
@@ -354,7 +355,8 @@ export default function StudentPlayPage() {
     : 8;
   const ranking = [...classmates].sort((a, b) => b.session_score - a.session_score || a.joined_at.localeCompare(b.joined_at));
   const ownRank = ranking.findIndex((item) => item.id === student.id) + 1;
-  const studentNav = <Navbar studentContext={{ sessionTitle: session.title, week: session.selected_week, studentName: student.nickname, studentNumber: student.student_number, score: student.session_score, onLeave: () => { localStorage.removeItem(`system-lab:${pin}:student`); router.push("/"); } }} />;
+  const compactWeekFiveGame = session.selected_week === 5 && session.current_module <= 3 && session.is_module_started && !activeSubmission && !isAnswerReviewing;
+  const studentNav = <Navbar compactStudentGame={compactWeekFiveGame} studentContext={{ sessionTitle: session.title, week: session.selected_week, studentName: student.nickname, studentNumber: student.student_number, score: student.session_score, onLeave: () => { localStorage.removeItem(`system-lab:${pin}:student`); router.push("/"); } }} />;
 
   if (shouldShowFeedback && activeSubmission) return <>{studentNav}<main className="container page student-submission-wait-page">
     <section className="student-submission-wait panel"><ModuleFeedbackSurvey key={activeModuleKey} moduleId={session.current_module} onSubmit={sendFeedback} onSkip={closeFeedback} /></section>
@@ -395,7 +397,7 @@ export default function StudentPlayPage() {
         <span className="submission-check" aria-hidden="true">✓</span>
         <span className="eyebrow">Yanıt Alındı</span>
         <h1>Yanıtınız Kaydedildi!</h1>
-        <p>Öğretmen turu bitirene kadar bekleyin. Hız bonusunuz tur kapanınca kesinleşecektir.</p>
+        <p>{speedBonusEligible ? "Öğretmen turu bitirene kadar bekleyin. Hız bonusunuz tur kapanınca kesinleşecektir." : "Öğretmen turu bitirene kadar bekleyin. Modül puanınız tur kapanınca kesinleşecektir."}</p>
         {message && <div className="notice success">{message}</div>}
         {error && <div className="notice error">{error}</div>}
         {!feedbackKeys.includes(activeModuleKey) && feedbackDismissedKey !== activeModuleKey && <button type="button" className="feedback-reopen" onClick={() => setFeedbackOpen(true)}><MessageCircleHeart size={18} /> Geri bildirim ver</button>}
@@ -436,7 +438,7 @@ export default function StudentPlayPage() {
         ? <Week5BalanceMaster key={activeModuleKey} seedKey={`${session.id}:${student.id}:5:3:${session.current_run_number}`} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(3, draft)} onSubmit={(submission) => submit(3, submission)} />
       : modules[session.current_module];
 
-  return <>{studentNav}<main className="container student-module-page stack">
+  return <>{studentNav}<main className={`container student-module-page stack ${compactWeekFiveGame ? "student-game-page" : ""}`}>
     {message && <div className="notice success">{message}{saving ? " · kaydediliyor" : ""}</div>}
     {error && <div className="notice error">{error}</div>}
     {activeModule}

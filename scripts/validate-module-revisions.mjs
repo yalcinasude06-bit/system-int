@@ -32,7 +32,7 @@ assert.doesNotMatch(systemProcess, /correctedPlacements: (?!null)/, "Evaluation 
 assert.match(hunter, /taskTransitionRemainingMs/);
 assert.match(hunter, /className="hunter-timer"/);
 assert.doesNotMatch(hunter, /hunter-hud|Doğru hedef|Arcade ilerlemesi/);
-assert.match(css, /@media \(max-width: 390px\)[\s\S]*\.hunter-mission \{ min-height: 154px;/);
+assert.match(css, /@media \(max-width: 460px\)[\s\S]*\.hunter-mission \{ min-height: 88px;/, "Problem Hunter must use the compact live mission card on phones");
 assert.match(hunter, /tutorialState !== "closed"/, "Problem Hunter practice must pause active game time");
 assert.doesNotMatch(balance, /balance-resources|balance-event-band|balance-effect-log|state\.budget|teamCost/);
 assert.match(balance, /balance-transient-notice/);

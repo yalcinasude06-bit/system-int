@@ -23,6 +23,7 @@ const countdown = await readFile(new URL("../src/components/common/ModuleStartCo
 const demo = await readFile(new URL("../src/components/common/ModuleGameplayDemo.tsx", import.meta.url), "utf8");
 const css = await readFile(new URL("../src/app/globals.css", import.meta.url), "utf8");
 const migration = await readFile(new URL("../supabase/migrations/202610140022_week_five_balance_master.sql", import.meta.url), "utf8");
+const timedNoBonusMigration = await readFile(new URL("../supabase/migrations/202610150026_week_five_timed_modules_no_speed_bonus.sql", import.meta.url), "utf8");
 
 assert.ok(interventionPool.length >= 12, "The intervention pool must contain at least twelve interventions");
 assert.equal(interventionPool.length, 16, "The final control room design should expose sixteen interventions");
@@ -188,8 +189,9 @@ assert.match(component, /balance-transient-notice/, "Immediate and delayed effec
 assert.match(component, /balance-transient-row[\s\S]*balance-transient-notice[\s\S]*balance-time/, "The transient message and countdown must share the bottom status row");
 assert.match(component, /remainingTime[\s\S]*padStart\(2, "0"\)/, "The countdown must use a stable mm:ss label");
 assert.doesNotMatch(component, /balance-round-status|text\.safeTime|text\.phaseLow|text\.phaseWave|text\.phaseCritical/, "Safe-time and phase labels must be removed from the student UI");
+assert.doesNotMatch(component, /balance-status|text\.safeNow|text\.unstableNow/, "Persistent balanced/pressure status labels must not return");
 assert.match(css, /\.balance-transient-row \{[^}]*grid-template-columns: minmax\(0,1fr\) 92px;/, "Desktop status layout must reserve a stable countdown column");
-assert.match(css, /@media \(max-width: 360px\)[\s\S]*\.balance-transient-row \{ grid-template-columns: 1fr;/, "The message and countdown must stack without overlap on the narrowest phones");
+assert.match(css, /@media \(max-width: 360px\)[\s\S]*\.balance-transient-row \{ grid-template-columns: minmax\(0,1fr\) 72px;/, "The message and countdown must remain side by side at 320px");
 assert.doesNotMatch(component, /setState\(next\)[\s\S]{0,140}saveDraft\(next\)/, "The frame loop must not write a draft on every fixed step");
 assert.match(studentPage, /session\.selected_week === 5 && session\.current_module === 3[\s\S]*<Week5BalanceMaster/);
 assert.match(teacherPage, /session\.selected_week === 5 && currentModule <= 3/);
@@ -198,11 +200,18 @@ assert.match(countdown, /weekFiveModuleThreeBrief/);
 assert.match(demo, /WeekFiveBalanceMasterDemo/);
 assert.match(css, /\.balance-action-grid \{[^}]*grid-template-columns: repeat\(4/);
 assert.match(css, /@media \(max-width: 820px\)[\s\S]*\.balance-action-grid \{ grid-template-columns: repeat\(2/, "Intervention cards must become a readable 2×2 grid on narrow screens");
+assert.match(component, /productionShort: "Üretim"[\s\S]*healthShort: "Makine sağlığı"/, "Mobile metric labels must remain complete and directional");
+assert.match(css, /@media \(max-width: 520px\)[\s\S]*\.balance-factory \{ height: 96px; min-height: 96px;/, "The mobile factory must become a miniature scene");
+assert.match(css, /@media \(max-width: 520px\)[\s\S]*\.balance-action-card \{ min-height: 0;/, "Mobile intervention cards must not keep the oversized fixed height");
+assert.match(css, /\.balance-control-grid \{ order: 7;/, "The miniature scene must follow the metrics, timer, warning, and interventions on mobile");
 assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.balance-machine svg/);
 assert.doesNotMatch(migration, /create table|alter table|drop table/i, "Week 5 Module 3 must reuse the existing submission model");
 assert.match(migration, /selected_week in \(3, 4, 5\) and target_module_id > 3/, "The full three-module Week 5 set must be enabled");
 assert.match(migration, /current_run_number = current_run_number \+ 1/);
 assert.match(migration, /module_turn_counters = jsonb_set/);
+assert.match(timedNoBonusMigration, /when target_session\.selected_week = 5 and target_session\.current_module in \(2, 3\) then 0/, "Week 5 Module 3 must receive zero database speed bonus");
+assert.match(studentPage, /speedBonusEligible \? activeSubmission\?\.speed_bonus \?\? 0 : 0/, "Student result totals must ignore speed bonus for timed Week 5 games");
+assert.match(teacherPage, /const bonus = speedBonusEligible \? submission\.speed_bonus \?\? 0 : 0/, "Teacher results must not add a speed bonus for timed Week 5 games");
 
 console.table(seedResults.map(({ seed, smart, idle, random }) => ({
   seed: seed.replace("balance-policy-seed-", "#"),

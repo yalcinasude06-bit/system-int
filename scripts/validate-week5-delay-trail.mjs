@@ -22,6 +22,7 @@ const styles = await readFile(new URL("../src/app/globals.css", import.meta.url)
 const baseMigration = await readFile(new URL("../supabase/migrations/202610150023_week_five_delay_trail.sql", import.meta.url), "utf8");
 const revisedPoolMigration = await readFile(new URL("../supabase/migrations/202610150024_week_five_delay_trail_revised_pool.sql", import.meta.url), "utf8");
 const speedBonusMigration = await readFile(new URL("../supabase/migrations/202610150025_week_five_delay_trail_speed_bonus.sql", import.meta.url), "utf8");
+const timedNoBonusMigration = await readFile(new URL("../supabase/migrations/202610150026_week_five_timed_modules_no_speed_bonus.sql", import.meta.url), "utf8");
 
 assert.equal(DELAY_TRAIL_CASES.length, 25, "The case bank must include all 25 cases");
 assert.equal(DELAY_TRAIL_STAGE_COUNT, 5);
@@ -45,6 +46,7 @@ for (const scenario of DELAY_TRAIL_CASES) {
   }
   scenario.months.forEach((month, monthIndex) => {
     for (const locale of ["tr", "en"]) {
+      assert.ok(month.before[locale].length <= 65 && month.after[locale].length <= 65, `${scenario.id}/${locale}/${monthIndex + 1} must fit the fixed mobile month card`);
       if (monthIndex < scenario.initiatorIndex) assert.equal(month.before[locale], month.after[locale], `${scenario.id} must not rewrite ${locale} history before its initiator`);
       else assert.notEqual(month.before[locale], month.after[locale], `${scenario.id} must transform ${locale} content from its initiator through June`);
     }
@@ -115,7 +117,11 @@ assert.match(styles, /\.delay-trail-grid \{[^}]*grid-template-columns: repeat\(6
 assert.match(styles, /\.delay-trail-grid \{ grid-template-columns: repeat\(3,minmax\(0,1fr\)\)/, "Responsive layout must use a 3×2 month grid");
 assert.match(styles, /\.delay-trail-arrow-turn \{ display: none; \}/, "The misleading March down-arrow must be hidden on narrow screens");
 assert.match(styles, /\.delay-trail-mobile-turn \{ position: absolute;[\s\S]*display: block;/, "A connected responsive March-to-April route must replace the down-arrow");
-assert.match(component, /M99,25 H99\.5 V50 H0\.5 V75 H4/, "The mobile connector must end at the April card, not June");
+assert.match(component, /M83\.333,46\.7 V50 H16\.667 V53\.3/, "The mobile connector must travel through the row gutter from March to April");
+assert.match(styles, /\.delay-trail-mobile-turn \{[^}]*pointer-events: none;/, "The responsive connector must never intercept month-card taps");
+assert.match(styles, /@media \(max-width: 520px\)[\s\S]*\.delay-trail-month \{ height: 158px; min-height: 158px;/, "Mobile cards must retain their fixed dimensions");
+assert.match(styles, /\.delay-trail-month > strong \{[^}]*min-width: 0;[^}]*overflow-wrap: anywhere;/, "Month copy must wrap without clipping");
+assert.doesNotMatch(styles, /\.delay-trail-month > strong \{[^}]*overflow: hidden|\.delay-trail-month > strong \{[^}]*text-overflow: ellipsis/, "Month copy must not be clipped or ellipsized");
 
 assert.match(baseMigration, /week5_delay_trail_score/);
 assert.match(baseMigration, /public\.validated_module_score\(target_week_id, target_module_id, new_payload, new_score\)/, "Final score must be recomputed server-side");
@@ -139,5 +145,9 @@ assert.match(speedFinishFunction, /\* greatest\(0, least\(ranked\.score, public\
 assert.match(speedFinishFunction, /session_score = greatest\(0, student\.session_score \+ total\.bonus_delta\)/, "The finalized bonus must update the session total exactly once");
 assert.match(speedFinishFunction, /public\.student_profiles\.total_score \+ excluded\.total_score/, "The finalized bonus must update the persistent profile total");
 assert.match(speedBonusMigration, /grant execute on function public\.finish_session_module\(uuid, bigint\) to service_role/, "Only the teacher service path may finish a run");
+assert.match(timedNoBonusMigration, /when target_session\.selected_week = 5 and target_session\.current_module in \(2, 3\) then 0/, "Only the two fixed-duration Week 5 games must opt out of speed bonus");
+assert.match(timedNoBonusMigration, /else round\([\s\S]*when ranked\.group_size = 1 then 10/, "Week 5 Module 1 and earlier modules must retain the existing rank formula");
+const timedNoBonusPreamble = timedNoBonusMigration.slice(0, timedNoBonusMigration.indexOf("create or replace function"));
+assert.doesNotMatch(timedNoBonusPreamble, /\b(update|delete|insert)\b/i, "The migration must not backfill or erase historical submissions");
 
 console.log("Week 5 Tracing the Delay validation passed");

@@ -23,6 +23,7 @@ const countdown = await readFile(new URL("../src/components/common/ModuleStartCo
 const demo = await readFile(new URL("../src/components/common/ModuleGameplayDemo.tsx", import.meta.url), "utf8");
 const css = await readFile(new URL("../src/app/globals.css", import.meta.url), "utf8");
 const migration = await readFile(new URL("../supabase/migrations/202610140021_week_five_problem_hunter.sql", import.meta.url), "utf8");
+const timedNoBonusMigration = await readFile(new URL("../supabase/migrations/202610150026_week_five_timed_modules_no_speed_bonus.sql", import.meta.url), "utf8");
 
 const categories = ["event", "pattern", "structure"];
 const contexts = ["delivery", "production", "safety", "inventory", "sales", "coordination"];
@@ -40,7 +41,7 @@ for (const category of categories) {
 for (const item of problemHunterPool) {
   assert.ok(item.text.tr && item.text.en && item.explanation.tr && item.explanation.en, `${item.id} must be bilingual`);
   assert.ok(item.icon, `${item.id} must include an icon`);
-  assert.ok(item.text.tr.length <= 75 && item.text.en.length <= 90, `${item.id} must remain readable on a short-lived target`);
+  assert.ok(item.text.tr.length <= 55 && item.text.en.length <= 55, `${item.id} must remain readable on a short-lived mobile target`);
   const trWords = item.text.tr.replace(/[.,!?]/g, "").trim().split(/\s+/).length;
   const enWords = item.text.en.replace(/[.,!?]/g, "").trim().split(/\s+/).length;
   assert.ok(trWords >= 3 && trWords <= 11, `${item.id} Turkish text must remain concise`);
@@ -153,13 +154,13 @@ assert.match(demo, /WeekFiveProblemHunterDemo/);
 assert.match(css, /\.hunter-board[\s\S]*grid-template-columns: repeat\(3/);
 assert.match(css, /@media \(max-width: 760px\)[\s\S]*\.hunter-board[\s\S]*grid-template-columns: repeat\(3/, "The required 2×3 board must remain intact on mobile");
 assert.match(component, /hunter-mission-kicker[\s\S]*taskChanged[\s\S]*missionLabel[\s\S]*missionDefinition/, "The mission must render as three explicit content rows, including the change announcement");
-assert.match(component, /ŞU ANKİ GÖREVİN — ÖNCE BURAYI OKU/);
+assert.match(component, /ŞU ANDA NEYİ YAKALAMALISIN\?/);
 assert.match(component, /GÖREV DEĞİŞTİ!/);
 assert.match(component, /className="hunter-timer"/, "Only the time HUD must remain in the student play screen");
 assert.match(component, /Bugün üç sipariş gecikti\./);
 assert.match(component, /Gecikmeler üç aydır artıyor\./);
 assert.match(component, /Siparişler kapasiteye göre planlanmıyor\./);
-assert.match(component, /Sorunun arkasındaki kuralı, planlama eksikliğini veya birimler arasındaki bağlantı sorununu anlatan cümlelere dokun\./);
+assert.match(component, /Kuralı, planlama açığını veya birimler arası ilişkiyi bul\./);
 assert.match(component, /Oyuna Başla/);
 assert.match(component, /Nasıl Oynanır\?/);
 assert.match(component, /localStorage\.setItem\(tutorialStorageKey, "seen"\)/, "Completed or skipped practice must not be forced on re-entry");
@@ -169,10 +170,12 @@ assert.doesNotMatch(component, /hunter-hud|Doğru hedef|Arcade ilerlemesi|Trendi
 assert.doesNotMatch(component, /hunter-summary|categorySummary|categoryCorrect|categoryWrong|categoryMissed/, "The module-specific analysis screen must not delay the general feedback flow");
 assert.match(component, /hunter-submit-state/, "Only a transient save/retry state may remain after the game ends");
 assert.match(studentPage, /if \(shouldShowFeedback && activeSubmission\)[\s\S]*ModuleFeedbackSurvey/, "A successful submit must continue into the shared feedback flow");
-assert.match(css, /\.hunter-mission \{[^}]*height: auto;[^}]*display: grid;[^}]*grid-template-rows: auto auto auto auto;/, "The mission layout must use normal four-row grid flow");
+assert.match(css, /\.hunter-mission \{[^}]*height: auto;[^}]*display: grid;[^}]*grid-template-rows: auto auto auto;/, "The live mission layout must use a compact three-row grid flow");
 assert.match(css, /\.hunter-mission-kicker span \{[^}]*overflow-wrap: anywhere;/, "Long mission labels must wrap instead of overlapping their icon");
 assert.doesNotMatch(css, /\.hunter-mission[^\{]*\{[^}]*position: absolute/, "Mission rows must not use absolute positioning");
 assert.match(css, /@media \(max-width: 760px\)[\s\S]*\.hunter-practice-options \{ grid-template-columns: 1fr;/, "Practice choices must stack on narrow screens");
+assert.match(css, /@media \(max-width: 460px\)[\s\S]*\.hunter-board \{ height: clamp\(248px,43dvh,320px\); min-height: 248px;/, "The mobile board must adapt to usable dynamic viewport height");
+assert.match(css, /\.student-game-navbar \.nav-inner \{ min-height: 52px;/, "Live Week 5 games must use the scoped compact student header on phones");
 for (const viewport of [320, 360, 375, 390, 414, 430]) {
   const horizontalPadding = viewport <= 460 ? 18 : 32;
   assert.ok(viewport - horizontalPadding >= 302, `${viewport}px viewport must retain a usable mission content width`);
@@ -183,5 +186,8 @@ assert.doesNotMatch(migration, /create table|alter table|drop table/i, "Module 2
 assert.match(migration, /selected_week = 5 and target_module_id > 2/, "Week 5 Module 2 must be enabled and later modules must remain locked");
 assert.match(migration, /current_run_number = current_run_number \+ 1/, "The technical run number must remain monotonic");
 assert.match(migration, /module_turn_counters = jsonb_set/, "Visible module-based play counters must remain intact");
+assert.match(timedNoBonusMigration, /when target_session\.selected_week = 5 and target_session\.current_module in \(2, 3\) then 0/, "Week 5 Module 2 must receive zero database speed bonus");
+assert.match(studentPage, /const speedBonusEligible = !\(session\.selected_week === 5 && \(session\.current_module === 2 \|\| session\.current_module === 3\)\)/, "Student totals and waiting copy must share the no-bonus gate");
+assert.match(teacherPage, /const speedBonusEligible = !\(session\.selected_week === 5 && \(session\.current_module === 2 \|\| session\.current_module === 3\)\)/, "Teacher results must share the no-bonus gate");
 
 console.log("Week 5 Problem Hunter content, schedule, scoring, responsive integration, and migration validation passed");

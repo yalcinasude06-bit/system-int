@@ -15,7 +15,6 @@ import {
   getIntervention,
   getInterventionAvailability,
   hasCollapsed,
-  isSafeState,
   restoreControlRoomState,
   scoreControlRoom,
   stepSimulation,
@@ -33,9 +32,13 @@ const copy = {
     subtitle: "Sistem Kontrol Odası",
     modelNote: "Eğitim amaçlı temsili sistem modeli",
     production: "Üretim performansı",
+    productionShort: "Üretim",
     failure: "Arıza riski",
+    failureShort: "Arıza riski",
     delay: "Teslimat gecikmesi",
+    delayShort: "Gecikme",
     health: "Makine sağlığı",
+    healthShort: "Makine sağlığı",
     good: "Güvenli",
     watch: "İzle",
     critical: "Kritik",
@@ -65,8 +68,6 @@ const copy = {
     retry: "Kaydı tekrar dene",
     locked: "Bu oynanış tamamlandı",
     lockedDetail: "Sonucun bir kez kaydedildi. Öğretmenin sonuçları açıklamasını bekle.",
-    safeNow: "Sistem dengede",
-    unstableNow: "Sistem baskı altında",
     actionApplied: "Müdahale uygulandı",
     seconds: "sn",
   },
@@ -75,9 +76,13 @@ const copy = {
     subtitle: "System Control Room",
     modelNote: "Representative model for educational use",
     production: "Production performance",
+    productionShort: "Output",
     failure: "Failure risk",
+    failureShort: "Failure risk",
     delay: "Delivery delay",
+    delayShort: "Delay",
     health: "Machine health",
+    healthShort: "Machine health",
     good: "Safe",
     watch: "Watch",
     critical: "Critical",
@@ -107,8 +112,6 @@ const copy = {
     retry: "Try saving again",
     locked: "This play is complete",
     lockedDetail: "Your result was recorded once. Wait for your teacher to reveal the results.",
-    safeNow: "System balanced",
-    unstableNow: "System under pressure",
     actionApplied: "Intervention applied",
     seconds: "sec",
   },
@@ -120,12 +123,12 @@ function metricTone(value: number, direction: "high" | "low") {
   return critical ? "critical" : good ? "good" : "watch";
 }
 
-function MetricCard({ label, value, direction, icon, labels }: { label: string; value: number; direction: "high" | "low"; icon: React.ReactNode; labels: { good: string; watch: string; critical: string; higherBetter: string; lowerBetter: string } }) {
+function MetricCard({ label, mobileLabel, value, direction, icon, labels }: { label: string; mobileLabel: string; value: number; direction: "high" | "low"; icon: React.ReactNode; labels: { good: string; watch: string; critical: string; higherBetter: string; lowerBetter: string } }) {
   const rounded = Math.round(value);
   const tone = metricTone(rounded, direction);
-  return <div className={`balance-metric ${tone}`}>
+  return <div className={`balance-metric ${tone}`} aria-label={`${label}: ${rounded}%`} title={label}>
     <span className="balance-metric-icon">{icon}</span>
-    <span>{label} <b className="balance-direction" aria-label={direction === "high" ? labels.higherBetter : labels.lowerBetter}>{direction === "high" ? "↑" : "↓"}</b></span>
+    <span className="balance-metric-label"><span className="balance-metric-label-full">{label}</span><span className="balance-metric-label-mobile">{mobileLabel}</span> <b className="balance-direction" aria-label={direction === "high" ? labels.higherBetter : labels.lowerBetter}>{direction === "high" ? "↑" : "↓"}</b></span>
     <strong>{rounded}%</strong>
     <small>{labels[tone]}</small>
     <i role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={rounded}><b style={{ width: `${rounded}%` }} /></i>
@@ -342,9 +345,7 @@ export function Week5BalanceMaster({ onSubmit, onDraft, existingSubmission, exis
   }
 
   const cards = cardsForState(state, scenario).map(getIntervention);
-  const currentWindow = cardWindowIndex(state.elapsedMs);
   const justChanged = state.elapsedMs > CONTROL_ROOM_CONFIG.cardWindowMs && state.elapsedMs % CONTROL_ROOM_CONFIG.cardWindowMs < 1_200;
-  const safe = isSafeState(state);
   const remainingSeconds = Math.max(0, Math.ceil((CONTROL_ROOM_CONFIG.durationMs - state.elapsedMs) / 1_000));
   const remainingTime = `${String(Math.floor(remainingSeconds / 60)).padStart(2, "0")}:${String(remainingSeconds % 60).padStart(2, "0")}`;
   const criticalProgress = Math.min(100, state.criticalMs / CONTROL_ROOM_CONFIG.criticalGraceMs * 100);
@@ -357,24 +358,24 @@ export function Week5BalanceMaster({ onSubmit, onDraft, existingSubmission, exis
       : text.calm;
 
   return <section className="panel module-shell balance-master-shell">
-    <div className="balance-header"><div><div className="module-title-chip">{text.title}</div><h1>{text.subtitle}</h1><small>{text.modelNote}</small></div><span className={`balance-status ${safe ? "safe" : "pressure"}`}><i />{safe ? text.safeNow : text.unstableNow}</span></div>
+    <div className="balance-header"><div><div className="module-title-chip">{text.title}</div><h1>{text.subtitle}</h1><small>{text.modelNote}</small></div></div>
     <div className="balance-metrics">
-      <MetricCard label={text.production} value={state.production} direction="high" icon={<Gauge />} labels={metricLabels} />
-      <MetricCard label={text.health} value={state.health} direction="high" icon={<HeartPulse />} labels={metricLabels} />
-      <MetricCard label={text.failure} value={state.failureRisk} direction="low" icon={<AlertTriangle />} labels={metricLabels} />
-      <MetricCard label={text.delay} value={state.delay} direction="low" icon={<Clock3 />} labels={metricLabels} />
+      <MetricCard label={text.production} mobileLabel={text.productionShort} value={state.production} direction="high" icon={<Gauge />} labels={metricLabels} />
+      <MetricCard label={text.health} mobileLabel={text.healthShort} value={state.health} direction="high" icon={<HeartPulse />} labels={metricLabels} />
+      <MetricCard label={text.failure} mobileLabel={text.failureShort} value={state.failureRisk} direction="low" icon={<AlertTriangle />} labels={metricLabels} />
+      <MetricCard label={text.delay} mobileLabel={text.delayShort} value={state.delay} direction="low" icon={<Clock3 />} labels={metricLabels} />
     </div>
     <div className="balance-control-grid">
       <div className="balance-scene-column">
         <ControlFactory state={state} />
-        {state.criticalMs > 0 && <div className="balance-critical" style={{ "--critical-progress": `${criticalProgress}%` } as React.CSSProperties}><AlertTriangle /><span>{text.criticalWarning}</span><i><b /></i></div>}
       </div>
     </div>
     <div className="balance-transient-row">
       <div className="balance-transient-notice" aria-live="polite"><Activity /> <span data-i18n-skip>{transientMessage}</span></div>
       <div className="balance-time" role="timer" aria-label={`${text.time}: ${remainingTime}`}><span aria-hidden="true">⏱</span><strong>{remainingTime}</strong></div>
     </div>
-    <div className="balance-actions-heading"><div><strong>{text.interventions}</strong><span>{currentWindow + 1}/{scenario.cardWindows.length}</span></div>{justChanged && <b><Sparkles />{text.cardsChanged}</b>}</div>
+    {state.criticalMs > 0 && <div className="balance-critical" style={{ "--critical-progress": `${criticalProgress}%` } as React.CSSProperties}><AlertTriangle /><span>{text.criticalWarning}</span><i><b /></i></div>}
+    <div className="balance-actions-heading"><div><strong>{text.interventions}</strong></div>{justChanged && <b><Sparkles />{text.cardsChanged}</b>}</div>
     <div className="balance-action-grid">{cards.map((intervention) => <InterventionCard key={intervention.id} intervention={intervention} state={state} scenario={scenario} onApply={applyAction} labels={text} locale={locale} />)}</div>
     {isHidden && <div className="balance-paused"><Clock3 />{text.paused}</div>}
   </section>;
