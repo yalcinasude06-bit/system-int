@@ -154,6 +154,21 @@ const weekFiveModuleThreeBrief: Record<"tr" | "en", ModuleBrief> = {
   },
 };
 
+const weekSixModuleBriefs: Record<1 | 2 | 3, Record<"tr" | "en", ModuleBrief>> = {
+  1: {
+    tr: { icon: "🏭", title: "Modül 1: Akış Operasyonu", description: "Stok, giriş ve çıkışı incele; sistemi hedefe götüren operasyonu seç." },
+    en: { icon: "🏭", title: "Module 1: Flow Operation", description: "Inspect stock, inflow, and outflow; choose the operation that moves the system toward its goal." },
+  },
+  2: {
+    tr: { icon: "🧪", title: "Modül 2: Simülasyon Tamircisi", description: "Model uyarısını teşhis et ve doğru onarımla simülasyonu düzelt." },
+    en: { icon: "🧪", title: "Module 2: Simulation Repair Shop", description: "Diagnose the model alert and fix the simulation with the correct repair." },
+  },
+  3: {
+    tr: { icon: "💼", title: "Modül 3: Model Ajansı", description: "Müşteri talebini oku; kullanacağın tek model aracını seç." },
+    en: { icon: "💼", title: "Module 3: Model Agency", description: "Read the client request and choose the one modeling tool you will use." },
+  },
+};
+
 type ModuleStartCountdownProps = {
   weekId?: number;
   moduleId: ModuleId;
@@ -185,6 +200,8 @@ export function ModuleStartCountdown({ weekId = 1, moduleId, startedAt, onComple
         ? weekFiveModuleTwoBrief[locale]
       : weekId === 5 && moduleId === 3
         ? weekFiveModuleThreeBrief[locale]
+      : weekId === 6 && moduleId <= 3
+        ? weekSixModuleBriefs[moduleId as 1 | 2 | 3][locale]
       : moduleBriefs[moduleId];
 
   useEffect(() => {
