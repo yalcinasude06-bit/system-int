@@ -21,6 +21,7 @@ const demo = await readFile(new URL("../src/components/common/ModuleGameplayDemo
 const styles = await readFile(new URL("../src/app/globals.css", import.meta.url), "utf8");
 const baseMigration = await readFile(new URL("../supabase/migrations/202610150023_week_five_delay_trail.sql", import.meta.url), "utf8");
 const revisedPoolMigration = await readFile(new URL("../supabase/migrations/202610150024_week_five_delay_trail_revised_pool.sql", import.meta.url), "utf8");
+const speedBonusMigration = await readFile(new URL("../supabase/migrations/202610150025_week_five_delay_trail_speed_bonus.sql", import.meta.url), "utf8");
 
 assert.equal(DELAY_TRAIL_CASES.length, 25, "The case bank must include all 25 cases");
 assert.equal(DELAY_TRAIL_STAGE_COUNT, 5);
@@ -118,10 +119,25 @@ assert.match(component, /M99,25 H99\.5 V50 H0\.5 V75 H4/, "The mobile connector 
 
 assert.match(baseMigration, /week5_delay_trail_score/);
 assert.match(baseMigration, /public\.validated_module_score\(target_week_id, target_module_id, new_payload, new_score\)/, "Final score must be recomputed server-side");
-assert.match(baseMigration, /not \(target_session\.selected_week = 5 and target_session\.current_module = 1\)/, "This module must be excluded from speed bonuses");
+assert.match(baseMigration, /not \(target_session\.selected_week = 5 and target_session\.current_module = 1\)/, "The legacy migration must document the former speed-bonus exclusion");
 assert.doesNotMatch(revisedPoolMigration, /create table/i, "The revised pool must reuse the existing persistence model");
 for (const scenario of DELAY_TRAIL_CASES) {
   assert.match(revisedPoolMigration, new RegExp(`when '${scenario.id}' then ${scenario.initiatorIndex}`), `${scenario.id} must use the same answer key on the client and server`);
 }
+
+const speedFinishFunction = speedBonusMigration.slice(
+  speedBonusMigration.indexOf("create or replace function public.finish_session_module"),
+  speedBonusMigration.indexOf("revoke all on function public.finish_session_module"),
+);
+assert.ok(speedFinishFunction.length > 0, "The speed-bonus migration must replace the module-finish function");
+assert.doesNotMatch(speedFinishFunction, /not \(target_session\.selected_week = 5 and target_session\.current_module = 1\)/, "Tracing the Delay must participate in speed bonuses");
+assert.match(speedFinishFunction, /completion_status = 'completed'/, "Incomplete plays must remain ineligible for speed bonuses");
+assert.match(speedFinishFunction, /row_number\(\) over \(order by submission\.submitted_at, submission\.id\) - 1 as position/, "Speed ranking must use the existing deterministic submission order");
+assert.match(speedFinishFunction, /when ranked\.group_size = 1 then 10/, "A sole completed player must remain eligible for the ten-point rank bonus");
+assert.match(speedFinishFunction, /10\.0 \* \(ranked\.group_size - 1 - ranked\.position\) \/ \(ranked\.group_size - 1\)/, "The shared zero-to-ten rank formula must be preserved");
+assert.match(speedFinishFunction, /\* greatest\(0, least\(ranked\.score, public\.module_score_cap/, "The rank bonus must remain weighted by the validated base score");
+assert.match(speedFinishFunction, /session_score = greatest\(0, student\.session_score \+ total\.bonus_delta\)/, "The finalized bonus must update the session total exactly once");
+assert.match(speedFinishFunction, /public\.student_profiles\.total_score \+ excluded\.total_score/, "The finalized bonus must update the persistent profile total");
+assert.match(speedBonusMigration, /grant execute on function public\.finish_session_module\(uuid, bigint\) to service_role/, "Only the teacher service path may finish a run");
 
 console.log("Week 5 Tracing the Delay validation passed");
