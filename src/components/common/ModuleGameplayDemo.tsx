@@ -398,14 +398,14 @@ function WeekFiveDelayTrailDemo() {
     tr: {
       prompt: "Başlatan kararı bul",
       months: ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran"],
-      before: ["Yeni hat açıldı", "Eğitim kısaltıldı", "Hatalar arttı", "Hatalı ürün arttı", "İadeler arttı", "Şikâyetler arttı"],
-      after: ["Yeni hat açıldı", "Eğitim tamamlandı", "Hatalar azaldı", "Kalite iyileşti", "İadeler azaldı", "Şikâyetler azaldı"],
+      before: ["Yeni ekipman kuruldu", "Eğitim kısaltıldı", "Hatalar sıklaştı", "Hatalı ürün arttı", "İadeler çoğaldı", "Şikâyetler arttı"],
+      after: ["Yeni ekipman kuruldu", "Eğitim tamamlandı", "Hatalar azaldı", "Kalite iyileşti", "İadeler azaldı", "Şikâyetler azaldı"],
     },
     en: {
       prompt: "Find the starting decision",
       months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-      before: ["New line opened", "Training shortened", "Errors increased", "Defects increased", "Returns increased", "Complaints increased"],
-      after: ["New line opened", "Training completed", "Errors decreased", "Quality improved", "Returns decreased", "Complaints decreased"],
+      before: ["New equipment installed", "Training shortened", "Errors increased", "Defects increased", "Returns increased", "Complaints increased"],
+      after: ["New equipment installed", "Training completed", "Errors decreased", "Quality improved", "Returns decreased", "Complaints decreased"],
     },
   } as const;
   const text = demoCopy[locale];

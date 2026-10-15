@@ -2,12 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useReducedMotion } from "framer-motion";
-import { ArrowRight, CheckCircle2, Clock3, History, Lightbulb, LockKeyhole, RefreshCw, RotateCcw, Sparkles } from "lucide-react";
+import { ArrowRight, CheckCircle2, History, Lightbulb, LockKeyhole, RefreshCw, RotateCcw } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { useI18n } from "@/lib/i18n/I18nContext";
 import type { LearningModuleProps, ModuleSubmission } from "@/types";
 import {
-  DELAY_TRAIL_MAX_SCORE,
   DELAY_TRAIL_MONTHS,
   DELAY_TRAIL_REVEAL_STEP_MS,
   DELAY_TRAIL_SECOND_CHANCE_MS,
@@ -32,14 +31,10 @@ const copy = {
     title: "Hafta 5 · Modül 1: Gecikmenin İzinde",
     eyebrow: "GECİKMENİN İZİNDE",
     stage: "Aşama",
-    score: "Puan",
-    june: "Haziran",
-    issue: "Gecikmiş sonuç",
-    instruction: "Bu sorun zincirini başlatan geçmiş kararı bul ve kartına dokun.",
-    order: "Aylar soldan sağa; mobilde üst satırdan alt satıra ilerler.",
+    question: "Haziran'daki sonuca hangi geçmiş karar yol açtı?",
+    instruction: "Bu zinciri başlatan geçmiş karara dokun.",
     firstWrong: "Bu olay zincirin başlangıç kararı değil. Doğru kararı bulmak için 6 saniyen var.",
     secondChance: "Düzeltme süresi",
-    transforming: "Başlangıç kararından sonraki gecikmiş etkiler ay ay dönüşüyor…",
     solved: "Başlangıç kararını değiştirdin → gecikmiş etkiler düzeldi.",
     teaching: "Doğru çözümün gösterimi",
     teachingDetail: "Bu dönüşüm öğretici olarak gösteriliyor; öğrenci başarısı sayılmadı.",
@@ -56,21 +51,15 @@ const copy = {
     retry: "Kaydı tekrar dene",
     locked: "Bu oynanış tamamlandı",
     lockedDetail: "Yanıt hakkın daha önce kaydedildi. Öğretmenin sonraki yönlendirmesini bekle.",
-    old: "Önce",
-    improved: "İyileşmiş",
   },
   en: {
     title: "Week 5 · Module 1: Tracing the Delay",
     eyebrow: "TRACING THE DELAY",
     stage: "Stage",
-    score: "Score",
-    june: "June",
-    issue: "Delayed outcome",
-    instruction: "Find the past decision that started this problem chain and tap its card.",
-    order: "Months run left to right; on mobile, continue from the top row to the bottom row.",
+    question: "Which past decision led to the outcome in June?",
+    instruction: "Tap the past decision that started this chain.",
     firstWrong: "This event is not the starting decision. You have 6 seconds to find the correct decision.",
     secondChance: "Correction time",
-    transforming: "The delayed effects after the starting decision are changing month by month…",
     solved: "You changed the starting decision → the delayed effects improved.",
     teaching: "Correct-solution demonstration",
     teachingDetail: "This transformation is shown for teaching and was not counted as student success.",
@@ -87,8 +76,6 @@ const copy = {
     retry: "Try saving again",
     locked: "This play is complete",
     lockedDetail: "Your response was already recorded. Wait for your teacher's next instruction.",
-    old: "Before",
-    improved: "Improved",
   },
 } as const;
 
@@ -165,7 +152,6 @@ export function Week5DelayTrail({
   const submissionStarted = useRef(false);
   const cardRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
-  const score = validatedDelayTrailScore(selectedCaseIds, records);
   const currentCase = round[stageIndex]!;
   const currentRecord = records[stageIndex];
   const phase = currentRecord
@@ -348,24 +334,19 @@ export function Week5DelayTrail({
 
   const remainingMs = clockNow === 0 ? DELAY_TRAIL_SECOND_CHANCE_MS : Math.max(0, (correctionDeadlineAt ?? clockNow) - clockNow);
   const isTeaching = currentRecord?.resolution === "teaching";
-  const juneChanged = Boolean(currentRecord && currentRecord.revealedThrough >= 5);
-
   return <section className="panel module-shell delay-trail-shell">
     <header className="delay-trail-header">
-      <div><div className="module-title-chip">{text.title}</div><h2>{text.eyebrow}</h2><p>{currentCase.title[locale]} <span>· {currentCase.context[locale]}</span></p></div>
-      <div className="delay-trail-progress" aria-label={`${text.stage} ${stageIndex + 1}/5, ${text.score} ${score}/${DELAY_TRAIL_MAX_SCORE}`}>
-        <span>{text.stage} <b>{stageIndex + 1}/5</b><small>{DELAY_TRAIL_STAGES[stageIndex]![locale]}</small></span><span>{text.score} <b>{score}/{DELAY_TRAIL_MAX_SCORE}</b></span>
+      <div><h2>{text.eyebrow}</h2><p>{currentCase.title[locale]} <span>· {currentCase.context[locale]}</span></p><strong>{text.question}</strong></div>
+      <div className="delay-trail-progress" aria-label={`${text.stage} ${stageIndex + 1}/5`}>
+        <span>{text.stage} <b>{stageIndex + 1}/5</b><small>{DELAY_TRAIL_STAGES[stageIndex]![locale]}</small></span>
       </div>
     </header>
 
-    <div className={`delay-trail-issue ${juneChanged ? "resolved" : ""}`} aria-live="polite">
-      {juneChanged ? <CheckCircle2 size={20} /> : <Clock3 size={20} />}
-      <span><small>{text.issue}</small><strong>{text.june} — {currentCase.months[5]![juneChanged ? "after" : "before"][locale]}</strong></span>
-    </div>
-
-    {currentCase.feedbackLoop && <div className="delay-trail-loop" aria-label={`${text.feedback}: ${currentCase.feedbackLoop[locale]}`}><span>↶</span><b>{text.feedback}</b><p>{currentCase.feedbackLoop[locale]}</p></div>}
-
     <div className="delay-trail-grid" role="group" aria-label={text.instruction}>
+      <svg className="delay-trail-mobile-turn" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <defs><marker id="delay-trail-turn-head" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto"><path d="M0,0 L5,2.5 L0,5 Z" /></marker></defs>
+        <path d="M99,25 H99.5 V50 H0.5 V75 H4" markerEnd="url(#delay-trail-turn-head)" />
+      </svg>
       {currentCase.months.map((month, monthIndex) => {
         const changed = Boolean(currentRecord && monthIndex >= currentCase.initiatorIndex && monthIndex <= currentRecord.revealedThrough);
         const selectedWrong = currentSelections.includes(monthIndex) || (isTeaching && currentRecord.selections.includes(monthIndex) && monthIndex !== currentCase.initiatorIndex);
@@ -382,23 +363,19 @@ export function Week5DelayTrail({
             onKeyDown={(event) => handleCardKeyDown(event, monthIndex)}
           >
             <span>{DELAY_TRAIL_MONTHS[locale][monthIndex]}</span>
-            <small>{changed ? text.improved : text.old}</small>
             <strong>{monthText}</strong>
             {changed && <CheckCircle2 size={17} aria-hidden="true" />}
           </button>
-          {monthIndex < 5 && <ArrowRight className="delay-trail-arrow" aria-hidden="true" />}
+          {monthIndex < 5 && <ArrowRight className={`delay-trail-arrow ${monthIndex === 2 ? "delay-trail-arrow-turn" : ""}`} aria-hidden="true" />}
         </div>;
       })}
     </div>
 
-    <p className="delay-trail-order"><ArrowRight size={15} />{text.order}</p>
-
-    <div className={`delay-trail-guidance ${phase} ${isTeaching ? "teaching" : ""}`} aria-live="polite">
+    {phase !== "transforming" && <div className={`delay-trail-guidance ${phase} ${isTeaching ? "teaching" : ""}`} aria-live="polite">
       {phase === "inspect" && <><Lightbulb size={20} /><strong>{text.instruction}</strong></>}
       {phase === "second-chance" && <><RefreshCw size={20} /><div><strong>{text.firstWrong}</strong><span>{text.secondChance}: {(remainingMs / 1000).toFixed(1)} sn</span></div></>}
-      {phase === "transforming" && <><Sparkles size={20} /><div><strong>{isTeaching ? text.teaching : text.transforming}</strong>{isTeaching && <span>{text.teachingDetail}</span>}</div></>}
       {phase === "summary" && <><CheckCircle2 size={20} /><div><strong>{isTeaching ? text.teaching : text.solved}</strong>{isTeaching && <span>{text.teachingDetail}</span>}</div></>}
-    </div>
+    </div>}
 
     {phase === "summary" && <div className="delay-trail-summary">
       <div><b>{text.explanation}</b><p>{currentCase.explanation[locale]}</p>{currentCase.feedbackLoop && <p><strong>{text.feedback}:</strong> {currentCase.feedbackLoop[locale]}</p>}</div>
