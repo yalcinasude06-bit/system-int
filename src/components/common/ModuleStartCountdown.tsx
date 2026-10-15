@@ -159,6 +159,11 @@ const weekSixModuleOneBrief: Record<"tr" | "en", ModuleBrief> = {
   en: { icon: "🏭", title: "1. Flow Operation", description: "Run stock, inflow, outflow, time, and graph relationships through five mini games." },
 };
 
+const weekSixModuleTwoBrief: Record<"tr" | "en", ModuleBrief> = {
+  tr: { icon: "🛠️", title: "2. Simülasyon Tamircisi", description: "Önce arızayı teşhis et, sonra model parçasını onarıp görsel testi çalıştır." },
+  en: { icon: "🛠️", title: "2. Simulation Repairer", description: "Diagnose the fault, repair the model part, then run the visual test." },
+};
+
 type ModuleStartCountdownProps = {
   weekId?: number;
   moduleId: ModuleId;
@@ -192,6 +197,8 @@ export function ModuleStartCountdown({ weekId = 1, moduleId, startedAt, onComple
         ? weekFiveModuleThreeBrief[locale]
       : weekId === 6 && moduleId === 1
         ? weekSixModuleOneBrief[locale]
+      : weekId === 6 && moduleId === 2
+        ? weekSixModuleTwoBrief[locale]
       : moduleBriefs[moduleId];
 
   useEffect(() => {

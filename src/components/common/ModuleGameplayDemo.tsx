@@ -492,6 +492,24 @@ function WeekSixFlowOperationDemo() {
   </div>;
 }
 
+function WeekSixSimulationRepairDemo() {
+  const { locale } = useI18n();
+  const demoCopy = {
+    tr: { case: "V01 · Stok işaretleri", reference: "Beklenen: 100 + 20 − 12 = 108", verification: "Doğrulama", validation: "Geçerlilik", diagnose: "1 · Teşhis", repair: "2 · Onarım", test: "3 · Test", output: "Çıktı" },
+    en: { case: "V01 · Stock signs", reference: "Expected: 100 + 20 − 12 = 108", verification: "Verification", validation: "Validation", diagnose: "1 · Diagnose", repair: "2 · Repair", test: "3 · Test", output: "Output" },
+  } as const;
+  const text = demoCopy[locale];
+  const transition = { duration: 6.4, repeat: Infinity, ease: "easeInOut" as const, times: [0, .14, .28, .42, .6, .76, .9, 1] };
+  return <div className="module-demo week-six-repair-demo" aria-hidden="true">
+    <div className="week-six-repair-demo-head"><b>{text.case}</b><span>{text.reference}</span></div>
+    <div className="week-six-repair-demo-steps"><motion.span animate={{ color: ["#f5eefe", "#f5eefe", "#6ee7b7", "#6ee7b7", "#9ca3af", "#9ca3af", "#9ca3af", "#f5eefe"] }} transition={transition}>{text.diagnose}</motion.span><motion.span animate={{ color: ["#9ca3af", "#9ca3af", "#9ca3af", "#f5eefe", "#6ee7b7", "#6ee7b7", "#9ca3af", "#9ca3af"] }} transition={transition}>{text.repair}</motion.span><motion.span animate={{ color: ["#9ca3af", "#9ca3af", "#9ca3af", "#9ca3af", "#9ca3af", "#f5eefe", "#6ee7b7", "#9ca3af"] }} transition={transition}>{text.test}</motion.span></div>
+    <div className="week-six-repair-demo-diagnosis"><motion.span animate={{ borderColor: ["#64748b", "#64748b", "#34d399", "#34d399", "#34d399", "#64748b", "#64748b", "#64748b"], backgroundColor: ["#20243f", "#20243f", "#123c35", "#123c35", "#123c35", "#20243f", "#20243f", "#20243f"] }} transition={transition}>{text.verification}</motion.span><span>{text.validation}</span></div>
+    <div className="week-six-repair-demo-equation"><b>100</b><motion.i animate={{ color: ["#fb7185", "#fb7185", "#fb7185", "#fb7185", "#6ee7b7", "#6ee7b7", "#6ee7b7", "#fb7185"], rotateX: [0, 0, 0, 0, 180, 180, 180, 0] }} transition={transition}>−</motion.i><b>20</b><motion.i animate={{ color: ["#fb7185", "#fb7185", "#fb7185", "#fb7185", "#6ee7b7", "#6ee7b7", "#6ee7b7", "#fb7185"], rotateX: [0, 0, 0, 0, 180, 180, 180, 0] }} transition={transition}>+</motion.i><b>12</b><em>=</em><motion.strong animate={{ color: ["#fb7185", "#fb7185", "#fb7185", "#fb7185", "#6ee7b7", "#6ee7b7", "#6ee7b7", "#fb7185"] }} transition={transition}><motion.span animate={{ opacity: [1, 1, 1, 1, 0, 0, 0, 1] }} transition={transition}>92</motion.span><motion.span animate={{ opacity: [0, 0, 0, 0, 1, 1, 1, 0] }} transition={transition}>108 ✓</motion.span></motion.strong></div>
+    <motion.div className="week-six-repair-demo-test" animate={{ opacity: [0, 0, 0, 0, 0, .2, 1, 0], scale: [.94, .94, .94, .94, .94, .94, 1, .94] }} transition={transition}>{text.output}: 108</motion.div>
+    <motion.span className="week-six-repair-demo-hand" animate={{ x: [0, 0, -76, -76, 18, 90, 90, 0], y: [0, 0, -45, -45, 12, 12, 12, 0], scale: [1, 1, .82, 1, .82, .82, 1, 1], opacity: [1, 1, 1, 1, 1, 1, 0, 0] }} transition={transition}>👆</motion.span>
+  </div>;
+}
+
 const demos: Record<ModuleId, () => ReactNode> = {
   1: ModuleOneDemo,
   2: ModuleTwoDemo,
@@ -521,6 +539,8 @@ export function ModuleGameplayDemo({ moduleId, weekId = 1 }: { moduleId: ModuleI
         ? WeekFiveBalanceMasterDemo
       : weekId === 6 && moduleId === 1
         ? WeekSixFlowOperationDemo
+      : weekId === 6 && moduleId === 2
+        ? WeekSixSimulationRepairDemo
       : demos[moduleId];
   return <MotionConfig reducedMotion="user"><Demo /></MotionConfig>;
 }

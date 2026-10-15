@@ -715,6 +715,9 @@ Object.assign(dictionaries.en, {
   "Sonuçları": "Results",
   "Sonuçları Gör": "View Results",
   "Tekrar Başlat": "Start Again",
+  "2. Simülasyon Tamircisi": "2. Simulation Repairer",
+  "5 vaka · teşhis, onarım ve görsel test": "5 cases · diagnosis, repair, and visual test",
+  "Kod hatasıyla model varsayımını ayır; sekiz farklı araçla bozuk simülasyonu doğrudan onar.": "Distinguish code faults from model assumptions and directly repair the broken simulation with eight different tools.",
 });
 
 const dynamicTranslations: Array<[RegExp, (match: RegExpMatchArray) => string]> = [

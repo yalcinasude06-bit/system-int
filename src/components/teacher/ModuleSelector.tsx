@@ -1,4 +1,4 @@
-import { BarChart3, Boxes, CheckCircle2, Factory, Gauge, History, Layers3, ListChecks, Network, Play, RotateCcw, ScanSearch, Shapes, Square, Target, UsersRound, Workflow } from "lucide-react";
+import { BarChart3, Boxes, CheckCircle2, Factory, Gauge, History, Layers3, ListChecks, Network, Play, RotateCcw, ScanSearch, Shapes, Square, Target, UsersRound, Workflow, Wrench } from "lucide-react";
 import type { ComponentType } from "react";
 import type { ModuleId } from "@/types";
 
@@ -38,6 +38,7 @@ const weekFiveModules: typeof weekOneModules = [
 
 const weekSixModules: typeof weekOneModules = [
   { id: 1, title: "1. Akış Operasyonu", subtitle: "5 mini oyun · 30 stok-akış senaryosu", description: "Hedef depoyu yönet, taşmayı önle, kayıp akışı tamamla, zamanı ilerlet ve doğru grafiği yakala.", Icon: Workflow },
+  { id: 2, title: "2. Simülasyon Tamircisi", subtitle: "5 vaka · teşhis, onarım ve görsel test", description: "Kod hatasıyla model varsayımını ayır; sekiz farklı araçla bozuk simülasyonu doğrudan onar.", Icon: Wrench },
 ];
 
 export function WeekSelector({ activeWeek, onChange, disabled }: { activeWeek: number; onChange: (week: number) => void; disabled?: boolean }) {

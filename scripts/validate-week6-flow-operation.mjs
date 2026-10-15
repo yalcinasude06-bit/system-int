@@ -78,8 +78,8 @@ assert.match(css, /@media \(max-width: 340px\), \(max-height: 590px\)/, "Small p
 assert.match(css, /\.flow-graph-card\.selected polyline/, "Only the selected graph should animate");
 
 assert.match(student, /session\.selected_week === 6 && session\.current_module === 1/);
-assert.doesNotMatch(student, /session\.selected_week === 6 && session\.current_module === [23]/, "Week 6 Modules 2 and 3 must not be implemented");
-assert.match(teacher, /session\.selected_week === 6 && currentModule === 1/);
+assert.doesNotMatch(student, /session\.selected_week === 6 && session\.current_module === 3/, "Week 6 Module 3 must not be implemented");
+assert.match(teacher, /session\.selected_week === 6 && currentModule <= 2/);
 assert.match(selector, /title: "1\. Akış Operasyonu"/);
 assert.equal((selector.match(/const weekSixModules/g) ?? []).length, 1);
 
