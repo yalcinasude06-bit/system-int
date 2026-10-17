@@ -46,6 +46,10 @@ for (const scenario of allFlowScenarios) {
     assert.equal(simulated.final, calculateFinalStock(simulated.initial, simulated.production, simulated.shipping, simulated.duration), `${scenario.id} must really simulate choice ${choice}`);
   }
   assert.equal(simulateFlowSelection(scenario, scenario.answer).final, scenario.final, `${scenario.id} correct choice must reach its final stock`);
+  assert.equal(scoreFlowRecords([scenario], [{ scenarioId: scenario.id, action: { kind: scenario.kind, value: scenario.answer } }]), 20, `${scenario.id} correct choice must score 20`);
+  const wrongChoice = scenario.choices.find((choice) => choice !== scenario.answer);
+  assert.notEqual(wrongChoice, undefined, `${scenario.id} needs a wrong choice`);
+  assert.equal(scoreFlowRecords([scenario], [{ scenarioId: scenario.id, action: { kind: scenario.kind, value: wrongChoice } }]), 0, `${scenario.id} wrong choice must score 0`);
 }
 
 const orders = new Set();
@@ -79,10 +83,19 @@ for (const marker of ["flow-one-factory", "flow-one-conveyor", "flow-one-depot",
 assert.match(component, /data-question-kind=\{scenario\.kind\}/);
 assert.match(component, /data-value=\{value\}/);
 assert.match(component, /simulateFlowSelection\(current, value\)/, "Wrong choices must run the real stock calculation");
+assert.match(component, /const productionDisplay = productionValue === "\?" \? "\?" : `\+\$\{productionValue\}`/, "Production must visibly use the positive-flow sign");
+assert.match(component, /const shippingDisplay = shippingValue === "\?" \? "\?" : `−\$\{shippingValue\}`/, "Shipping must visibly use the negative-flow sign");
+assert.match(component, /\{result && <div className="flow-one-stock"/, "Live stock must only appear after the flow starts");
+assert.doesNotMatch(component, /visibleStock \?\? "\?"/, "The warehouse must not leak or duplicate the hidden initial stock");
+assert.match(component, /role="group" aria-label=\{questionPrompt\(scenario, text\)\}/, "Choices need a semantic accessible group label");
+assert.match(component, /role="status" aria-live="polite" aria-atomic="true"/, "Feedback must be announced without interrupting the learner");
+assert.match(component, /flow-one-choice-status/, "Correct and wrong choices need a non-color status marker");
 assert.match(component, /choices\.map/);
 assert.match(component, /disabled=\{Boolean\(result\)\}/, "A choice must lock immediately");
 assert.doesNotMatch(component, />\s*(Kontrol Et|Akışı Başlat|Sonraki|İleri|Check|Next|Continue)\s*</, "Question flow must not expose a manual advance/check button");
 assert.match(component, /gameId: "week-6-flow-operation-v3"/);
+assert.match(component, /const hydratedRecords = useMemo\(\(\) => hydrateDraft\(existingDraft, round\)/, "A refresh must restore the validated draft");
+assert.match(component, /useState\(Math\.min\(hydratedRecords\.length, 4\)\)/, "A restored draft must resume at the next task");
 assert.match(component, /completionStatus: reason === "completed" \? "completed" : reason === "teacher-ended" \? "incomplete"/);
 assert.match(component, /onDraft\?\.\(submissionFor/, "Every answered question must persist a draft");
 assert.match(component, /finalize\("teacher-ended"\)/, "Teacher early finish must submit partial progress");
@@ -92,12 +105,20 @@ assert.doesNotMatch(countdown, /Beş mini oyunda/);
 assert.match(countdown, /beş değişkenden eksik olanı bul/);
 
 const newCss = css.slice(css.indexOf("Week 6 · Module 1: one factory"), css.indexOf("Week 6 · Module 2"));
-assert.match(newCss, /height: calc\(100dvh - 52px - env\(safe-area-inset-bottom\)\)/, "The game must fit the dynamic mobile viewport");
+assert.match(newCss, /height: calc\(100dvh - 60px - env\(safe-area-inset-bottom\)\)/, "The game must account for the real mobile navbar and page inset");
+assert.match(newCss, /overflow: visible/, "The module shell must not clip choices or feedback");
 assert.match(newCss, /@media \(max-width: 600px\)/, "The scene needs a mobile layout");
 assert.match(newCss, /@media \(max-width: 340px\), \(max-height: 590px\)/, "Small phones need an extra compact layout");
 assert.match(newCss, /\.flow-one-options button[\s\S]*min-height: 58px/);
 assert.match(newCss, /\.flow-one-conveyor\.*/);
+assert.match(newCss, /@media \(prefers-reduced-motion: reduce\)/, "Reduced-motion users need a stable scene");
+assert.match(newCss, /@media \(forced-colors: active\)/, "Question and answer state must survive forced-colors mode");
 for (const value of [...newCss.matchAll(/font-size:\s*([0-9.]+)px/g)].map((match) => Number(match[1]))) assert.ok(value >= 10, `Visible type must remain readable (found ${value}px)`);
+for (const [width, height] of [[320, 568], [360, 640], [375, 667], [390, 844]]) {
+  const availableHeight = height - 60;
+  const compactContentHeight = height <= 590 ? 184 + 50 + 38 + 8 : 205 + 54 + 42 + 10;
+  assert.ok(width >= 320 && compactContentHeight < availableHeight, `${width}x${height} must have room for the scene, all choices, and feedback`);
+}
 
 assert.match(student, /session\.selected_week === 6 && session\.current_module === 1/);
 assert.doesNotMatch(student, /session\.selected_week === 6 && session\.current_module === 3/, "Week 6 Module 3 must remain unbuilt");

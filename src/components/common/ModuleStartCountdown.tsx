@@ -160,8 +160,8 @@ const weekSixModuleOneBrief: Record<"tr" | "en", ModuleBrief> = {
 };
 
 const weekSixModuleTwoBrief: Record<"tr" | "en", ModuleBrief> = {
-  tr: { icon: "🛠️", title: "2. Simülasyon Tamircisi", description: "Önce arızayı teşhis et, sonra model parçasını onarıp görsel testi çalıştır." },
-  en: { icon: "🛠️", title: "2. Simulation Repairer", description: "Diagnose the fault, repair the model part, then run the visual test." },
+  tr: { icon: "🛠️", title: "2. Simülasyon Tamircisi", description: "Sorunun türünü teşhis et; ardından hatalı model parçasına tek dokunuşla onarımı başlat." },
+  en: { icon: "🛠️", title: "2. Simulation Repairer", description: "Diagnose the problem, then trigger the repair with one tap on the faulty model part." },
 };
 
 type ModuleStartCountdownProps = {

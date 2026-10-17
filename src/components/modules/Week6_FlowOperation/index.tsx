@@ -26,15 +26,15 @@ const resultHoldMs = 620;
 
 const copy = {
   tr: {
-    title: "Hafta 6 · 1. Akış Operasyonu", shortTitle: "AKIŞ OPERASYONU", task: "Görev", score: "Puan", initial: "Başlangıç", target: "Hedef", final: "Son stok", stock: "Stok", production: "Üretim", shipping: "Sevkiyat", days: "gün", perDay: "/gün", unit: "birim",
-    productionPrompt: "Hedef stok için gerekli üretim hızını bul.", shippingPrompt: "Hedef stok için gerekli sevkiyat hızını bul.", finalPrompt: "Akışların sonunda oluşacak son stoku bul.", durationPrompt: "Hedef stoka kaç günde ulaşılacağını bul.", initialPrompt: "Hedef sonuç için gerekli başlangıç stokunu bul.",
-    correct: "Doğru! Akış hedefle eşleşti.", wrong: "Seçim hedefle eşleşmedi.", estimate: "Tahmin", difference: "Fark",
+    title: "Hafta 6 · 1. Akış Operasyonu", shortTitle: "AKIŞ OPERASYONU", task: "Görev", score: "Puan", initial: "Başlangıç", target: "Hedef stok", final: "Son stok", stock: "Anlık stok", warehouse: "Depo", duration: "Süre", production: "Üretim", shipping: "Sevkiyat", days: "gün", perDay: "/gün", unit: "birim",
+    productionPrompt: (duration: number, target: number) => `${duration} gün sonunda ${target} ürün hedefi için üretim hızını bul.`, shippingPrompt: (duration: number, target: number) => `${duration} gün sonunda ${target} ürün hedefi için sevkiyat hızını bul.`, finalPrompt: "Akışlardan sonra depoda kaç ürün kalır?", durationPrompt: (target: number) => `${target} ürün hedef stokuna kaç günde ulaşılır?`, initialPrompt: (target: number) => `${target} ürün son stok için başlangıç stokunu bul.`,
+    correct: "Doğru! Akış hedefle eşleşti.", wrong: "Seçim hedefle eşleşmedi.", estimate: "Seçimin", difference: "Fark",
     completed: "Beş akış görevi tamamlandı", partial: "Oynanış öğretmen tarafından sonlandırıldı", completedDetail: "Tamamlanan görevlerin kaydı alındı. Sonuçlar öğretmen açıklayana kadar gizli kalır.", saving: "Sonuç kaydediliyor…", saveError: "Sonuç kaydedilemedi; ilerlemen korundu.", retry: "Kaydı tekrar dene", locked: "Bu oynanış tamamlandı", lockedDetail: "Yanıtların daha önce kaydedildi.",
   },
   en: {
-    title: "Week 6 · 1. Flow Operation", shortTitle: "FLOW OPERATION", task: "Task", score: "Score", initial: "Start", target: "Target", final: "Final stock", stock: "Stock", production: "Production", shipping: "Shipping", days: "days", perDay: "/day", unit: "units",
-    productionPrompt: "Find the production rate needed for the target stock.", shippingPrompt: "Find the shipping rate needed for the target stock.", finalPrompt: "Find the final stock after the flows run.", durationPrompt: "Find how many days it takes to reach the target.", initialPrompt: "Find the initial stock needed for the target result.",
-    correct: "Correct! The flow matches the target.", wrong: "The selection does not match the target.", estimate: "Estimate", difference: "Difference",
+    title: "Week 6 · 1. Flow Operation", shortTitle: "FLOW OPERATION", task: "Task", score: "Score", initial: "Start", target: "Target stock", final: "Final stock", stock: "Live stock", warehouse: "Warehouse", duration: "Duration", production: "Production", shipping: "Shipping", days: "days", perDay: "/day", unit: "units",
+    productionPrompt: (duration: number, target: number) => `Find the production rate needed to reach ${target} units after ${duration} days.`, shippingPrompt: (duration: number, target: number) => `Find the shipping rate needed to reach ${target} units after ${duration} days.`, finalPrompt: "How many units remain after the flows run?", durationPrompt: (target: number) => `How many days does it take to reach ${target} units?`, initialPrompt: (target: number) => `Find the initial stock needed to finish with ${target} units.`,
+    correct: "Correct! The flow matches the target.", wrong: "The selection does not match the target.", estimate: "Your choice", difference: "Difference",
     completed: "Five flow tasks complete", partial: "The teacher ended this play", completedDetail: "Completed tasks were recorded. Results stay hidden until the teacher reveals them.", saving: "Saving result…", saveError: "The result could not be saved; your progress is preserved.", retry: "Try saving again", locked: "This play is complete", lockedDetail: "Your answers were already recorded.",
   },
 } as const;
@@ -67,16 +67,16 @@ function hydrateDraft(draft: ModuleDraft | null | undefined, round: readonly Flo
   return records;
 }
 
-function questionPrompt(kind: FlowQuestionKind, text: typeof copy.tr | typeof copy.en) {
-  if (kind === "production") return text.productionPrompt;
-  if (kind === "shipping") return text.shippingPrompt;
-  if (kind === "final") return text.finalPrompt;
-  if (kind === "duration") return text.durationPrompt;
-  return text.initialPrompt;
+function questionPrompt(scenario: FlowScenario, text: typeof copy.tr | typeof copy.en) {
+  if (scenario.kind === "production") return text.productionPrompt(scenario.duration, scenario.final);
+  if (scenario.kind === "shipping") return text.shippingPrompt(scenario.duration, scenario.final);
+  if (scenario.kind === "final") return text.finalPrompt;
+  if (scenario.kind === "duration") return text.durationPrompt(scenario.final);
+  return text.initialPrompt(scenario.final);
 }
 
 function optionUnit(kind: FlowQuestionKind, text: typeof copy.tr | typeof copy.en) {
-  if (kind === "production" || kind === "shipping") return text.perDay;
+  if (kind === "production" || kind === "shipping") return ` ${text.unit}${text.perDay}`;
   if (kind === "duration") return ` ${text.days}`;
   return ` ${text.unit}`;
 }
@@ -111,26 +111,30 @@ function FactoryFlowGame({ scenario, choices, result, animationStep, onChoose, t
   const initialValue = scenario.kind === "initial" && !result ? "?" : simulation?.initial ?? scenario.initial;
   const finalValue = scenario.kind === "final" ? finished && simulation ? simulation.final : "?" : scenario.final;
   const wrongDifference = result ? scenario.kind === "final" ? Math.abs(result.record.action.value - result.simulation.final) : Math.abs(result.simulation.final - scenario.final) : 0;
+  const productionDisplay = productionValue === "?" ? "?" : `+${productionValue}`;
+  const shippingDisplay = shippingValue === "?" ? "?" : `−${shippingValue}`;
 
   return <section data-question-kind={scenario.kind} data-scenario-id={scenario.id} className={`flow-one-game ${result ? "running" : ""} ${finished ? result?.correct ? "correct" : "wrong" : ""}`}>
     <div className="flow-one-scene">
-      <div className={`flow-one-calendar ${scenario.kind === "duration" && !result ? "unknown" : ""}`}><CalendarDays /><span>{durationValue}</span><small>{text.days}</small></div>
-      <div className={`flow-one-factory ${scenario.kind === "production" && !result ? "unknown" : ""}`}><Factory /><i /><div><small>{text.production}</small><strong>{productionValue}<em>{text.perDay}</em></strong></div></div>
-      <div className="flow-one-inflow"><span /><b>›</b></div>
+      <div className={`flow-one-calendar ${scenario.kind === "duration" && !result ? "unknown" : ""}`}><CalendarDays aria-hidden="true" /><small>{text.duration}</small><strong>{durationValue}<em>{durationValue === "?" ? "" : ` ${text.days}`}</em></strong></div>
+      <div className={`flow-one-factory ${scenario.kind === "production" && !result ? "unknown" : ""}`}><Factory aria-hidden="true" /><i /><div><small>{text.production}</small><strong>{productionDisplay}<em>{productionValue === "?" ? "" : text.perDay}</em></strong></div></div>
+      <div className="flow-one-inflow" aria-hidden="true"><span /><b>›</b></div>
       <div className="flow-one-conveyor"><i /><i /><i /><div><Package /><Package /><Package /></div></div>
-      <div className={`flow-one-depot ${scenario.kind === "initial" && !result ? "unknown" : ""}`}>
-        <Warehouse />
-        <div className="flow-one-stock"><small>{text.stock}</small><b>{visibleStock ?? "?"}</b></div>
+      <div className="flow-one-depot">
+        <div className="flow-one-depot-heading"><Warehouse aria-hidden="true" /><span>{text.warehouse}</span></div>
+        {result && <div className="flow-one-stock" aria-live="off"><small>{text.stock}</small><b>{visibleStock}</b></div>}
         <div className="flow-one-stock-labels"><span className={scenario.kind === "initial" && !result ? "unknown" : ""}><small>{text.initial}</small><strong>{initialValue}</strong></span><span className={scenario.kind === "final" && !finished ? "unknown" : ""}><small>{scenario.kind === "final" ? text.final : text.target}</small><strong>{finalValue}</strong></span></div>
       </div>
-      <div className="flow-one-outflow"><span /><b>›</b></div>
-      <div className={`flow-one-truck ${scenario.kind === "shipping" && !result ? "unknown" : ""}`}><Truck /><div><small>{text.shipping}</small><strong>{shippingValue}<em>{text.perDay}</em></strong></div></div>
-      {finished && result && <div className={`flow-one-scene-result ${result.correct ? "correct" : "wrong"}`}>{result.correct ? <CheckCircle2 /> : <X />}<b>{result.simulation.final}</b></div>}
+      <div className="flow-one-outflow" aria-hidden="true"><span /><b>›</b></div>
+      <div className={`flow-one-truck ${scenario.kind === "shipping" && !result ? "unknown" : ""}`}><Truck aria-hidden="true" /><div><small>{text.shipping}</small><strong>{shippingDisplay}<em>{shippingValue === "?" ? "" : text.perDay}</em></strong></div></div>
     </div>
-    <div className="flow-one-options" aria-label={questionPrompt(scenario.kind, text)}>
-      {choices.map((value) => <button type="button" key={value} data-value={value} disabled={Boolean(result)} className={selectedValue === value ? "selected" : ""} onClick={() => onChoose(value)}><QuestionIcon kind={scenario.kind} /><strong>{value}<small>{optionUnit(scenario.kind, text)}</small></strong></button>)}
+    <div className="flow-one-options" role="group" aria-label={questionPrompt(scenario, text)}>
+      {choices.map((value) => {
+        const selected = selectedValue === value;
+        return <button type="button" key={value} data-value={value} disabled={Boolean(result)} aria-pressed={selected} aria-label={`${value}${optionUnit(scenario.kind, text)}`} className={selected ? `selected ${finished ? result?.correct ? "correct" : "wrong" : ""}` : ""} onClick={() => onChoose(value)}><QuestionIcon kind={scenario.kind} /><strong>{value}<small>{optionUnit(scenario.kind, text)}</small></strong>{selected && finished && <span className="flow-one-choice-status" aria-hidden="true">{result?.correct ? <CheckCircle2 /> : <X />}</span>}</button>;
+      })}
     </div>
-    <div className="flow-operation-feedback" aria-live="polite">{finished && result && <div className={result.correct ? "correct" : "wrong"}>{result.correct ? <CheckCircle2 /> : <X />}<span><strong>{result.correct ? text.correct : text.wrong}</strong><small>{result.correct ? `${text.final}: ${result.simulation.final}` : scenario.kind === "final" ? `${text.estimate}: ${result.record.action.value} · ${text.final}: ${result.simulation.final} · ${text.difference}: ${wrongDifference}` : `${text.final}: ${result.simulation.final} · ${text.target}: ${scenario.final} · ${text.difference}: ${wrongDifference}`}</small></span></div>}</div>
+    <div className="flow-operation-feedback" role="status" aria-live="polite" aria-atomic="true">{finished && result && <div className={result.correct ? "correct" : "wrong"}>{result.correct ? <CheckCircle2 aria-hidden="true" /> : <X aria-hidden="true" />}<span><strong>{result.correct ? text.correct : text.wrong}</strong><small>{result.correct ? `${text.final}: ${result.simulation.final}` : scenario.kind === "final" ? `${text.estimate}: ${result.record.action.value} · ${text.final}: ${result.simulation.final} · ${text.difference}: ${wrongDifference}` : `${text.final}: ${result.simulation.final} · ${text.target}: ${scenario.final} · ${text.difference}: ${wrongDifference}`}</small></span></div>}</div>
   </section>;
 }
 
@@ -185,11 +189,14 @@ export function Week6FlowOperation({ seedKey, onSubmit, onDraft, existingSubmiss
     const steps = Math.max(1, Math.min(4, simulation.duration));
     const nextStage = Math.min(stageRef.current + 1, 4);
     saveDraft(nextRecords, nextStage);
-    for (let step = 1; step <= steps; step += 1) timerRefs.current.push(window.setTimeout(() => setAnimationStep(step), step * stepMs));
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const animationStepMs = reducedMotion ? 150 : stepMs;
+    const animationResultHoldMs = reducedMotion ? 760 : resultHoldMs;
+    for (let step = 1; step <= steps; step += 1) timerRefs.current.push(window.setTimeout(() => setAnimationStep(step), step * animationStepMs));
     timerRefs.current.push(window.setTimeout(() => {
       if (stageRef.current >= 4) { finalize("completed"); return; }
       const upcoming = stageRef.current + 1; stageRef.current = upcoming; setStageIndex(upcoming); setResult(null); setAnimationStep(0);
-    }, steps * stepMs + resultHoldMs));
+    }, steps * animationStepMs + animationResultHoldMs));
   }, [clearTimers, current, existingSubmission, finalize, forceSubmit, result, saveDraft]);
 
   if (existingSubmission && !completed) return <section className="panel module-shell flow-operation-shell"><div className="module-title-chip">{text.title}</div><div className="module-complete-card"><LockKeyhole size={42} /><h2>{text.locked}</h2><p>{text.lockedDetail}</p></div></section>;
@@ -197,8 +204,8 @@ export function Week6FlowOperation({ seedKey, onSubmit, onDraft, existingSubmiss
 
   return <section className="panel module-shell flow-operation-shell flow-one-shell">
     <header className="flow-operation-header flow-one-header"><div><span className="module-title-chip">{text.shortTitle} · {text.task} {stageIndex + 1}/5</span></div><div><span>{text.score} <b>{scoreFlowRecords(round, records)}</b></span></div></header>
-    <div className="flow-operation-progress">{round.map((scenario, index) => <i key={scenario.id} className={index < records.length ? "done" : index === stageIndex ? "active" : ""} />)}</div>
-    <p className="flow-operation-prompt">{questionPrompt(current.kind, text)}</p>
+    <div className="flow-operation-progress" role="progressbar" aria-valuemin={1} aria-valuemax={5} aria-valuenow={stageIndex + 1} aria-label={`${text.task} ${stageIndex + 1}/5`}>{round.map((scenario, index) => <i aria-hidden="true" key={scenario.id} className={index < records.length ? "done" : index === stageIndex ? "active" : ""} />)}</div>
+    <h2 className="flow-operation-prompt">{questionPrompt(current, text)}</h2>
     <div key={current.id} className="flow-operation-stage"><FactoryFlowGame scenario={current} choices={choices} result={result} animationStep={animationStep} onChoose={resolve} text={text} /></div>
   </section>;
 }
