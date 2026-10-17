@@ -376,7 +376,7 @@ export default function StudentPlayPage() {
   if (loading) return <><Navbar /><main className="container page"><div className="empty">Canlı sınıfa bağlanılıyor…</div></main></>;
   if (!session || !student) return <><Navbar /><main className="container page"><div className="notice error">{error || "Katılımcı kaydı bulunamadı."}</div></main></>;
 
-  const speedBonusEligible = !(session.selected_week === 5 && (session.current_module === 2 || session.current_module === 3)) && !(session.selected_week === 6 && session.current_module <= 3);
+  const speedBonusEligible = !(session.selected_week === 5 && (session.current_module === 2 || session.current_module === 3));
   const scoreEarned = (activeSubmission?.score ?? 0) + (speedBonusEligible ? activeSubmission?.speed_bonus ?? 0 : 0);
   const firstCheckCorrect = session.selected_week === 4
     && session.current_module === 3

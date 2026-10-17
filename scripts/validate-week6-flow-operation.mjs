@@ -85,7 +85,7 @@ assert.match(component, /data-value=\{value\}/);
 assert.match(component, /simulateFlowSelection\(current, value\)/, "Wrong choices must run the real stock calculation");
 assert.match(component, /const productionDisplay = productionValue === "\?" \? "\?" : `\+\$\{productionValue\}`/, "Production must visibly use the positive-flow sign");
 assert.match(component, /const shippingDisplay = shippingValue === "\?" \? "\?" : `−\$\{shippingValue\}`/, "Shipping must visibly use the negative-flow sign");
-assert.match(component, /\{result && <div className="flow-one-stock"/, "Live stock must only appear after the flow starts");
+assert.match(component, /\{result && !finished && <div className="flow-one-stock"/, "Live stock must only appear while the flow animation is running");
 assert.doesNotMatch(component, /visibleStock \?\? "\?"/, "The warehouse must not leak or duplicate the hidden initial stock");
 assert.match(component, /role="group" aria-label=\{questionPrompt\(scenario, text\)\}/, "Choices need a semantic accessible group label");
 assert.match(component, /role="status" aria-live="polite" aria-atomic="true"/, "Feedback must be announced without interrupting the learner");

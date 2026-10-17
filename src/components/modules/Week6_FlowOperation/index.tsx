@@ -122,7 +122,7 @@ function FactoryFlowGame({ scenario, choices, result, animationStep, onChoose, t
       <div className="flow-one-conveyor"><i /><i /><i /><div><Package /><Package /><Package /></div></div>
       <div className="flow-one-depot">
         <div className="flow-one-depot-heading"><Warehouse aria-hidden="true" /><span>{text.warehouse}</span></div>
-        {result && <div className="flow-one-stock" aria-live="off"><small>{text.stock}</small><b>{visibleStock}</b></div>}
+        {result && !finished && <div className="flow-one-stock" aria-live="off"><small>{text.stock}</small><b>{visibleStock}</b></div>}
         <div className="flow-one-stock-labels"><span className={scenario.kind === "initial" && !result ? "unknown" : ""}><small>{text.initial}</small><strong>{initialValue}</strong></span><span className={scenario.kind === "final" && !finished ? "unknown" : ""}><small>{scenario.kind === "final" ? text.final : text.target}</small><strong>{finalValue}</strong></span></div>
       </div>
       <div className="flow-one-outflow" aria-hidden="true"><span /><b>›</b></div>

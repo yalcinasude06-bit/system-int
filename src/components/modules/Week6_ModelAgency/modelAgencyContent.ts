@@ -67,12 +67,15 @@ function shuffled<T>(items: T[], seed: string) {
 }
 
 export function buildModelAgencyRound(seedKey: string) {
-  const selected = modelTypes.map((modelType) => shuffled(modelAgencyProjects.filter((project) => project.modelType === modelType), `${seedKey}:${modelType}`)[0]!);
-  const extraType = shuffled(modelTypes, `${seedKey}:extra`)[0]!;
-  selected.push(shuffled(modelAgencyProjects.filter((project) => project.modelType === extraType && project.id !== selected.find((item) => item.modelType === extraType)?.id), `${seedKey}:extra:${extraType}`)[0]!);
+  const extraTypes = new Set(shuffled(modelTypes, `${seedKey}:extra`).slice(0, 2));
+  const selected = modelTypes.flatMap((modelType) => shuffled(
+    modelAgencyProjects.filter((project) => project.modelType === modelType),
+    `${seedKey}:${modelType}`,
+  ).slice(0, extraTypes.has(modelType) ? 3 : 2));
   return shuffled(selected, `${seedKey}:round`);
 }
 
 export function scoreModelAgencyAnswers(projects: ModelAgencyProject[], answers: Array<{ projectId: string; selectedModelType: ModelType }>) {
-  return answers.reduce((score, answer, index) => score + (projects[index]?.id === answer.projectId && projects[index]?.modelType === answer.selectedModelType ? 20 : 0), 0);
+  const pointsPerProject = projects.length === 5 ? 20 : 10;
+  return answers.reduce((score, answer, index) => score + (projects[index]?.id === answer.projectId && projects[index]?.modelType === answer.selectedModelType ? pointsPerProject : 0), 0);
 }

@@ -165,8 +165,8 @@ const weekSixModuleTwoBrief: Record<"tr" | "en", ModuleBrief> = {
 };
 
 const weekSixModuleThreeBrief: Record<"tr" | "en", ModuleBrief> = {
-  tr: { icon: "🎨", title: "3. Model Ajansı", description: "Gerçek bir müşterinin isteğini oku ve uygun model türünü tek dokunuşla seç." },
-  en: { icon: "🎨", title: "3. Model Agency", description: "Read a real client's request and choose the right model type with one tap." },
+  tr: { icon: "🎨", title: "3. Model Ajansı · 10 Proje", description: "On müşterinin isteğini oku ve uygun model türünü tek dokunuşla seç." },
+  en: { icon: "🎨", title: "3. Model Agency · 10 Projects", description: "Read ten client requests and choose the right model type with one tap." },
 };
 
 type ModuleStartCountdownProps = {

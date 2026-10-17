@@ -723,6 +723,7 @@ Object.assign(dictionaries.en, {
 Object.assign(dictionaries.en, {
   "3. Model Ajansı": "3. Model Agency",
   "5 proje · 24 müşteri vakası": "5 projects · 24 client cases",
+  "10 proje / 24 müşterilik havuz": "10 projects / pool of 24 clients",
   "Müşteri ihtiyacına en uygun fiziksel, analog, şematik veya matematiksel model aracını seç.": "Choose the physical, analog, schematic, or mathematical modelling tool that best fits the client's need.",
 });
 
