@@ -160,8 +160,8 @@ const weekSixModuleOneBrief: Record<"tr" | "en", ModuleBrief> = {
 };
 
 const weekSixModuleTwoBrief: Record<"tr" | "en", ModuleBrief> = {
-  tr: { icon: "🛠️", title: "2. Simülasyon Tamircisi · 6 Vaka", description: "Altı farklı vakada doğrulama veya geçerlilik sorununu teşhis et; ardından hatalı model parçasını tek dokunuşla onar." },
-  en: { icon: "🛠️", title: "2. Simulation Repairer · 6 Cases", description: "Diagnose verification or validation problems across six case types, then repair the faulty model part with one tap." },
+  tr: { icon: "🛠️", title: "2. Simülasyon Tamircisi · 5 Vaka", description: "Beş farklı vakada doğrulama veya geçerlilik sorununu teşhis et; ardından hatalı model parçasını tek dokunuşla onar." },
+  en: { icon: "🛠️", title: "2. Simulation Repairer · 5 Cases", description: "Diagnose verification or validation problems across five case types, then repair the faulty model part with one tap." },
 };
 
 const weekSixModuleThreeBrief: Record<"tr" | "en", ModuleBrief> = {

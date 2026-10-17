@@ -9,7 +9,7 @@ import { buildRepairRound, repairIsCorrect, scoreRepairProgress, type Diagnosis,
 
 type Phase = "diagnosis" | "diagnosis-feedback" | "repair" | "result";
 type DraftPayload = { gameId?: unknown; selectedCaseIds?: unknown; progress?: unknown };
-const gameId = "week-6-simulation-repair-v5";
+const gameId = "week-6-simulation-repair-v6";
 
 const copy = {
   tr: {
@@ -17,7 +17,7 @@ const copy = {
     verificationHint: "Model kuralları doğru uygulandı mı?", validationHint: "Model gerçek sistemi temsil ediyor mu?", repairPrompt: "Hatalı model parçasına bir kez dokun.",
     observation: "Gerçek sistem", simulation: "Simülasyon", fixed: "Düzeltilmiş simülasyon", definedData: "Tanımlı veri ve kural", modelOutput: "Model çıktısı", start: "Başlangıç", effect: "Etki başlar",
     correctDiagnosis: "Doğru teşhis", wrongDiagnosis: "Yanlış teşhis", yourChoice: "Seçimin", correctAnswer: "Doğrusu", correctPart: "Doğru parça", correct: "Doğru onarım", wrong: "Yanlış onarım",
-    auto: "Sonraki vaka hazırlanıyor…", completed: "Altı vaka tamamlandı", partial: "Öğretmen turu sonlandırdı", detail: "Tamamlanan alt aşamalar güvenle kaydedildi.",
+    auto: "Sonraki vaka hazırlanıyor…", completed: "Beş vaka tamamlandı", partial: "Öğretmen turu sonlandırdı", detail: "Tamamlanan alt aşamalar güvenle kaydedildi.",
     saving: "Kaydediliyor…", saveError: "Kayıt başarısız; ilerleme korundu.", retry: "Tekrar dene", locked: "Bu tur tamamlandı", lockedDetail: "Yanıtların daha önce kaydedildi.",
   },
   en: {
@@ -25,7 +25,7 @@ const copy = {
     verificationHint: "Were the model rules applied correctly?", validationHint: "Does the model represent the real system?", repairPrompt: "Tap the faulty model part once.",
     observation: "Real system", simulation: "Simulation", fixed: "Corrected simulation", definedData: "Defined data and rule", modelOutput: "Model output", start: "Start", effect: "Effect begins",
     correctDiagnosis: "Correct diagnosis", wrongDiagnosis: "Incorrect diagnosis", yourChoice: "Your choice", correctAnswer: "Correct answer", correctPart: "Correct part", correct: "Correct repair", wrong: "Incorrect repair",
-    auto: "Preparing next case…", completed: "Six cases complete", partial: "Teacher ended the round", detail: "Completed sub-stages were saved securely.",
+    auto: "Preparing next case…", completed: "Five cases complete", partial: "Teacher ended the round", detail: "Completed sub-stages were saved securely.",
     saving: "Saving…", saveError: "Save failed; progress is preserved.", retry: "Try again", locked: "This round is complete", lockedDetail: "Your answers were already saved.",
   },
 } as const;
@@ -35,10 +35,10 @@ type RepairCopy = typeof copy.tr | typeof copy.en;
 function hydrate(draft: ModuleDraft | null | undefined, round: readonly RepairScenario[]) {
   const payload = draft?.payload as DraftPayload | undefined;
   const ids = round.map((scenario) => scenario.id);
-  const matches = payload?.gameId === gameId && Array.isArray(payload.selectedCaseIds) && payload.selectedCaseIds.length === 6 && payload.selectedCaseIds.every((id, index) => id === ids[index]);
+  const matches = payload?.gameId === gameId && Array.isArray(payload.selectedCaseIds) && payload.selectedCaseIds.length === 5 && payload.selectedCaseIds.every((id, index) => id === ids[index]);
   const restored: RepairProgress[] = [];
   if (matches && Array.isArray(payload?.progress)) {
-    for (const [index, value] of payload.progress.slice(0, 6).entries()) {
+    for (const [index, value] of payload.progress.slice(0, 5).entries()) {
       if (!value || typeof value !== "object") break;
       const item = value as Record<string, unknown>;
       const diagnosis = item.diagnosis === "verification" || item.diagnosis === "validation" ? item.diagnosis : undefined;
@@ -100,16 +100,6 @@ function TimelineEvidence({ scenario, locale, text, revealed }: { scenario: Repa
   </div>;
 }
 
-function RelationEvidence({ scenario, locale, text, revealed }: { scenario: RepairScenario; locale: "tr" | "en"; text: RepairCopy; revealed: boolean }) {
-  const relation = scenario.relation;
-  if (!relation) return null;
-  const simulated = revealed ? relation.fixed : relation.broken;
-  return <div className="repair-p5-relation-map">
-    <div className="real"><small>{text.observation}</small><span>{relation.cause[locale]}</span><b>{relation.real.response[locale]}</b><strong>{relation.real.metricLabel[locale]}: <em>{relation.real.metricValue[locale]}</em></strong></div>
-    <div className={revealed ? "corrected" : "broken"}><small>{revealed ? text.fixed : text.simulation}</small><span>{relation.cause[locale]}</span><b>{simulated.response[locale]}</b><strong>{simulated.metricLabel[locale]}: <em>{simulated.metricValue[locale]}</em></strong></div>
-  </div>;
-}
-
 function CapacityEvidence({ scenario, locale, text, revealed }: { scenario: RepairScenario; locale: "tr" | "en"; text: RepairCopy; revealed: boolean }) {
   const real = scenario.realSeries!, model = scenario.modelSeries!, fixed = scenario.fixedSeries!;
   const shownModel = revealed ? fixed : model;
@@ -125,7 +115,6 @@ function CapacityEvidence({ scenario, locale, text, revealed }: { scenario: Repa
 function DiagnosticVisual({ scenario, locale, text }: { scenario: RepairScenario; locale: "tr" | "en"; text: RepairCopy }) {
   if (scenario.evidenceKind === "equation") return <EquationEvidence scenario={scenario} locale={locale} />;
   if (scenario.evidenceKind === "timeline") return <TimelineEvidence scenario={scenario} locale={locale} text={text} revealed={false} />;
-  if (scenario.evidenceKind === "relation") return <RelationEvidence scenario={scenario} locale={locale} text={text} revealed={false} />;
   if (scenario.evidenceKind === "capacity") return <CapacityEvidence scenario={scenario} locale={locale} text={text} revealed={false} />;
   return null;
 }
@@ -137,7 +126,6 @@ function RepairEvidence({ scenario, phase, selected, locale, text, onRepair }: {
   }
   return <div className="repair-p5-model-repair">
     {scenario.evidenceKind === "timeline" && <TimelineEvidence scenario={scenario} locale={locale} text={text} revealed={revealed} />}
-    {scenario.evidenceKind === "relation" && <RelationEvidence scenario={scenario} locale={locale} text={text} revealed={revealed} />}
     {scenario.evidenceKind === "capacity" && <CapacityEvidence scenario={scenario} locale={locale} text={text} revealed={revealed} />}
     <div className="repair-p5-token-cards">{scenario.tokens.map((token) => {
       const chosen = selected === token.id, target = token.id === scenario.correctTokenId;
@@ -160,10 +148,10 @@ export function Week6SimulationRepair({ seedKey, onSubmit, onDraft, existingSubm
   const initial = useMemo(() => hydrate(existingDraft, round), [existingDraft, round]);
   const legacyDraftSnapshot = useMemo(() => {
     const payload = existingDraft?.payload as DraftPayload | undefined;
-    return payload?.gameId === "week-6-simulation-repair-v4" ? payload : undefined;
+    return payload?.gameId === "week-6-simulation-repair-v4" || payload?.gameId === "week-6-simulation-repair-v5" ? payload : undefined;
   }, [existingDraft]);
   const completedCount = initial.filter((item) => item.selectedTokenId).length;
-  const [index, setIndex] = useState(Math.min(completedCount, 5));
+  const [index, setIndex] = useState(Math.min(completedCount, 4));
   const [progress, setProgress] = useState(initial);
   const initialPhase: Phase = initial[completedCount]?.diagnosis ? "repair" : "diagnosis";
   const [phase, setPhase] = useState<Phase>(initialPhase);
@@ -178,11 +166,11 @@ export function Week6SimulationRepair({ seedKey, onSubmit, onDraft, existingSubm
   const clear = useCallback(() => { timers.current.forEach(window.clearTimeout); timers.current = []; }, []);
   useEffect(() => clear, [clear]);
 
-  const submissionFor = useCallback((nextProgress: RepairProgress[], completionReason: "completed" | "teacher-ended" | "draft"): ModuleSubmission => ({ stage: Math.min(6, indexRef.current + 1), score: scoreRepairProgress(round, nextProgress), payload: { gameId, selectedCaseIds: ids, progress: nextProgress, answeredCount: nextProgress.filter((item) => item.selectedTokenId).length, completionReason, completionStatus: completionReason === "completed" ? "completed" : completionReason === "teacher-ended" ? "incomplete" : "draft", ...(legacyDraftSnapshot ? { legacyDraftSnapshot } : {}) } }), [ids, legacyDraftSnapshot, round]);
+  const submissionFor = useCallback((nextProgress: RepairProgress[], completionReason: "completed" | "teacher-ended" | "draft"): ModuleSubmission => ({ stage: Math.min(5, indexRef.current + 1), score: scoreRepairProgress(round, nextProgress), payload: { gameId, selectedCaseIds: ids, progress: nextProgress, answeredCount: nextProgress.filter((item) => item.selectedTokenId).length, completionReason, completionStatus: completionReason === "completed" ? "completed" : completionReason === "teacher-ended" ? "incomplete" : "draft", ...(legacyDraftSnapshot ? { legacyDraftSnapshot } : {}) } }), [ids, legacyDraftSnapshot, round]);
   const save = useCallback((nextProgress = progressRef.current) => { void onDraft?.(submissionFor(nextProgress, "draft")); }, [onDraft, submissionFor]);
   const send = useCallback(async (submission: ModuleSubmission) => { setSubmitting(true); setFailed(false); if (await onSubmit(submission) === false) { submitted.current = false; setFailed(true); } setSubmitting(false); }, [onSubmit]);
   const finish = useCallback((completionReason: "completed" | "teacher-ended") => { if (submitted.current || existingSubmission) return; clear(); submitted.current = true; done.current = true; setCompleted(true); setReason(completionReason); const submission = submissionFor(progressRef.current, completionReason); setFinalSubmission(submission); void send(submission); }, [clear, existingSubmission, send, submissionFor]);
-  useEffect(() => { if (completedCount === 6 && !existingSubmission) finish("completed"); }, [completedCount, existingSubmission, finish]);
+  useEffect(() => { if (completedCount === 5 && !existingSubmission) finish("completed"); }, [completedCount, existingSubmission, finish]);
   useEffect(() => { if (forceSubmit && !done.current && !existingSubmission) finish("teacher-ended"); }, [existingSubmission, finish, forceSubmit]);
   useEffect(() => { const flush = () => { if (!done.current && !existingSubmission) save(); }; addEventListener("pagehide", flush); return () => removeEventListener("pagehide", flush); }, [existingSubmission, save]);
 
@@ -201,7 +189,7 @@ export function Week6SimulationRepair({ seedKey, onSubmit, onDraft, existingSubm
     next[indexRef.current] = { ...progressRef.current[indexRef.current]!, selectedTokenId: tokenId };
     progressRef.current = next; setProgress(next); setSelected(tokenId); phaseRef.current = "result"; setPhase("result"); save(next);
     const delay = matchMedia("(prefers-reduced-motion: reduce)").matches ? 1600 : 1800;
-    timers.current.push(window.setTimeout(() => { if (indexRef.current >= 5) { finish("completed"); return; } indexRef.current += 1; setIndex(indexRef.current); phaseRef.current = "diagnosis"; setPhase("diagnosis"); setSelected(undefined); diagnosisLocked.current = false; repairLocked.current = false; save(next); }, delay));
+    timers.current.push(window.setTimeout(() => { if (indexRef.current >= 4) { finish("completed"); return; } indexRef.current += 1; setIndex(indexRef.current); phaseRef.current = "diagnosis"; setPhase("diagnosis"); setSelected(undefined); diagnosisLocked.current = false; repairLocked.current = false; save(next); }, delay));
   };
 
   if (existingSubmission && !completed) return <section className="panel module-shell simulation-repair-shell"><div className="module-title-chip">{text.title}</div><div className="module-complete-card"><LockKeyhole size={42} /><h2>{text.locked}</h2><p>{text.lockedDetail}</p></div></section>;
@@ -214,8 +202,8 @@ export function Week6SimulationRepair({ seedKey, onSubmit, onDraft, existingSubm
   const selectedDiagnosis = record?.diagnosis === "verification" ? text.verification : text.validation;
 
   return <section className="panel module-shell simulation-repair-shell repair-p5-shell">
-    <header className="simulation-repair-header"><span className="module-title-chip">{text.title}</span><div><span>{text.case} <b>{index + 1}/6</b></span><span>{text.score} <b>{scoreRepairProgress(round, progress)}</b></span></div></header>
-    <div className="simulation-repair-progress" role="progressbar" aria-valuemin={1} aria-valuemax={6} aria-valuenow={index + 1}>{round.map((scenario, scenarioIndex) => <i aria-hidden="true" key={scenario.id} className={progress[scenarioIndex]?.selectedTokenId ? "done" : scenarioIndex === index ? "active" : ""} />)}</div>
+    <header className="simulation-repair-header"><span className="module-title-chip">{text.title}</span><div><span>{text.case} <b>{index + 1}/5</b></span><span>{text.score} <b>{scoreRepairProgress(round, progress)}</b></span></div></header>
+    <div className="simulation-repair-progress" role="progressbar" aria-valuemin={1} aria-valuemax={5} aria-valuenow={index + 1}>{round.map((scenario, scenarioIndex) => <i aria-hidden="true" key={scenario.id} className={progress[scenarioIndex]?.selectedTokenId ? "done" : scenarioIndex === index ? "active" : ""} />)}</div>
     <div className="repair-p5-heading"><h2>{current.title[locale]}</h2><p>{current.context[locale]}</p></div>
     <Evidence scenario={current} phase={phase} selected={selected} locale={locale} text={text} onRepair={repair} />
     <div className="repair-p5-active">
