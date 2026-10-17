@@ -112,7 +112,7 @@ assert.match(v6Css, /max-height:calc\(100dvh - 60px - env\(safe-area-inset-botto
 assert.match(v6Css, /overflow-y:auto/);
 assert.match(v6Css, /min-height:44px/);
 assert.match(v6Css, /flex-wrap:nowrap/);
-assert.match(v6Css, /operator-token[^}]*background:#f5f1fb[^}]*border-color:#d8d0e8/);
+assert.match(v6Css, /operator-token[^}]*background:#fff[^}]*border-color:#d3d8e5[^}]*border-radius:8px/);
 assert.match(v6Css, /@media \(max-width:360px\)/);
 assert.doesNotMatch(v6Css, /repair-p5-equation[^\n]*flex-wrap:wrap/);
 assert.doesNotMatch(v6Css, /repair-p5-relation-map/);
