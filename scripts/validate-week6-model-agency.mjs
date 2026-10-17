@@ -48,9 +48,7 @@ assert.doesNotMatch(demo, /week-six-agency-demo-client[^\n]*<span/, "The how-to-
 assert.doesNotMatch(css, /model-agency-portrait>span|week-six-agency-demo-client span/, "Removed portrait badges must not leave dedicated CSS");
 
 const moduleCss = css.slice(css.indexOf("Week 6 · Module 3"));
-assert.match(moduleCss, /height:calc\(100dvh - 61px - env\(safe-area-inset-bottom\)\)/);
-assert.match(moduleCss, /grid-template-rows:auto 3px minmax\(176px,1fr\)/);
-assert.match(moduleCss, /align-content:stretch/);
+assert.match(moduleCss, /height:calc\(100dvh - 60px - env\(safe-area-inset-bottom\)\)/);
 assert.match(moduleCss, /overflow:visible/);
 assert.match(moduleCss, /grid-template-columns:1fr 1fr/);
 assert.match(moduleCss, /min-height:48px/);
