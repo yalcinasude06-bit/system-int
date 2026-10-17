@@ -160,8 +160,8 @@ const weekSixModuleOneBrief: Record<"tr" | "en", ModuleBrief> = {
 };
 
 const weekSixModuleTwoBrief: Record<"tr" | "en", ModuleBrief> = {
-  tr: { icon: "🛠️", title: "2. Simülasyon Tamircisi", description: "Sorunun türünü teşhis et; ardından hatalı model parçasına tek dokunuşla onarımı başlat." },
-  en: { icon: "🛠️", title: "2. Simulation Repairer", description: "Diagnose the problem, then trigger the repair with one tap on the faulty model part." },
+  tr: { icon: "🛠️", title: "2. Simülasyon Tamircisi · 6 Vaka", description: "Altı farklı vaka türünde sorunu teşhis et; ardından hatalı model parçasını tek dokunuşla onar." },
+  en: { icon: "🛠️", title: "2. Simulation Repairer · 6 Cases", description: "Diagnose six different case types, then repair the faulty model part with one tap." },
 };
 
 const weekSixModuleThreeBrief: Record<"tr" | "en", ModuleBrief> = {

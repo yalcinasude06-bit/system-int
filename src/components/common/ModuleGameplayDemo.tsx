@@ -495,8 +495,8 @@ function WeekSixFlowOperationDemo() {
 function WeekSixSimulationRepairDemo() {
   const { locale } = useI18n();
   const demoCopy = {
-    tr: { case: "Stok işaretleri", reference: "Simülasyon: 68", verification: "Doğrulama", validation: "Geçerlilik", diagnose: "1 · İncele", feedback: "2 · Teşhis sonucu", repair: "3 · Onar", test: "4 · Sonuç", diagnosisResult: "Doğru teşhis · +8", output: "Düzeltilmiş" },
-    en: { case: "Stock signs", reference: "Simulation: 68", verification: "Verification", validation: "Validation", diagnose: "1 · Inspect", feedback: "2 · Diagnosis result", repair: "3 · Repair", test: "4 · Result", diagnosisResult: "Correct diagnosis · +8", output: "Fixed" },
+    tr: { case: "Vaka 1/6 · Depoda gün sonu", reference: "Simülasyon: 68", verification: "Doğrulama", validation: "Geçerlilik", diagnose: "1 · Teşhis et", feedback: "Teşhis sonucu", repair: "2 · Parçayı onar", test: "Sonuç", diagnosisResult: "Doğru teşhis", output: "Düzeltilmiş" },
+    en: { case: "Case 1/6 · Warehouse close", reference: "Simulation: 68", verification: "Verification", validation: "Validation", diagnose: "1 · Diagnose", feedback: "Diagnosis result", repair: "2 · Repair part", test: "Result", diagnosisResult: "Correct diagnosis", output: "Fixed" },
   } as const;
   const text = demoCopy[locale];
   const transition = { duration: 10, repeat: Infinity, ease: "easeInOut" as const, times: [0, .12, .23, .34, .44, .56, .7, .86, 1] };
