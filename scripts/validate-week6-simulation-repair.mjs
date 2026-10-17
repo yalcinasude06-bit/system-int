@@ -101,11 +101,19 @@ assert.match(v5Css, /overflow-y:auto/);
 assert.match(v5Css, /min-height:44px/);
 
 assert.match(countdown, /6 Vaka/);
-assert.match(countdown, /Altı farklı vaka türünde/);
+assert.match(countdown, /Altı farklı vakada doğrulama veya geçerlilik/);
 assert.match(demo, /Vaka 1\/6/);
 assert.match(demo, /duration: 10/);
-assert.match(demo, /Doğru teşhis/);
-assert.doesNotMatch(demo.slice(demo.indexOf("function WeekSixSimulationRepairDemo"), demo.indexOf("function WeekSixModelAgencyDemo")), /\+8/);
+const repairDemo = demo.slice(demo.indexOf("function WeekSixSimulationRepairDemo"), demo.indexOf("function WeekSixModelAgencyDemo"));
+assert.match(repairDemo, /Doğru teşhis · \+8/);
+assert.match(repairDemo, /Hatalı kareye dokun/);
+assert.match(repairDemo, /İlk stok 100/);
+assert.match(repairDemo, /Üretim \+20/);
+assert.match(repairDemo, /Sevkiyat −12/);
+assert.match(repairDemo, /108 ✓/);
+assert.doesNotMatch(repairDemo, /week-six-repair-demo-steps|week-six-repair-demo-test/);
+assert.match(v5Css, /week-six-repair-demo-equation \.target/);
+assert.match(v5Css, /prefers-reduced-motion:reduce/);
 
 assert.match(legacyMigration, /week6_simulation_repair_score_v3/);
 assert.match(v4Migration, /week6_simulation_repair_score_v4/);

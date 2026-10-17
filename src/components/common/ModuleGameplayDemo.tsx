@@ -1,6 +1,7 @@
 "use client";
 
 import { MotionConfig, motion } from "framer-motion";
+import { Box, Calculator, GitBranch, MousePointer2, Waves } from "lucide-react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { BossPortrait } from "@/components/modules/Week4_BossApproach/BossPortrait";
 import { FlowSymbolShape } from "@/components/modules/Week3_FlowchartSymbols/FlowSymbolShape";
@@ -475,52 +476,57 @@ function WeekFiveBalanceMasterDemo() {
 function WeekSixFlowOperationDemo() {
   const { locale } = useI18n();
   const demoCopy = {
-    tr: { title: "Hedef Depo", production: "Üretim", shipping: "Sevkiyat", target: "Hedef", day: "2 gün", unit: "/gün" },
-    en: { title: "Target Depot", production: "Production", shipping: "Shipping", target: "Target", day: "2 days", unit: "/day" },
+    tr: { task: "2 gün sonunda 52 ürün için üretim kaç/gün?", initial: "İlk stok: 40", production: "Üretim", shipping: "Sevkiyat 8/gün", unit: "/gün" },
+    en: { task: "How many units/day reach 52 after 2 days?", initial: "Initial stock: 40", production: "Production", shipping: "Shipping 8/day", unit: "/day" },
   } as const;
   const text = demoCopy[locale];
-  const transition = { duration: 5.2, repeat: Infinity, ease: "easeInOut" as const, times: [0, .18, .3, .48, .66, .82, 1] };
+  const transition = { duration: 10, repeat: Infinity, ease: "easeInOut" as const, times: [0, .16, .3, .46, .64, .84, 1] };
   return <div className="module-demo week-six-flow-demo" aria-hidden="true">
-    <div className="week-six-flow-demo-heading"><b>{text.title}</b><span>{text.shipping} 8{text.unit} · {text.day}</span></div>
-    <div className="week-six-flow-demo-factory"><i /><i /><i /><b>40</b></div>
-    <div className="week-six-flow-demo-belt"><motion.i animate={{ x: [-20, -20, 68, 132, 175, 175, -20] }} transition={transition} /><motion.i animate={{ x: [-48, -48, 34, 98, 150, 150, -48] }} transition={transition} /></div>
-    <div className="week-six-flow-demo-depot"><small>{text.target} 52</small><motion.b animate={{ opacity: [1, 1, 1, 0, 0, 0, 1] }} transition={transition}>40</motion.b><motion.b className="result" animate={{ opacity: [0, 0, 0, 1, 1, 1, 0], scale: [.8, .8, .8, 1.08, 1, 1, .8] }} transition={transition}>52 ✓</motion.b></div>
-    <div className="week-six-flow-demo-rates"><span>10{text.unit}</span><motion.span animate={{ color: ["#315c4d", "#315c4d", "#17643e", "#17643e", "#17643e", "#315c4d", "#315c4d"], backgroundColor: ["#fff", "#fff", "#dff2e6", "#dff2e6", "#dff2e6", "#fff", "#fff"], borderColor: ["#b9d8c4", "#b9d8c4", "#36a269", "#36a269", "#36a269", "#b9d8c4", "#b9d8c4"], scale: [1, 1, 1.06, 1.06, 1, 1, 1] }} transition={transition}>14{text.unit}</motion.span><span>18{text.unit}</span></div>
-    <motion.span className="week-six-flow-demo-hand" animate={{ y: [8, 8, -2, -2, 5, 8, 8], scale: [1, 1, .82, 1, 1, 1, 1], opacity: [1, 1, 1, 1, 0, 0, 1] }} transition={transition}>👆</motion.span>
-    <motion.div className="week-six-flow-demo-formula" animate={{ opacity: [0, 0, 0, .15, 1, 1, 0], y: [4, 4, 4, 4, 0, 0, 4] }} transition={transition}>40 + (14 − 8) × 2 = 52</motion.div>
-    <span className="week-six-flow-demo-label">{text.production}</span>
+    <strong className="week-six-flow-demo-task">{text.task}</strong>
+    <div className="week-six-flow-demo-factory"><small>{text.production}</small><motion.b className="question" animate={{ opacity: [1, 1, 1, 0, 0, 0, 1] }} transition={transition}>?{text.unit}</motion.b><motion.b className="answer" animate={{ opacity: [0, 0, 0, 1, 1, 1, 0] }} transition={transition}>14{text.unit}</motion.b><i /><i /><i /></div>
+    <div className="week-six-flow-demo-belt"><motion.i animate={{ x: [-22, -22, -22, 52, 126, 178, -22] }} transition={transition} /><motion.i animate={{ x: [-48, -48, -48, 20, 92, 158, -48] }} transition={transition} /></div>
+    <div className="week-six-flow-demo-depot"><small>{text.initial}</small><motion.b className="initial" animate={{ opacity: [1, 1, 1, 1, 0, 0, 1] }} transition={transition}>40</motion.b><motion.b className="result" animate={{ opacity: [0, 0, 0, 0, 1, 1, 0], scale: [.9, .9, .9, .9, 1.06, 1, .9] }} transition={transition}>52 ✓</motion.b></div>
+    <span className="week-six-flow-demo-shipping">{text.shipping}</span>
+    <div className="week-six-flow-demo-rates"><span>10{text.unit}</span><motion.span className="week-six-flow-demo-answer" animate={{ color: ["#344057", "#344057", "#344057", "#17643e", "#17643e", "#17643e", "#344057"], backgroundColor: ["#fff", "#fff", "#fff", "#e8f5ee", "#e8f5ee", "#e8f5ee", "#fff"], borderColor: ["#d6dbe7", "#d6dbe7", "#d6dbe7", "#65ad8a", "#65ad8a", "#65ad8a", "#d6dbe7"], scale: [1, 1, .96, 1.04, 1, 1, 1] }} transition={transition}>14{text.unit}</motion.span><span>18{text.unit}</span></div>
+    <motion.span className="week-six-flow-demo-hand" animate={{ y: [8, 8, -3, -3, 4, 8, 8], scale: [1, 1, .88, 1, 1, 1, 1], opacity: [1, 1, 1, 0, 0, 0, 1] }} transition={transition}><MousePointer2 /></motion.span>
+    <motion.div className="week-six-flow-demo-formula" animate={{ opacity: [0, 0, 0, 0, .2, 1, 0], y: [3, 3, 3, 3, 3, 0, 3] }} transition={transition}>40 + (14 − 8) × 2 = 52</motion.div>
   </div>;
 }
 
 function WeekSixSimulationRepairDemo() {
   const { locale } = useI18n();
   const demoCopy = {
-    tr: { case: "Vaka 1/6 · Depoda gün sonu", reference: "Simülasyon: 68", verification: "Doğrulama", validation: "Geçerlilik", diagnose: "1 · Teşhis et", feedback: "Teşhis sonucu", repair: "2 · Parçayı onar", test: "Sonuç", diagnosisResult: "Doğru teşhis", output: "Düzeltilmiş" },
-    en: { case: "Case 1/6 · Warehouse close", reference: "Simulation: 68", verification: "Verification", validation: "Validation", diagnose: "1 · Diagnose", feedback: "Diagnosis result", repair: "2 · Repair part", test: "Result", diagnosisResult: "Correct diagnosis", output: "Fixed" },
+    tr: { case: "Vaka 1/6 · Depoda gün sonu", initial: "İlk stok 100", production: "Üretim +20", shipping: "Sevkiyat −12", verification: "Doğrulama", validation: "Geçerlilik", diagnosisResult: "Doğru teşhis · +8", repair: "Hatalı kareye dokun", next: "Sonraki vakaya geçiliyor…" },
+    en: { case: "Case 1/6 · Warehouse close", initial: "Initial stock 100", production: "Production +20", shipping: "Shipping −12", verification: "Verification", validation: "Validation", diagnosisResult: "Correct diagnosis · +8", repair: "Tap the faulty square", next: "Moving to the next case…" },
   } as const;
   const text = demoCopy[locale];
   const transition = { duration: 10, repeat: Infinity, ease: "easeInOut" as const, times: [0, .12, .23, .34, .44, .56, .7, .86, 1] };
   return <div className="module-demo week-six-repair-demo" aria-hidden="true">
-    <div className="week-six-repair-demo-head"><b>{text.case}</b><span>{text.reference}</span></div>
-    <div className="week-six-repair-demo-steps"><motion.span animate={{ color: ["#315c4d", "#315c4d", "#17643e", "#60756c", "#60756c", "#60756c", "#60756c", "#60756c", "#315c4d"] }} transition={transition}>{text.diagnose}</motion.span><motion.span animate={{ color: ["#60756c", "#60756c", "#60756c", "#17643e", "#17643e", "#60756c", "#60756c", "#60756c", "#60756c"] }} transition={transition}>{text.feedback}</motion.span><motion.span animate={{ color: ["#60756c", "#60756c", "#60756c", "#60756c", "#60756c", "#17643e", "#17643e", "#60756c", "#60756c"] }} transition={transition}>{text.repair}</motion.span><motion.span animate={{ color: ["#60756c", "#60756c", "#60756c", "#60756c", "#60756c", "#60756c", "#60756c", "#17643e", "#60756c"] }} transition={transition}>{text.test}</motion.span></div>
-    <div className="week-six-repair-demo-diagnosis"><motion.span animate={{ color: ["#315c4d", "#315c4d", "#17643e", "#17643e", "#315c4d", "#315c4d", "#315c4d", "#315c4d", "#315c4d"], borderColor: ["#bfd5c9", "#bfd5c9", "#46a979", "#46a979", "#bfd5c9", "#bfd5c9", "#bfd5c9", "#bfd5c9", "#bfd5c9"], backgroundColor: ["#fff", "#fff", "#e6f7ec", "#e6f7ec", "#fff", "#fff", "#fff", "#fff", "#fff"] }} transition={transition}>{text.verification}</motion.span><span>{text.validation}</span></div>
+    <div className="week-six-repair-demo-head"><b>{text.case}</b></div>
+    <div className="week-six-repair-demo-facts"><span>{text.initial}</span><span>{text.production}</span><span>{text.shipping}</span></div>
+    <motion.div className="week-six-repair-demo-diagnosis" animate={{ opacity: [1, 1, 1, 1, .15, 0, 0, 0, 1] }} transition={transition}><motion.span className="selected" animate={{ color: ["#344057", "#344057", "#344057", "#17643e", "#17643e", "#344057", "#344057", "#344057", "#344057"], backgroundColor: ["#fff", "#fff", "#fff", "#e8f5ee", "#e8f5ee", "#fff", "#fff", "#fff", "#fff"], borderColor: ["#d6dbe7", "#d6dbe7", "#d6dbe7", "#65ad8a", "#65ad8a", "#d6dbe7", "#d6dbe7", "#d6dbe7", "#d6dbe7"] }} transition={transition}>{text.verification}</motion.span><span>{text.validation}</span></motion.div>
     <motion.div className="week-six-repair-demo-feedback" animate={{ opacity: [0, 0, 0, 1, 1, 0, 0, 0, 0] }} transition={transition}>✓ {text.diagnosisResult}</motion.div>
-    <div className="week-six-repair-demo-equation"><b>100</b><motion.i animate={{ color: ["#315c4d", "#315c4d", "#315c4d", "#315c4d", "#315c4d", "#17643e", "#17643e", "#17643e", "#315c4d"], backgroundColor: ["#fff", "#fff", "#fff", "#fff", "#fff", "#e6f7ec", "#e6f7ec", "#e6f7ec", "#fff"], borderColor: ["#bfd5c9", "#bfd5c9", "#bfd5c9", "#bfd5c9", "#bfd5c9", "#46a979", "#46a979", "#46a979", "#bfd5c9"], rotateX: [0, 0, 0, 0, 0, 180, 180, 180, 0] }} transition={transition}>−</motion.i><b>20</b><i>−</i><b>12</b><em>=</em><motion.strong><motion.span animate={{ opacity: [1, 1, 1, 1, 1, 0, 0, 0, 1] }} transition={transition}>68</motion.span><motion.span animate={{ opacity: [0, 0, 0, 0, 0, 1, 1, 1, 0] }} transition={transition}>108 ✓</motion.span></motion.strong></div>
-    <motion.div className="week-six-repair-demo-test" animate={{ opacity: [0, 0, 0, 0, 0, 0, .2, 1, 0], scale: [.94, .94, .94, .94, .94, .94, .94, 1, .94] }} transition={transition}>{text.output}: 108</motion.div>
-    <motion.span className="week-six-repair-demo-hand" animate={{ x: [0, 0, -76, -76, 0, 18, 18, 90, 0], y: [0, 0, -45, -45, 0, 12, 12, 12, 0], scale: [1, 1, .82, 1, 1, .82, 1, 1, 1], opacity: [1, 1, 1, 0, 0, 1, 1, 0, 0] }} transition={transition}>👆</motion.span>
+    <motion.div className="week-six-repair-demo-instruction" animate={{ opacity: [0, 0, 0, 0, .25, 1, 1, 0, 0] }} transition={transition}>{text.repair}</motion.div>
+    <div className="week-six-repair-demo-equation"><b>100</b><motion.i className="target" animate={{ color: ["#344057", "#344057", "#344057", "#344057", "#344057", "#344057", "#17643e", "#17643e", "#344057"], backgroundColor: ["#fff", "#fff", "#fff", "#fff", "#fff", "#fff", "#e8f5ee", "#e8f5ee", "#fff"], borderColor: ["#d6dbe7", "#d6dbe7", "#d6dbe7", "#d6dbe7", "#d6dbe7", "#d6dbe7", "#65ad8a", "#65ad8a", "#d6dbe7"] }} transition={transition}><motion.span animate={{ opacity: [1, 1, 1, 1, 1, 1, 0, 0, 1] }} transition={transition}>−</motion.span><motion.span className="fixed" animate={{ opacity: [0, 0, 0, 0, 0, 0, 1, 1, 0] }} transition={transition}>+</motion.span></motion.i><b>20</b><i>−</i><b>12</b><em>=</em><motion.strong><motion.span animate={{ opacity: [1, 1, 1, 1, 1, 1, 0, 0, 1] }} transition={transition}>68</motion.span><motion.span className="fixed" animate={{ opacity: [0, 0, 0, 0, 0, 0, 1, 1, 0] }} transition={transition}>108 ✓</motion.span></motion.strong></div>
+    <motion.div className="week-six-repair-demo-next" animate={{ opacity: [0, 0, 0, 0, 0, 0, 0, 1, 0] }} transition={transition}>{text.next}</motion.div>
+    <motion.span className="week-six-repair-demo-hand" animate={{ x: [-116, -116, -116, -116, -28, -28, 0, 0, -116], y: [8, 8, -1, -1, 8, 8, -26, -26, 8], scale: [1, 1, .88, 1, 1, 1, .88, 1, 1], opacity: [1, 1, 1, 0, 0, 1, 1, 0, 1] }} transition={transition}><MousePointer2 /></motion.span>
   </div>;
 }
 
 function WeekSixModelAgencyDemo() {
   const { locale } = useI18n();
   const l = (tr: string, en: string) => locale === "tr" ? tr : en;
-  const text = { role: l("Şehir Plancısı", "Urban Planner"), request: l("Yeni meydanın ölçekli maketini hazırlayın.", "Prepare a scale model of the new square."), question: l("Model aracın hangisi?", "Which modelling tool?"), physical: l("Fiziksel", "Physical"), analog: l("Analog", "Analog"), schematic: l("Şematik", "Schematic"), mathematical: l("Matematiksel", "Mathematical") };
-  const transition = { duration: 4.8, repeat: Infinity, ease: "easeInOut" as const, times: [0, .2, .38, .56, .76, 1] };
+  const text = { progress: l("Proje 1/10", "Project 1/10"), role: l("Şehir Plancısı", "Urban Planner"), request: l("Yeni meydanın ölçekli maketini hazırlayın.", "Prepare a scale model of the new square."), question: l("Model türünü seç", "Choose the model type"), physical: l("Fiziksel", "Physical"), analog: l("Analog", "Analog"), schematic: l("Şematik", "Schematic"), mathematical: l("Matematiksel", "Mathematical"), correct: l("Doğru ✓", "Correct ✓"), next: l("Sıradaki müşteri geliyor…", "The next client is arriving…") };
+  const transition = { duration: 10, repeat: Infinity, ease: "easeInOut" as const, times: [0, .18, .34, .5, .68, .86, 1] };
   return <div className="module-demo week-six-agency-demo" aria-hidden="true">
     <div className="week-six-agency-demo-client"><BossPortrait variant={4} /></div>
-    <div className="week-six-agency-demo-brief"><b>{text.role}</b><p>“{text.request}”</p><strong>{text.question}</strong></div>
-    <div className="week-six-agency-demo-options"><motion.span animate={{ borderColor: ["#d8e3dc", "#d8e3dc", "#36a269", "#36a269", "#36a269", "#d8e3dc"], backgroundColor: ["#fff", "#fff", "#e6f7ec", "#e6f7ec", "#e6f7ec", "#fff"], scale: [1, 1, .97, 1.03, 1, 1] }} transition={transition}>📦 {text.physical}</motion.span><span>〰️ {text.analog}</span><span>🔗 {text.schematic}</span><span>∑ {text.mathematical}</span></div>
-    <motion.span className="week-six-agency-demo-hand" animate={{ x: [66, 66, 0, 0, 0, 66], y: [28, 28, 0, 0, 0, 28], scale: [1, 1, .82, 1, 1, 1], opacity: [1, 1, 1, 1, 0, 0] }} transition={transition}>👆</motion.span>
+    <motion.div className="week-six-agency-demo-card" animate={{ opacity: [1, 1, 1, 1, 1, .35, 1], x: [0, 0, 0, 0, 0, -8, 0] }} transition={transition}>
+      <div className="week-six-agency-demo-brief"><small>{text.progress}</small><b>{text.role}</b><p>“{text.request}”</p><strong>{text.question}</strong></div>
+      <div className="week-six-agency-demo-options"><motion.span className="selected" animate={{ color: ["#344057", "#344057", "#344057", "#17643e", "#17643e", "#17643e", "#344057"], borderColor: ["#d8dce8", "#d8dce8", "#d8dce8", "#65ad8a", "#65ad8a", "#65ad8a", "#d8dce8"], backgroundColor: ["#fff", "#fff", "#fff", "#e8f5ee", "#e8f5ee", "#e8f5ee", "#fff"], scale: [1, 1, .97, 1.03, 1, 1, 1] }} transition={transition}><Box />{text.physical}</motion.span><span><Waves />{text.analog}</span><span><GitBranch />{text.schematic}</span><span><Calculator />{text.mathematical}</span></div>
+    </motion.div>
+    <motion.div className="week-six-agency-demo-feedback" animate={{ opacity: [0, 0, 0, 1, 1, 0, 0] }} transition={transition}>{text.correct}</motion.div>
+    <motion.div className="week-six-agency-demo-next" animate={{ opacity: [0, 0, 0, 0, 0, 1, 0] }} transition={transition}>{text.next}</motion.div>
+    <motion.span className="week-six-agency-demo-hand" animate={{ x: [66, 66, 0, 0, 0, 66, 66], y: [28, 28, 0, 0, 0, 28, 28], scale: [1, 1, .88, 1, 1, 1, 1], opacity: [1, 1, 1, 0, 0, 0, 1] }} transition={transition}><MousePointer2 /></motion.span>
   </div>;
 }
 

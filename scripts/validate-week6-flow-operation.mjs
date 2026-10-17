@@ -100,9 +100,16 @@ assert.match(component, /completionStatus: reason === "completed" \? "completed"
 assert.match(component, /onDraft\?\.\(submissionFor/, "Every answered question must persist a draft");
 assert.match(component, /finalize\("teacher-ended"\)/, "Teacher early finish must submit partial progress");
 assert.match(demo, /function WeekSixFlowOperationDemo/);
+assert.match(demo.slice(demo.indexOf("function WeekSixFlowOperationDemo"), demo.indexOf("function WeekSixSimulationRepairDemo")), /duration: 10/);
+assert.match(demo, /2 gün sonunda 52 ürün için üretim kaç\/gün\?/);
+assert.match(demo, /İlk stok: 40/);
+assert.match(demo, /<MousePointer2/);
 assert.match(demo, /40 \+ \(14 − 8\) × 2 = 52/, "The introduction must demonstrate a real stock calculation");
 assert.doesNotMatch(countdown, /Beş mini oyunda/);
 assert.match(countdown, /beş değişkenden eksik olanı bul/);
+const demoCss = css.slice(css.indexOf("Week 6 countdown demo revision"));
+assert.match(demoCss, /week-six-flow-demo-answer/);
+assert.match(demoCss, /prefers-reduced-motion:reduce/);
 
 const newCss = css.slice(css.indexOf("Week 6 · Module 1: one factory"), css.indexOf("Week 6 · Module 2"));
 assert.match(newCss, /height: calc\(100dvh - 60px - env\(safe-area-inset-bottom\)\)/, "The game must account for the real mobile navbar and page inset");
