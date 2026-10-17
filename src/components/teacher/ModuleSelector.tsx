@@ -39,6 +39,7 @@ const weekFiveModules: typeof weekOneModules = [
 const weekSixModules: typeof weekOneModules = [
   { id: 1, title: "1. Akış Operasyonu", subtitle: "5 soru · 30 stok-akış senaryosu", description: "Aynı fabrika akışında üretim, sevkiyat, son stok, süre ve başlangıç değerlerini bul.", Icon: Workflow },
   { id: 2, title: "2. Simülasyon Tamircisi", subtitle: "5 vaka · teşhis, onarım ve görsel test", description: "Kod hatasıyla model varsayımını ayır; sekiz farklı araçla bozuk simülasyonu doğrudan onar.", Icon: Wrench },
+  { id: 3, title: "3. Model Ajansı", subtitle: "5 proje · 24 müşteri vakası", description: "Müşteri ihtiyacına en uygun fiziksel, analog, şematik veya matematiksel model aracını seç.", Icon: Shapes },
 ];
 
 export function WeekSelector({ activeWeek, onChange, disabled }: { activeWeek: number; onChange: (week: number) => void; disabled?: boolean }) {

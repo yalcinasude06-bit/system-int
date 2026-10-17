@@ -20,6 +20,7 @@
     "test:run-replay": "node --no-warnings --experimental-strip-types scripts/validate-run-replay.mjs",
     "test:week6-flow-operation": "node --no-warnings --experimental-strip-types scripts/validate-week6-flow-operation.mjs",
     "test:week6-simulation-repair": "node --no-warnings --experimental-strip-types scripts/validate-week6-simulation-repair.mjs",
+    "test:week6-model-agency": "node --no-warnings --experimental-strip-types scripts/validate-week6-model-agency.mjs",
     "test:run-load": "node scripts/report-run-load.mjs"
   },
   "dependencies": {

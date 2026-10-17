@@ -164,6 +164,11 @@ const weekSixModuleTwoBrief: Record<"tr" | "en", ModuleBrief> = {
   en: { icon: "🛠️", title: "2. Simulation Repairer", description: "Diagnose the problem, then trigger the repair with one tap on the faulty model part." },
 };
 
+const weekSixModuleThreeBrief: Record<"tr" | "en", ModuleBrief> = {
+  tr: { icon: "🎨", title: "3. Model Ajansı", description: "Gerçek bir müşterinin isteğini oku ve uygun model türünü tek dokunuşla seç." },
+  en: { icon: "🎨", title: "3. Model Agency", description: "Read a real client's request and choose the right model type with one tap." },
+};
+
 type ModuleStartCountdownProps = {
   weekId?: number;
   moduleId: ModuleId;
@@ -199,6 +204,8 @@ export function ModuleStartCountdown({ weekId = 1, moduleId, startedAt, onComple
         ? weekSixModuleOneBrief[locale]
       : weekId === 6 && moduleId === 2
         ? weekSixModuleTwoBrief[locale]
+      : weekId === 6 && moduleId === 3
+        ? weekSixModuleThreeBrief[locale]
       : moduleBriefs[moduleId];
 
   useEffect(() => {

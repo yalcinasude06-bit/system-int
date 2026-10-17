@@ -121,8 +121,8 @@ for (const [width, height] of [[320, 568], [360, 640], [375, 667], [390, 844]]) 
 }
 
 assert.match(student, /session\.selected_week === 6 && session\.current_module === 1/);
-assert.doesNotMatch(student, /session\.selected_week === 6 && session\.current_module === 3/, "Week 6 Module 3 must remain unbuilt");
-assert.match(teacher, /session\.selected_week === 6 && currentModule <= 2/);
+assert.match(student, /session\.selected_week === 6 && session\.current_module === 3/, "Week 6 Module 3 must remain integrated without changing Module 1 gameplay");
+assert.match(teacher, /session\.selected_week === 6 && currentModule <= 3/);
 assert.match(selector, /title: "1\. Akış Operasyonu"/);
 assert.match(selector, /5 soru · 30 stok-akış senaryosu/);
 assert.doesNotMatch(selector, /5 mini oyun/);

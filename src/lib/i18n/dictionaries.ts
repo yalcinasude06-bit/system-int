@@ -720,6 +720,12 @@ Object.assign(dictionaries.en, {
   "Kod hatasıyla model varsayımını ayır; sekiz farklı araçla bozuk simülasyonu doğrudan onar.": "Distinguish code faults from model assumptions and directly repair the broken simulation with eight different tools.",
 });
 
+Object.assign(dictionaries.en, {
+  "3. Model Ajansı": "3. Model Agency",
+  "5 proje · 24 müşteri vakası": "5 projects · 24 client cases",
+  "Müşteri ihtiyacına en uygun fiziksel, analog, şematik veya matematiksel model aracını seç.": "Choose the physical, analog, schematic, or mathematical modelling tool that best fits the client's need.",
+});
+
 const dynamicTranslations: Array<[RegExp, (match: RegExpMatchArray) => string]> = [
   [/^Hafta (\d+)$/, (m) => `Week ${m[1]}`],
   [/^Hafta (\d+) modülleri$/, (m) => `Week ${m[1]} modules`],

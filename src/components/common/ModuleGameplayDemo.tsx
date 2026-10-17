@@ -510,6 +510,19 @@ function WeekSixSimulationRepairDemo() {
   </div>;
 }
 
+function WeekSixModelAgencyDemo() {
+  const { locale } = useI18n();
+  const l = (tr: string, en: string) => locale === "tr" ? tr : en;
+  const text = { role: l("Şehir plancısı", "Urban planner"), request: l("Yeni meydanın ölçekli maketini hazırlayın.", "Prepare a scale model of the new square."), question: l("Hangi model aracını kullanacaksın?", "Which modelling tool will you use?"), physical: l("Fiziksel", "Physical"), analog: l("Analog", "Analog"), schematic: l("Şematik", "Schematic"), mathematical: l("Matematiksel", "Mathematical") };
+  const transition = { duration: 4.8, repeat: Infinity, ease: "easeInOut" as const, times: [0, .2, .38, .56, .76, 1] };
+  return <div className="module-demo week-six-agency-demo" aria-hidden="true">
+    <div className="week-six-agency-demo-client"><BossPortrait variant={4} /><span>🏙️</span></div>
+    <div className="week-six-agency-demo-brief"><b>{text.role}</b><p>“{text.request}”</p><strong>{text.question}</strong></div>
+    <div className="week-six-agency-demo-options"><motion.span animate={{ borderColor: ["#d8e3dc", "#d8e3dc", "#36a269", "#36a269", "#36a269", "#d8e3dc"], backgroundColor: ["#fff", "#fff", "#e6f7ec", "#e6f7ec", "#e6f7ec", "#fff"], scale: [1, 1, .97, 1.03, 1, 1] }} transition={transition}>📦 {text.physical}</motion.span><span>〰️ {text.analog}</span><span>🔗 {text.schematic}</span><span>∑ {text.mathematical}</span></div>
+    <motion.span className="week-six-agency-demo-hand" animate={{ x: [66, 66, 0, 0, 0, 66], y: [28, 28, 0, 0, 0, 28], scale: [1, 1, .82, 1, 1, 1], opacity: [1, 1, 1, 1, 0, 0] }} transition={transition}>👆</motion.span>
+  </div>;
+}
+
 const demos: Record<ModuleId, () => ReactNode> = {
   1: ModuleOneDemo,
   2: ModuleTwoDemo,
@@ -541,6 +554,8 @@ export function ModuleGameplayDemo({ moduleId, weekId = 1 }: { moduleId: ModuleI
         ? WeekSixFlowOperationDemo
       : weekId === 6 && moduleId === 2
         ? WeekSixSimulationRepairDemo
+      : weekId === 6 && moduleId === 3
+        ? WeekSixModelAgencyDemo
       : demos[moduleId];
   return <MotionConfig reducedMotion="user"><Demo /></MotionConfig>;
 }
