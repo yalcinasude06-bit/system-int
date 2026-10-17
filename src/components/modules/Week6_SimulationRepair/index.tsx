@@ -14,16 +14,16 @@ const gameId = "week-6-simulation-repair-v5";
 const copy = {
   tr: {
     title: "HAFTA 6 · MODÜL 2", case: "Vaka", score: "Puan", prompt: "Sorun nerede?", verification: "Doğrulama", validation: "Geçerlilik",
-    verificationHint: "Tanımlanan model doğru uygulanmış mı?", validationHint: "Model gerçek sistemi yeterince temsil ediyor mu?", repairPrompt: "Hatalı model parçasına bir kez dokun.",
-    observation: "Gerçek", simulation: "Bozuk model", fixed: "Düzeltilmiş model", definedData: "Tanımlı veri ve kural", modelOutput: "Model çıktısı", start: "Başlangıç", effect: "Etki başlar",
+    verificationHint: "Model kuralları doğru uygulandı mı?", validationHint: "Model gerçek sistemi temsil ediyor mu?", repairPrompt: "Hatalı model parçasına bir kez dokun.",
+    observation: "Gerçek sistem", simulation: "Simülasyon", fixed: "Düzeltilmiş simülasyon", definedData: "Tanımlı veri ve kural", modelOutput: "Model çıktısı", start: "Başlangıç", effect: "Etki başlar",
     correctDiagnosis: "Doğru teşhis", wrongDiagnosis: "Yanlış teşhis", yourChoice: "Seçimin", correctAnswer: "Doğrusu", correctPart: "Doğru parça", correct: "Doğru onarım", wrong: "Yanlış onarım",
     auto: "Sonraki vaka hazırlanıyor…", completed: "Altı vaka tamamlandı", partial: "Öğretmen turu sonlandırdı", detail: "Tamamlanan alt aşamalar güvenle kaydedildi.",
     saving: "Kaydediliyor…", saveError: "Kayıt başarısız; ilerleme korundu.", retry: "Tekrar dene", locked: "Bu tur tamamlandı", lockedDetail: "Yanıtların daha önce kaydedildi.",
   },
   en: {
     title: "WEEK 6 · MODULE 2", case: "Case", score: "Score", prompt: "Where is the problem?", verification: "Verification", validation: "Validation",
-    verificationHint: "Was the defined model implemented correctly?", validationHint: "Does the model represent the real system well enough?", repairPrompt: "Tap the faulty model part once.",
-    observation: "Observed", simulation: "Broken model", fixed: "Fixed model", definedData: "Defined data and rule", modelOutput: "Model output", start: "Start", effect: "Effect begins",
+    verificationHint: "Were the model rules applied correctly?", validationHint: "Does the model represent the real system?", repairPrompt: "Tap the faulty model part once.",
+    observation: "Real system", simulation: "Simulation", fixed: "Corrected simulation", definedData: "Defined data and rule", modelOutput: "Model output", start: "Start", effect: "Effect begins",
     correctDiagnosis: "Correct diagnosis", wrongDiagnosis: "Incorrect diagnosis", yourChoice: "Your choice", correctAnswer: "Correct answer", correctPart: "Correct part", correct: "Correct repair", wrong: "Incorrect repair",
     auto: "Preparing next case…", completed: "Six cases complete", partial: "Teacher ended the round", detail: "Completed sub-stages were saved securely.",
     saving: "Saving…", saveError: "Save failed; progress is preserved.", retry: "Try again", locked: "This round is complete", lockedDetail: "Your answers were already saved.",
@@ -59,19 +59,34 @@ function axisLabels(axis: string, length: number) {
 }
 
 function Facts({ scenario, locale }: { scenario: RepairScenario; locale: "tr" | "en" }) {
-  return <div className="repair-p5-facts">{scenario.facts.map((fact, index) => <span key={index}>{fact[locale]}</span>)}</div>;
+  return <div className="repair-p5-facts">{scenario.facts.map((fact, index) => <div className="repair-p5-fact" key={index}><span>{fact.label[locale]}:</span><strong>{fact.value[locale]}</strong></div>)}</div>;
 }
 
 function equationResult(output: string) {
   return output.split("=").slice(1).join("=").trim();
 }
 
-function EquationEvidence({ scenario, locale, revealed = false }: { scenario: RepairScenario; locale: "tr" | "en"; revealed?: boolean }) {
+function isEquationOperator(value: string) {
+  return /^[()+−×÷]$/u.test(value);
+}
+
+function EquationLine({ scenario, locale, revealed = false, selected, onRepair }: { scenario: RepairScenario; locale: "tr" | "en"; revealed?: boolean; selected?: string; onRepair?: (tokenId: string) => void }) {
   const output = revealed ? scenario.fixedOutput[locale] : scenario.brokenOutput[locale];
-  return <div className="repair-p5-equation repair-p5-equation-static" aria-label={output}>
-    {scenario.tokens.map((token) => <span key={token.id}>{revealed ? token.fixed[locale] : token.label[locale]}</span>)}
-    <b aria-hidden="true">=</b><strong>{equationResult(output)}</strong>
+  const interactive = Boolean(onRepair), correct = selected ? repairIsCorrect(scenario, selected) : false;
+  return <div className={`repair-p5-equation ${interactive ? "repair-p5-equation-interactive" : "repair-p5-equation-static"}`} aria-label={output}>
+    {scenario.tokens.map((token) => {
+      const value = revealed ? token.fixed[locale] : token.label[locale];
+      const chosen = selected === token.id, target = token.id === scenario.correctTokenId;
+      const className = `${isEquationOperator(value) ? "operator-token" : "value-token"} ${revealed && target ? "correct-token" : revealed && chosen && !correct ? "wrong-token" : ""}`.trim();
+      if (!interactive) return <span className={className} key={token.id}>{value}</span>;
+      return <button type="button" key={token.id} className={className} disabled={revealed} aria-pressed={chosen} aria-label={token.label[locale]} onClick={() => onRepair?.(token.id)}><span>{value}</span>{revealed && target && <CheckCircle2 aria-hidden="true" />}{revealed && chosen && !correct && <X aria-hidden="true" />}</button>;
+    })}
+    <b className="equation-equals" aria-hidden="true">=</b><strong className="equation-result">{equationResult(output)}</strong>
   </div>;
+}
+
+function EquationEvidence({ scenario, locale, revealed = false }: { scenario: RepairScenario; locale: "tr" | "en"; revealed?: boolean }) {
+  return <EquationLine scenario={scenario} locale={locale} revealed={revealed} />;
 }
 
 function TimelineEvidence({ scenario, locale, text, revealed }: { scenario: RepairScenario; locale: "tr" | "en"; text: RepairCopy; revealed: boolean }) {
@@ -86,9 +101,12 @@ function TimelineEvidence({ scenario, locale, text, revealed }: { scenario: Repa
 }
 
 function RelationEvidence({ scenario, locale, text, revealed }: { scenario: RepairScenario; locale: "tr" | "en"; text: RepairCopy; revealed: boolean }) {
+  const relation = scenario.relation;
+  if (!relation) return null;
+  const simulated = revealed ? relation.fixed : relation.broken;
   return <div className="repair-p5-relation-map">
-    <div className="real"><small>{text.observation}</small><strong>{scenario.realOutput?.[locale]}</strong></div>
-    <div className={revealed ? "corrected" : "broken"}><small>{revealed ? text.fixed : text.simulation}</small><strong>{revealed ? scenario.fixedOutput[locale] : scenario.brokenOutput[locale]}</strong></div>
+    <div className="real"><small>{text.observation}</small><span>{relation.cause[locale]}</span><b>{relation.real.response[locale]}</b><strong>{relation.real.metricLabel[locale]}: <em>{relation.real.metricValue[locale]}</em></strong></div>
+    <div className={revealed ? "corrected" : "broken"}><small>{revealed ? text.fixed : text.simulation}</small><span>{relation.cause[locale]}</span><b>{simulated.response[locale]}</b><strong>{simulated.metricLabel[locale]}: <em>{simulated.metricValue[locale]}</em></strong></div>
   </div>;
 }
 
@@ -115,11 +133,7 @@ function DiagnosticVisual({ scenario, locale, text }: { scenario: RepairScenario
 function RepairEvidence({ scenario, phase, selected, locale, text, onRepair }: { scenario: RepairScenario; phase: "repair" | "result"; selected?: string; locale: "tr" | "en"; text: RepairCopy; onRepair: (tokenId: string) => void }) {
   const revealed = phase === "result", correct = selected ? repairIsCorrect(scenario, selected) : false;
   if (scenario.diagnosis === "verification") {
-    return <div className="repair-p5-equation" aria-label={revealed ? scenario.fixedOutput[locale] : scenario.brokenOutput[locale]}>{scenario.tokens.map((token) => {
-      const chosen = selected === token.id, target = token.id === scenario.correctTokenId;
-      const className = revealed && target ? "correct-token" : revealed && chosen && !correct ? "wrong-token" : "";
-      return <button type="button" key={token.id} className={className} disabled={revealed} aria-pressed={chosen} aria-label={token.label[locale]} onClick={() => onRepair(token.id)}><span>{revealed ? token.fixed[locale] : token.label[locale]}</span>{revealed && target && <CheckCircle2 aria-hidden="true" />}{revealed && chosen && !correct && <X aria-hidden="true" />}</button>;
-    })}<b aria-hidden="true">=</b><strong>{equationResult(revealed ? scenario.fixedOutput[locale] : scenario.brokenOutput[locale])}</strong></div>;
+    return <EquationLine scenario={scenario} locale={locale} revealed={revealed} selected={selected} onRepair={onRepair} />;
   }
   return <div className="repair-p5-model-repair">
     {scenario.evidenceKind === "timeline" && <TimelineEvidence scenario={scenario} locale={locale} text={text} revealed={revealed} />}
@@ -135,7 +149,7 @@ function RepairEvidence({ scenario, phase, selected, locale, text, onRepair }: {
 
 function Evidence({ scenario, phase, selected, locale, text, onRepair }: { scenario: RepairScenario; phase: Phase; selected?: string; locale: "tr" | "en"; text: RepairCopy; onRepair: (tokenId: string) => void }) {
   const diagnosing = phase === "diagnosis" || phase === "diagnosis-feedback";
-  return <div className={`repair-p5-evidence ${diagnosing ? "diagnosing" : "repairing"}`}><Facts scenario={scenario} locale={locale} />{scenario.note && <div className="repair-p5-note">{scenario.note[locale]}</div>}{diagnosing ? <DiagnosticVisual scenario={scenario} locale={locale} text={text} /> : <RepairEvidence scenario={scenario} phase={phase} selected={selected} locale={locale} text={text} onRepair={onRepair} />}</div>;
+  return <div className={`repair-p5-evidence ${diagnosing ? "diagnosing" : "repairing"}`}><Facts scenario={scenario} locale={locale} />{scenario.note && <div className="repair-p5-note"><span>{scenario.note.label[locale]}:</span> <strong>{scenario.note.value[locale]}</strong></div>}{diagnosing ? <DiagnosticVisual scenario={scenario} locale={locale} text={text} /> : <RepairEvidence scenario={scenario} phase={phase} selected={selected} locale={locale} text={text} onRepair={onRepair} />}</div>;
 }
 
 export function Week6SimulationRepair({ seedKey, onSubmit, onDraft, existingSubmission, existingDraft, forceSubmit }: LearningModuleProps & { seedKey: string }) {

@@ -23,7 +23,9 @@ for (const scenario of allRepairCases) {
   assert.equal(new Set(scenario.tokens.map((token) => token.id)).size, scenario.tokens.length, `${scenario.id} token IDs unique`);
   assert.equal(scenario.tokens.filter((token) => token.id === scenario.correctTokenId).length, 1, `${scenario.id} one selectable target`);
   assert.ok(scenario.title.tr && scenario.title.en && scenario.context.tr && scenario.context.en, `${scenario.id} localized title and context`);
-  assert.ok(scenario.facts.every((fact) => fact.tr && fact.en), `${scenario.id} localized facts`);
+  assert.ok(scenario.facts.every((fact) => fact.label.tr && fact.label.en && fact.value.tr && fact.value.en), `${scenario.id} localized fact labels and values`);
+  assert.ok(scenario.facts.every((fact) => !fact.label.tr.endsWith(":") && !fact.label.en.endsWith(":")), `${scenario.id} fact renderer owns the colon`);
+  if (scenario.note) assert.ok(scenario.note.label.tr && scenario.note.label.en && scenario.note.value.tr && scenario.note.value.en, `${scenario.id} localized note label and value`);
   for (const token of scenario.tokens) {
     assert.ok(token.label.tr && token.label.en && token.fixed.tr && token.fixed.en, `${scenario.id}/${token.id} localized token`);
     assert.equal(repairIsCorrect(scenario, token.id), token.id === scenario.correctTokenId);
@@ -36,6 +38,13 @@ for (const scenario of allRepairCases.filter((item) => item.diagnosis === "verif
   assert.ok(scenario.tokens.every((token) => token.label.tr !== "="), `${scenario.id} output is not selectable`);
 }
 for (const scenario of allRepairCases.filter((item) => item.diagnosis === "validation")) assert.equal(scenario.tokens.length, 3, `${scenario.id} has three meaningful settings`);
+for (const scenario of allRepairCases.filter((item) => item.evidenceKind === "relation")) {
+  assert.ok(scenario.relation, `${scenario.id} has structured relation evidence`);
+  assert.ok(scenario.relation.cause.tr && scenario.relation.cause.en, `${scenario.id} relation cause localized`);
+  for (const state of [scenario.relation.real, scenario.relation.broken, scenario.relation.fixed]) {
+    assert.ok(state.response.tr && state.response.en && state.metricLabel.tr && state.metricLabel.en && state.metricValue.tr && state.metricValue.en, `${scenario.id} relation state localized`);
+  }
+}
 
 for (let index = 0; index < 500; index += 1) {
   const seed = `seed-${index}`, round = buildRepairRound(seed);
@@ -61,14 +70,23 @@ assert.equal(scoreRepairProgress(round, [{ caseId: round[0].id, selectedTokenId:
 
 const byId = (id) => allRepairCases.find((scenario) => scenario.id === id);
 assert.equal(byId("V04").fixedOutput.tr, "40 + (8 − 4) × 0,5 = 42");
-assert.equal(byId("V09").facts[0].tr, "Şarj +12 yüzde puan");
+assert.equal(byId("V05").fixedOutput.tr, "20 + (2 − 10) × 0,25 = 18");
+assert.equal(byId("V06").fixedOutput.tr, "70 + (6 − 16) × 0,2 = 68");
+assert.deepEqual(byId("V06").facts[0], { label: { tr: "İlk stok", en: "Initial stock" }, value: { tr: "70", en: "70" } });
+assert.deepEqual(byId("V06").note, { label: { tr: "Süre", en: "Duration" }, value: { tr: "günün beşte biri", en: "one fifth of a day" } });
+assert.equal(byId("V09").facts[0].label.tr, "Şarj");
+assert.equal(byId("V09").facts[0].value.tr, "+12 yüzde puan");
 assert.equal(byId("V09").fixedOutput.tr, "%60 + 12 − 8 = %64");
 assert.deepEqual(byId("G13").modelSeries, [8, 8, 8, 8, 8]);
 assert.deepEqual(byId("G14").realSeries, [20, 20, 45, 62, 70]);
 assert.deepEqual(byId("G23").realSeries, [30, 30, 25, 20, 18]);
-assert.equal(byId("G17").facts[2].tr, "Reklam sabit");
-assert.doesNotMatch(`${byId("G17").context.tr} ${byId("G17").facts.map((fact) => fact.tr).join(" ")}`, /Ürün kalitesi/);
+assert.equal(byId("G17").facts[2].label.tr, "Reklam");
+assert.equal(byId("G17").facts[2].value.tr, "Sabit");
+assert.doesNotMatch(`${byId("G17").context.tr} ${byId("G17").facts.map((fact) => `${fact.label.tr} ${fact.value.tr}`).join(" ")}`, /Ürün kalitesi/);
 assert.equal(byId("G17").brokenOutput.tr, "Fiyat ↑ · Talep ↑ · 60→86");
+assert.equal(byId("G18").relation.real.response.tr, "Aktif personel artıyor");
+assert.equal(byId("G18").relation.broken.response.tr, "Aktif personel azalıyor");
+assert.equal(byId("G18").relation.broken.metricValue.tr, "3 → 2");
 assert.deepEqual(byId("G19").realSeries, [0, 12, 24, 36]);
 assert.deepEqual(byId("G20").realSeries, [350, 450, 500, 500]);
 assert.deepEqual(byId("G21").realSeries, [70, 88, 100, 100]);
@@ -88,6 +106,11 @@ assert.match(component, /phaseRef\.current = "diagnosis-feedback"/);
 assert.match(component, /\}, 800\)/);
 assert.match(component, /\? 1600 : 1800/);
 assert.match(component, /equationResult/);
+assert.match(component, /function EquationLine/);
+assert.match(component, /repair-p5-fact/);
+assert.match(component, /scenario\.relation/);
+assert.match(component, /Gerçek sistem/);
+assert.match(component, /Model kuralları doğru uygulandı mı\?/);
 assert.doesNotMatch(component, /BehaviorEvidence|repair-p5-chart|data-correct|correctTokenId=/);
 assert.doesNotMatch(component, /diagnosisPoints|repairPoints|\+\{diagnosis/);
 assert.doesNotMatch(content, /"timestep"\s*\||"unit"\s*\||"behavior"\s*\|/);
@@ -99,6 +122,10 @@ assert.match(v5Css, /@media \(hover:hover\) and \(pointer:fine\)/);
 assert.match(v5Css, /max-height:calc\(100dvh - 60px - env\(safe-area-inset-bottom\)\)/);
 assert.match(v5Css, /overflow-y:auto/);
 assert.match(v5Css, /min-height:44px/);
+assert.match(v5Css, /flex-wrap:nowrap/);
+assert.match(v5Css, /operator-token/);
+assert.match(v5Css, /@media \(max-width:360px\)/);
+assert.doesNotMatch(v5Css, /repair-p5-equation[^\n]*flex-wrap:wrap/);
 
 assert.match(countdown, /6 Vaka/);
 assert.match(countdown, /Altı farklı vakada doğrulama veya geçerlilik/);
