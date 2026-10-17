@@ -122,7 +122,7 @@ export function Week6ModelAgency({ onSubmit, onDraft, existingSubmission, existi
     <header className="model-agency-header"><div className="module-title-chip">{text.title}</div><div><span>{text.project} <b>{index + 1}/{projects.length}</b></span><span>{text.score} <b>{correctCount * pointsPerProject}</b></span></div></header>
     <div className="model-agency-progress" aria-label={`${text.project} ${index + 1} / ${projects.length}`}>{projects.map((project, projectIndex) => <i key={project.id} className={projectIndex < answers.length ? "done" : projectIndex === index ? "active" : ""} />)}</div>
     <article key={current.id} className="model-agency-brief">
-      <div className="model-agency-portrait" style={{ "--portrait-hue": `${(current.id.charCodeAt(0) * 7 + Number(current.id.slice(1)) * 23) % 360}deg` } as React.CSSProperties}><BossPortrait variant={current.portrait} /><span aria-hidden="true">{current.badge}</span></div>
+      <div className="model-agency-portrait" style={{ "--portrait-hue": `${(current.id.charCodeAt(0) * 7 + Number(current.id.slice(1)) * 23) % 360}deg` } as React.CSSProperties}><BossPortrait variant={current.portrait} /></div>
       <div><span className="model-agency-client">{current.role[locale].replace(/(^|\s)(\p{L})/gu, (value) => value.toLocaleUpperCase(locale === "tr" ? "tr-TR" : "en-US"))}</span><blockquote data-i18n-skip>“{current.request[locale]}”</blockquote></div>
     </article>
     <h2 className="model-agency-question">{text.prompt}</h2>

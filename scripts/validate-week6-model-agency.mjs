@@ -43,6 +43,9 @@ assert.match(selector, /10 proje \/ 24 müşterilik havuz/);
 assert.match(demo, /function WeekSixModelAgencyDemo/);
 assert.match(countdown, /On müşterinin isteğini oku/);
 assert.match(component, /toLocaleUpperCase\(locale === "tr" \? "tr-TR" : "en-US"\)/);
+assert.doesNotMatch(component, /current\.badge|model-agency-portrait[^\n]*<span/, "The portrait must not render a profession emoji badge");
+assert.doesNotMatch(demo, /week-six-agency-demo-client[^\n]*<span/, "The how-to-play portrait must not render a corner emoji badge");
+assert.doesNotMatch(css, /model-agency-portrait>span|week-six-agency-demo-client span/, "Removed portrait badges must not leave dedicated CSS");
 
 const moduleCss = css.slice(css.indexOf("Week 6 · Module 3"));
 assert.match(moduleCss, /height:calc\(100dvh - 60px - env\(safe-area-inset-bottom\)\)/);
@@ -66,4 +69,4 @@ assert.match(migration, /week-6-model-agency-v1/);
 assert.match(migration, /week-6-model-agency-v2/);
 assert.doesNotMatch(migration, /create policy|grant select on table|alter table/);
 
-console.log("Week 6 Model Agency v2 validation passed: 24 cases, 500 deterministic 3-3-2-2 rounds, 10x10 scoring, legacy v1 continuity, responsive UI, and trusted scoring.");
+console.log("Week 6 Model Agency v2 validation passed: 24 cases, 500 deterministic 3-3-2-2 rounds, 10x10 scoring, legacy v1 continuity, badge-free portraits, responsive UI, and trusted scoring.");
