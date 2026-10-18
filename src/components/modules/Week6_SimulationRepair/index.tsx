@@ -137,7 +137,7 @@ function RepairEvidence({ scenario, phase, selected, locale, text, onRepair }: {
 
 function Evidence({ scenario, phase, selected, locale, text, onRepair }: { scenario: RepairScenario; phase: Phase; selected?: string; locale: "tr" | "en"; text: RepairCopy; onRepair: (tokenId: string) => void }) {
   const diagnosing = phase === "diagnosis" || phase === "diagnosis-feedback";
-  return <div className={`repair-p5-evidence ${diagnosing ? "diagnosing" : "repairing"}`}><Facts scenario={scenario} locale={locale} />{scenario.note && <div className="repair-p5-note"><span>{scenario.note.label[locale]}:</span> <strong>{scenario.note.value[locale]}</strong></div>}{diagnosing ? <DiagnosticVisual scenario={scenario} locale={locale} text={text} /> : <RepairEvidence scenario={scenario} phase={phase} selected={selected} locale={locale} text={text} onRepair={onRepair} />}</div>;
+  return <div className={`repair-p5-evidence ${diagnosing ? "diagnosing" : "repairing"} ${scenario.diagnosis === "verification" ? "verification-evidence" : "validation-evidence"}`}>{scenario.diagnosis === "verification" && <Facts scenario={scenario} locale={locale} />}{scenario.note && <div className="repair-p5-note"><span>{scenario.note.label[locale]}:</span> <strong>{scenario.note.value[locale]}</strong></div>}{diagnosing ? <DiagnosticVisual scenario={scenario} locale={locale} text={text} /> : <RepairEvidence scenario={scenario} phase={phase} selected={selected} locale={locale} text={text} onRepair={onRepair} />}</div>;
 }
 
 export function Week6SimulationRepair({ seedKey, onSubmit, onDraft, existingSubmission, existingDraft, forceSubmit }: LearningModuleProps & { seedKey: string }) {

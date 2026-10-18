@@ -79,6 +79,19 @@ assert.deepEqual(byId("G20").realSeries, [350, 450, 500, 500]);
 assert.deepEqual(byId("G21").realSeries, [70, 88, 100, 100]);
 assert.deepEqual(byId("G22").realSeries, [24, 32, 36, 36]);
 for (const id of ["G20", "G21", "G22"]) assert.doesNotMatch(byId(id).context.tr, id === "G20" ? /500/ : id === "G21" ? /100/ : /36/);
+for (const [id, trParts, enParts] of [
+  ["G13", ["8", "0. günde", "günlük"], ["8-unit", "day 0", "daily"]],
+  ["G14", ["20", "0. haftada", "haftalık"], ["20", "week 0", "weekly"]],
+  ["G15", ["70", "0. günde", "günlük"], ["70", "day 0", "daily"]],
+  ["G23", ["30°C", "0. saatte", "saatlik"], ["30°C", "hour 0", "hourly"]],
+  ["G19", ["0", "20 ürün", "kümülatif"], ["0", "20 units", "cumulatively"]],
+  ["G20", ["350", "100 ürün", "çıkış olmuyor"], ["350", "100 units", "none leave"]],
+  ["G21", ["70", "18 birim", "çıkış olmuyor"], ["70", "18 units", "none leave"]],
+  ["G22", ["24", "8 müşteri", "ayrılan olmuyor"], ["24", "8 arrive", "none leave"]],
+]) {
+  for (const part of trParts) assert.ok(byId(id).context.tr.includes(part), `${id} Turkish context includes ${part}`);
+  for (const part of enParts) assert.ok(byId(id).context.en.includes(part), `${id} English context includes ${part}`);
+}
 
 assert.match(component, /gameId = "week-6-simulation-repair-v6"/);
 assert.match(component, /legacyDraftSnapshot/);
@@ -96,6 +109,8 @@ assert.match(component, /\? 1600 : 1800/);
 assert.match(component, /equationResult/);
 assert.match(component, /function EquationLine/);
 assert.match(component, /repair-p5-fact/);
+assert.match(component, /scenario\.diagnosis === "verification" && <Facts/);
+assert.match(component, /"verification-evidence" : "validation-evidence"/);
 assert.match(component, /Gerçek sistem/);
 assert.match(component, /Model kuralları doğru uygulandı mı\?/);
 assert.doesNotMatch(component, /BehaviorEvidence|repair-p5-chart|data-correct|correctTokenId=/);
@@ -113,11 +128,15 @@ assert.match(v6Css, /overflow-y:auto/);
 assert.match(v6Css, /min-height:44px/);
 assert.match(v6Css, /flex-wrap:nowrap/);
 assert.match(v6Css, /operator-token[^}]*background:#fff[^}]*border-color:#d3d8e5[^}]*border-radius:8px/);
+assert.match(v6Css, /repair-p5-evidence\.validation-evidence[^}]*min-height:190px/);
+assert.match(v6Css, /validation-evidence \.repair-p5-timeline-row[^}]*min-height:44px/);
 assert.match(v6Css, /@media \(max-width:360px\)/);
 assert.doesNotMatch(v6Css, /repair-p5-equation[^\n]*flex-wrap:wrap/);
 assert.doesNotMatch(v6Css, /repair-p5-relation-map/);
 
-assert.match(countdown, /5 Vaka/);
+assert.match(countdown, /title: "2\. Simülasyon Tamircisi"/);
+assert.match(countdown, /title: "2\. Simulation Repairer"/);
+assert.doesNotMatch(countdown, /Simülasyon Tamircisi · 5 Vaka|Simulation Repairer · 5 Cases/);
 assert.match(countdown, /Beş farklı vakada doğrulama veya geçerlilik/);
 assert.match(demo, /Vaka 1\/5/);
 assert.match(demo, /duration: 10/);
