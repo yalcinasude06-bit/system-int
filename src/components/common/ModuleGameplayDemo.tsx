@@ -533,23 +533,24 @@ function WeekSixModelAgencyDemo() {
 function WeekSevenLoopRepairDemo() {
   const { locale } = useI18n();
   const demoCopy = {
-    tr: { prompt: "İşareti ve ok yönünü onar", stock: "Stok", gap: "Stok açığı", plan: "Üretim planı", repaired: "Döngü onarıldı · B" },
-    en: { prompt: "Repair the sign and arrow direction", stock: "Inventory", gap: "Inventory gap", plan: "Production plan", repaired: "Loop repaired · B" },
+    tr: { prompt: "İki işareti düzelt, sonucu tahmin et", stock: "Stok", gap: "Stok açığı", plan: "Üretim planı", question: "Stok artarsa açık ne olur?", options: ["Artar", "Azalır", "Aynı kalır"], result: "Doğru · +20 puan" },
+    en: { prompt: "Fix two signs and predict the outcome", stock: "Inventory", gap: "Inventory gap", plan: "Production plan", question: "What happens to the gap if inventory rises?", options: ["Increases", "Decreases", "Stays same"], result: "Correct · +20 points" },
   } as const;
   const text = demoCopy[locale];
-  const transition = { duration: 10, repeat: Infinity, ease: "easeInOut" as const, times: [0, .14, .27, .39, .52, .67, .82, 1] };
+  const transition = { duration: 10, repeat: Infinity, ease: "easeInOut" as const, times: [0, .12, .24, .36, .48, .62, .76, .9, 1] };
   return <div className="module-demo week-seven-loop-demo" aria-hidden="true">
     <strong>{text.prompt}</strong>
     <div className="week-seven-demo-diagram">
       <span className="week-seven-demo-node stock">{text.stock}</span>
       <span className="week-seven-demo-node gap">{text.gap}</span>
       <span className="week-seven-demo-node plan">{text.plan}</span>
-      <svg viewBox="0 0 100 64" preserveAspectRatio="none"><path d="M 29 16 Q 50 4 71 16" /><path d="M 78 24 Q 82 48 57 51" /><path d="M 43 51 Q 18 47 22 24" /></svg>
-      <motion.button className="week-seven-demo-control sign" tabIndex={-1} animate={{ backgroundColor: ["#fff", "#fff", "#fee2e2", "#dcfce7", "#dcfce7", "#dcfce7", "#dcfce7", "#fff"], borderColor: ["#cbd5e1", "#cbd5e1", "#ef4444", "#22c55e", "#22c55e", "#22c55e", "#22c55e", "#cbd5e1"], scale: [1, 1, .94, 1.08, 1, 1, 1, 1] }} transition={transition}><motion.span animate={{ opacity: [1, 1, 1, 0, 0, 0, 0, 1] }} transition={transition}>+</motion.span><motion.span className="fixed" animate={{ opacity: [0, 0, 0, 1, 1, 1, 1, 0] }} transition={transition}>−</motion.span></motion.button>
-      <motion.button className="week-seven-demo-control direction" tabIndex={-1} animate={{ backgroundColor: ["#fff", "#fff", "#fff", "#fff", "#fee2e2", "#dcfce7", "#dcfce7", "#fff"], borderColor: ["#cbd5e1", "#cbd5e1", "#cbd5e1", "#cbd5e1", "#ef4444", "#22c55e", "#22c55e", "#cbd5e1"], scale: [1, 1, 1, 1, .94, 1.08, 1, 1] }} transition={transition}><motion.span animate={{ opacity: [1, 1, 1, 1, 1, 0, 0, 1] }} transition={transition}>←</motion.span><motion.span className="fixed" animate={{ opacity: [0, 0, 0, 0, 0, 1, 1, 0] }} transition={transition}>→</motion.span></motion.button>
-      <motion.span className="week-seven-demo-hand" animate={{ x: [-48, -48, -48, -48, 56, 56, 56, -48], y: [8, 8, -2, 8, 8, -2, 8, 8], opacity: [1, 1, 1, 0, 0, 1, 0, 1], scale: [1, 1, .82, 1, 1, .82, 1, 1] }} transition={transition}><MousePointer2 /></motion.span>
+      <svg viewBox="0 0 100 64" preserveAspectRatio="none"><defs><marker id="week-seven-demo-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" /></marker></defs><path markerEnd="url(#week-seven-demo-arrow)" d="M 29 16 Q 50 4 71 16" /><path markerEnd="url(#week-seven-demo-arrow)" d="M 78 24 Q 82 48 57 51" /><path markerEnd="url(#week-seven-demo-arrow)" d="M 43 51 Q 18 47 22 24" /></svg>
+      <motion.button className="week-seven-demo-control sign first" tabIndex={-1} animate={{ backgroundColor: ["#fff", "#fff", "#fee2e2", "#dcfce7", "#dcfce7", "#dcfce7", "#dcfce7", "#dcfce7", "#fff"], borderColor: ["#cbd5e1", "#cbd5e1", "#ef4444", "#22c55e", "#22c55e", "#22c55e", "#22c55e", "#22c55e", "#cbd5e1"], scale: [1, 1, .94, 1.08, 1, 1, 1, 1, 1] }} transition={transition}><motion.span animate={{ opacity: [1, 1, 1, 0, 0, 0, 0, 0, 1] }} transition={transition}>+</motion.span><motion.span className="fixed" animate={{ opacity: [0, 0, 0, 1, 1, 1, 1, 1, 0] }} transition={transition}>−</motion.span></motion.button>
+      <motion.button className="week-seven-demo-control sign second" tabIndex={-1} animate={{ backgroundColor: ["#fff", "#fff", "#fff", "#fff", "#fee2e2", "#dcfce7", "#dcfce7", "#dcfce7", "#fff"], borderColor: ["#cbd5e1", "#cbd5e1", "#cbd5e1", "#cbd5e1", "#ef4444", "#22c55e", "#22c55e", "#22c55e", "#cbd5e1"], scale: [1, 1, 1, 1, .94, 1.08, 1, 1, 1] }} transition={transition}><motion.span animate={{ opacity: [1, 1, 1, 1, 1, 0, 0, 0, 1] }} transition={transition}>−</motion.span><motion.span className="fixed" animate={{ opacity: [0, 0, 0, 0, 0, 1, 1, 1, 0] }} transition={transition}>+</motion.span></motion.button>
+      <motion.span className="week-seven-demo-hand" animate={{ x: [-52, -52, -52, -52, 49, 49, 49, 0, -52], y: [5, 5, -2, 5, 34, 27, 34, 83, 5], opacity: [1, 1, 1, .25, 1, 1, .25, 1, 1], scale: [1, 1, .82, 1, 1, .82, 1, .82, 1] }} transition={transition}><MousePointer2 /></motion.span>
     </div>
-    <motion.div className="week-seven-demo-success" animate={{ opacity: [0, 0, 0, 0, 0, 0, 1, 0], y: [3, 3, 3, 3, 3, 3, 0, 3] }} transition={transition}>✓ {text.repaired}</motion.div>
+    <div className="week-seven-demo-prediction"><b>{text.question}</b><div>{text.options.map((option, index) => <motion.span key={option} className={index === 1 ? "answer" : ""} animate={index === 1 ? { color: ["#526078", "#526078", "#526078", "#526078", "#526078", "#526078", "#17643e", "#17643e", "#526078"], backgroundColor: ["#fff", "#fff", "#fff", "#fff", "#fff", "#fff", "#e8f5ee", "#e8f5ee", "#fff"], borderColor: ["#d6dbe7", "#d6dbe7", "#d6dbe7", "#d6dbe7", "#d6dbe7", "#d6dbe7", "#65ad8a", "#65ad8a", "#d6dbe7"] } : undefined} transition={transition}>{String.fromCharCode(65 + index)} · {option}</motion.span>)}</div></div>
+    <motion.div className="week-seven-demo-success" animate={{ opacity: [0, 0, 0, 0, 0, 0, 0, 1, 0], y: [3, 3, 3, 3, 3, 3, 3, 0, 3] }} transition={transition}>✓ {text.result}</motion.div>
   </div>;
 }
 
