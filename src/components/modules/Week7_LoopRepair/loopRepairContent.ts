@@ -38,7 +38,8 @@ export type LoopRepairCase = {
 };
 
 export type LoopLinkState = Pick<LoopLink, "id" | "from" | "to" | "polarity">;
-export type LoopCompletion = { caseId: string; signature: string };
+export type LoopAttempt = { caseId: string; signature: string };
+export type LoopCompletion = LoopAttempt;
 
 const t = (tr: string, en: string): LocalizedText => ({ tr, en });
 
@@ -311,8 +312,29 @@ export function correctAnswerSignature(item: LoopRepairCase) {
   return answerSignature(item.links);
 }
 
-export function scoreLoopCompletions(round: LoopRepairCase[], completions: LoopCompletion[]) {
-  return completions.reduce((score, completion, index) => score + (
-    round[index]?.id === completion.caseId && completion.signature === correctAnswerSignature(round[index]!) ? 20 : 0
+export function incorrectLinkIds(item: LoopRepairCase, states: LoopLinkState[]) {
+  return item.links.flatMap((correct, index) => {
+    const current = states[index];
+    return current?.id === correct.id && current.from === correct.from && current.to === correct.to && current.polarity === correct.polarity ? [] : [correct.id];
+  });
+}
+
+export function isValidAttemptSignature(item: LoopRepairCase, signature: string) {
+  const parts = signature.split("|");
+  if (parts.length !== item.links.length) return false;
+  return parts.every((part, index) => {
+    const match = /^([^:]+):([^:>]+)>([^:>]+):([+-])$/.exec(part);
+    const correct = item.links[index];
+    if (!match || !correct || match[1] !== correct.id) return false;
+    const [, , from, to] = match;
+    return (from === correct.from && to === correct.to) || (from === correct.to && to === correct.from);
+  });
+}
+
+export function scoreLoopAttempts(round: LoopRepairCase[], attempts: LoopAttempt[]) {
+  return attempts.reduce((score, attempt, index) => score + (
+    round[index]?.id === attempt.caseId && attempt.signature === correctAnswerSignature(round[index]!) ? 20 : 0
   ), 0);
 }
+
+export const scoreLoopCompletions = scoreLoopAttempts;

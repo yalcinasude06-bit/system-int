@@ -1,12 +1,15 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
+  answerSignature,
   buildLoopRepairRound,
   correctAnswerSignature,
+  incorrectLinkIds,
   initialLinkStates,
   isCaseSolved,
+  isValidAttemptSignature,
   loopGroups,
-  scoreLoopCompletions,
+  scoreLoopAttempts,
   week7LoopCases,
 } from "../src/components/modules/Week7_LoopRepair/loopRepairContent.ts";
 
@@ -39,6 +42,8 @@ for (const item of week7LoopCases) {
   assert.equal(initial.length, item.links.length);
   assert.equal(initial.filter((edge, index) => edge.polarity !== item.links[index].polarity).length, 1, `${item.id} must start with one polarity error`);
   assert.equal(initial.filter((edge, index) => edge.from !== item.links[index].from || edge.to !== item.links[index].to).length, 1, `${item.id} must start with one direction error`);
+  assert.deepEqual(new Set(incorrectLinkIds(item, initial)), new Set([item.initialErrors.polarityLinkId, item.initialErrors.directionLinkId]), `${item.id} must identify only its two erroneous links`);
+  assert.equal(isValidAttemptSignature(item, answerSignature(initial)), true, `${item.id} initial answer must be a valid checkable signature`);
   assert.equal(isCaseSolved(item, initial), false, `${item.id} cannot start solved`);
   assert.equal(new Set(initial.map((edge) => `${edge.from}>${edge.to}`)).size, initial.length, `${item.id} initial links must remain visually distinct`);
   assert.equal(isCaseSolved(item, item.links), true, `${item.id} canonical model must solve`);
@@ -67,10 +72,16 @@ for (let seed = 0; seed < 500; seed += 1) {
 }
 
 const sampleRound = buildLoopRepairRound("score-validation");
-const completions = sampleRound.map((item) => ({ caseId: item.id, signature: correctAnswerSignature(item) }));
-assert.equal(scoreLoopCompletions(sampleRound, completions), 100);
-assert.equal(scoreLoopCompletions(sampleRound, completions.slice(0, 2)), 40);
-assert.equal(scoreLoopCompletions(sampleRound, [{ ...completions[0], signature: "forged" }]), 0);
+const correctAttempts = sampleRound.map((item) => ({ caseId: item.id, signature: correctAnswerSignature(item) }));
+const wrongAttempts = sampleRound.map((item) => ({ caseId: item.id, signature: answerSignature(initialLinkStates(item)) }));
+const mixedAttempts = correctAttempts.map((attempt, index) => index < 2 ? attempt : wrongAttempts[index]);
+assert.equal(scoreLoopAttempts(sampleRound, correctAttempts), 100);
+assert.equal(scoreLoopAttempts(sampleRound, wrongAttempts), 0, "Five checked wrong diagrams must complete with zero points");
+assert.equal(wrongAttempts.length, 5, "All-wrong flow still records all five checks");
+assert.equal(scoreLoopAttempts(sampleRound, mixedAttempts), 40);
+assert.equal(scoreLoopAttempts(sampleRound, correctAttempts.slice(0, 2)), 40, "Teacher-ended partial progress must preserve earned points");
+assert.equal(scoreLoopAttempts(sampleRound, [{ ...correctAttempts[0], signature: "forged" }]), 0);
+assert.equal(isValidAttemptSignature(sampleRound[0], "e1:forged>endpoint:+"), false);
 
 const component = readFileSync(new URL("../src/components/modules/Week7_LoopRepair/index.tsx", import.meta.url), "utf8");
 const css = readFileSync(new URL("../src/app/globals.css", import.meta.url), "utf8");
@@ -79,15 +90,24 @@ const teacher = readFileSync(new URL("../src/app/teacher/session/[pin]/page.tsx"
 const selector = readFileSync(new URL("../src/components/teacher/ModuleSelector.tsx", import.meta.url), "utf8");
 const countdown = readFileSync(new URL("../src/components/common/ModuleStartCountdown.tsx", import.meta.url), "utf8");
 const demo = readFileSync(new URL("../src/components/common/ModuleGameplayDemo.tsx", import.meta.url), "utf8");
-const migration = readFileSync(new URL("../supabase/migrations/202610190037_week_seven_loop_repair.sql", import.meta.url), "utf8");
-assert.match(component, /week-7-loop-repair-v1/);
+const migration = readFileSync(new URL("../supabase/migrations/202610190038_week_seven_loop_repair_check.sql", import.meta.url), "utf8");
+assert.match(component, /week-7-loop-repair-v2/);
+assert.match(component, /legacyGameId = "week-7-loop-repair-v1"/);
 assert.match(component, /data-control="polarity"/);
 assert.match(component, /data-control="direction"/);
-assert.match(component, /20-per-solved-diagram-no-tap-deduction/);
-assert.match(component, /solvedFeedbackDuration = 1100/);
-assert.doesNotMatch(component, />\s*(Sonraki|Next|Kontrol Et|Check)\s*</);
-assert.match(css, /\.loop-sign-control[\s\S]*?min-width:\s*4[4-9]px/);
-assert.match(css, /\.loop-direction-control[\s\S]*?min-width:\s*4[4-9]px/);
+assert.match(component, /data-direction=\{forward \? "forward" : "reverse"\}/);
+assert.match(component, /markerStart=\{!forward/);
+assert.match(component, /markerEnd=\{forward/);
+assert.match(component, /20-per-correct-checked-diagram-no-tap-deduction/);
+assert.match(component, /reviewDuration = 1000/);
+assert.match(component, /const checkDiagram/);
+assert.match(component, /check: "Kontrol Et"/);
+assert.match(component, /attempts: checkedAttempts/);
+assert.doesNotMatch(component, /isCaseSolved/);
+assert.match(css, /\.loop-sign-control \{[^}]*min-width:44px[^}]*background:transparent[^}]*border:0/);
+assert.match(css, /\.loop-direction-control \{[^}]*min-width:46px[^}]*border-radius:50%/);
+assert.match(css, /\.loop-repair-check \{[^}]*min-height:44px/);
+assert.match(css, /\.loop-edge\.edge-error/);
 assert.match(css, /prefers-reduced-motion:\s*reduce/);
 assert.match(student, /session\.selected_week === 7 && session\.current_module === 1/);
 assert.match(student, /<Week7LoopRepair[\s\S]*seedKey=\{`\$\{session\.id\}:\$\{student\.id\}:7:1:\$\{session\.current_run_number\}`\}/);
@@ -97,12 +117,13 @@ assert.match(selector, /const weekSevenModules/);
 assert.match(countdown, /weekSevenModuleOneBrief/);
 assert.match(demo, /function WeekSevenLoopRepairDemo/);
 assert.match(demo, /duration: 10/);
-assert.match(migration, /create or replace function public\.week7_loop_repair_score/);
-assert.match(migration, /when target_week_id = 7 and target_module_id = 1[\s\S]*week7_loop_repair_score/);
-assert.match(migration, /target_session\.selected_week = 7 and target_module_id > 1/);
-assert.match(migration, /target_session\.selected_week = 7 and target_session\.current_module = 1/);
-assert.doesNotMatch(migration, /alter table|create policy|grant (?:select|insert|update|delete)/i, "Week 7 must not broaden table or RLS access");
-assert.match(migration, /revoke all on function public\.week7_loop_repair_score\(jsonb\) from public, anon, authenticated/);
-assert.match(migration, /grant execute on function public\.week7_loop_repair_score\(jsonb\) to service_role/);
+assert.match(migration, /create or replace function public\.week7_loop_attempt_signature_valid/);
+assert.match(migration, /create or replace function public\.week7_loop_repair_score_v2/);
+assert.match(migration, /week-7-loop-repair-v1[\s\S]*week7_loop_repair_score/);
+assert.match(migration, /week-7-loop-repair-v2[\s\S]*week7_loop_repair_score_v2/);
+assert.match(migration, /wrong_v2[\s\S]*<> 0/);
+assert.doesNotMatch(migration, /alter table|create policy|grant (?:select|insert|update|delete)/i, "Week 7 v2 must not broaden table or RLS access");
+assert.match(migration, /revoke all on function public\.week7_loop_repair_score_v2\(jsonb\) from public, anon, authenticated/);
+assert.match(migration, /grant execute on function public\.week7_loop_repair_score_v2\(jsonb\) to service_role/);
 
-console.log("Week 7 loop repair validation passed: 20 cases, deterministic 5-case rounds, loop parity, errors, scoring, accessibility, and interaction contract.");
+console.log("Week 7 loop repair v2 validation passed: explicit checks, all-wrong completion, trusted mixed scoring, fixed-path arrows, accessibility, and backward compatibility.");
