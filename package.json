@@ -22,6 +22,7 @@
     "test:week6-simulation-repair": "node --no-warnings --experimental-strip-types scripts/validate-week6-simulation-repair.mjs",
     "test:week6-model-agency": "node --no-warnings --experimental-strip-types scripts/validate-week6-model-agency.mjs",
     "test:week6-speed-bonus": "node --no-warnings --experimental-strip-types scripts/validate-week6-speed-bonus.mjs",
+    "test:week7-loop-repair": "node --no-warnings --experimental-strip-types scripts/validate-week7-loop-repair.mjs",
     "test:run-load": "node scripts/report-run-load.mjs"
   },
   "dependencies": {

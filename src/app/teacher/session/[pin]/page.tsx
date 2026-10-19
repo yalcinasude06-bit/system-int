@@ -127,7 +127,7 @@ export default function TeacherSessionPage() {
   }
 
   async function startModule(currentModule: ModuleId) {
-    if (!session || (session.selected_week !== 1 && !(session.selected_week === 3 && currentModule <= 3) && !(session.selected_week === 4 && currentModule <= 3) && !(session.selected_week === 5 && currentModule <= 3) && !(session.selected_week === 6 && currentModule <= 3))) return;
+    if (!session || (session.selected_week !== 1 && !(session.selected_week === 3 && currentModule <= 3) && !(session.selected_week === 4 && currentModule <= 3) && !(session.selected_week === 5 && currentModule <= 3) && !(session.selected_week === 6 && currentModule <= 3) && !(session.selected_week === 7 && currentModule === 1))) return;
     setBusy(true); setError(""); setResultsViewOpen(false);
     try {
       setSession(await runTeacherModuleAction(session.id, "start", currentModule));
@@ -190,7 +190,8 @@ export default function TeacherSessionPage() {
   if (!session) return <><Navbar teacherContext={{ username, onLogout: leaveTeacherPanel }} /><main className="container page"><div className="notice error">{error || "Bu oturuma erişim izniniz yok."}</div></main></>;
 
   const currentSubmissions = submissions.filter((submission) => submission.is_submitted && submission.week_id === session.selected_week && submission.module_id === session.current_module && submission.run_number === session.current_run_number);
-  const speedBonusEligible = !(session.selected_week === 5 && (session.current_module === 2 || session.current_module === 3));
+  const speedBonusEligible = !(session.selected_week === 5 && (session.current_module === 2 || session.current_module === 3))
+    && !(session.selected_week === 7 && session.current_module === 1);
   const completedCount = new Set(currentSubmissions.filter((submission) => submission.completion_status === "completed" && submission.payload?.completionReason !== "teacher-ended").map((submission) => submission.student_id)).size;
   const resultRows = currentSubmissions.map((submission) => {
     const participant = students.find((student) => student.id === submission.student_id);

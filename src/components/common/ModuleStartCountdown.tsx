@@ -169,6 +169,11 @@ const weekSixModuleThreeBrief: Record<"tr" | "en", ModuleBrief> = {
   en: { icon: "🎨", title: "3. Model Agency · 10 Projects", description: "Read ten client requests and choose the right model type with one tap." },
 };
 
+const weekSevenModuleOneBrief: Record<"tr" | "en", ModuleBrief> = {
+  tr: { icon: "🔁", title: "Modül 1: Döngüyü Onar", description: "Yanlış işareti değiştir, ters oku çevir ve nedensel döngüyü tamamla." },
+  en: { icon: "🔁", title: "Module 1: Repair the Loop", description: "Toggle the wrong sign, reverse the wrong arrow, and complete the causal loop." },
+};
+
 type ModuleStartCountdownProps = {
   weekId?: number;
   moduleId: ModuleId;
@@ -206,6 +211,8 @@ export function ModuleStartCountdown({ weekId = 1, moduleId, startedAt, onComple
         ? weekSixModuleTwoBrief[locale]
       : weekId === 6 && moduleId === 3
         ? weekSixModuleThreeBrief[locale]
+      : weekId === 7 && moduleId === 1
+        ? weekSevenModuleOneBrief[locale]
       : moduleBriefs[moduleId];
 
   useEffect(() => {

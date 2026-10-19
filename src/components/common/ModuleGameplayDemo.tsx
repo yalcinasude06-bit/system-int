@@ -530,6 +530,29 @@ function WeekSixModelAgencyDemo() {
   </div>;
 }
 
+function WeekSevenLoopRepairDemo() {
+  const { locale } = useI18n();
+  const demoCopy = {
+    tr: { prompt: "İşareti ve ok yönünü onar", stock: "Stok", gap: "Stok açığı", plan: "Üretim planı", repaired: "Döngü onarıldı · B" },
+    en: { prompt: "Repair the sign and arrow direction", stock: "Inventory", gap: "Inventory gap", plan: "Production plan", repaired: "Loop repaired · B" },
+  } as const;
+  const text = demoCopy[locale];
+  const transition = { duration: 10, repeat: Infinity, ease: "easeInOut" as const, times: [0, .14, .27, .39, .52, .67, .82, 1] };
+  return <div className="module-demo week-seven-loop-demo" aria-hidden="true">
+    <strong>{text.prompt}</strong>
+    <div className="week-seven-demo-diagram">
+      <span className="week-seven-demo-node stock">{text.stock}</span>
+      <span className="week-seven-demo-node gap">{text.gap}</span>
+      <span className="week-seven-demo-node plan">{text.plan}</span>
+      <svg viewBox="0 0 100 64" preserveAspectRatio="none"><path d="M 29 16 Q 50 4 71 16" /><path d="M 78 24 Q 82 48 57 51" /><path d="M 43 51 Q 18 47 22 24" /></svg>
+      <motion.button className="week-seven-demo-control sign" tabIndex={-1} animate={{ backgroundColor: ["#fff", "#fff", "#fee2e2", "#dcfce7", "#dcfce7", "#dcfce7", "#dcfce7", "#fff"], borderColor: ["#cbd5e1", "#cbd5e1", "#ef4444", "#22c55e", "#22c55e", "#22c55e", "#22c55e", "#cbd5e1"], scale: [1, 1, .94, 1.08, 1, 1, 1, 1] }} transition={transition}><motion.span animate={{ opacity: [1, 1, 1, 0, 0, 0, 0, 1] }} transition={transition}>+</motion.span><motion.span className="fixed" animate={{ opacity: [0, 0, 0, 1, 1, 1, 1, 0] }} transition={transition}>−</motion.span></motion.button>
+      <motion.button className="week-seven-demo-control direction" tabIndex={-1} animate={{ backgroundColor: ["#fff", "#fff", "#fff", "#fff", "#fee2e2", "#dcfce7", "#dcfce7", "#fff"], borderColor: ["#cbd5e1", "#cbd5e1", "#cbd5e1", "#cbd5e1", "#ef4444", "#22c55e", "#22c55e", "#cbd5e1"], scale: [1, 1, 1, 1, .94, 1.08, 1, 1] }} transition={transition}><motion.span animate={{ opacity: [1, 1, 1, 1, 1, 0, 0, 1] }} transition={transition}>←</motion.span><motion.span className="fixed" animate={{ opacity: [0, 0, 0, 0, 0, 1, 1, 0] }} transition={transition}>→</motion.span></motion.button>
+      <motion.span className="week-seven-demo-hand" animate={{ x: [-48, -48, -48, -48, 56, 56, 56, -48], y: [8, 8, -2, 8, 8, -2, 8, 8], opacity: [1, 1, 1, 0, 0, 1, 0, 1], scale: [1, 1, .82, 1, 1, .82, 1, 1] }} transition={transition}><MousePointer2 /></motion.span>
+    </div>
+    <motion.div className="week-seven-demo-success" animate={{ opacity: [0, 0, 0, 0, 0, 0, 1, 0], y: [3, 3, 3, 3, 3, 3, 0, 3] }} transition={transition}>✓ {text.repaired}</motion.div>
+  </div>;
+}
+
 const demos: Record<ModuleId, () => ReactNode> = {
   1: ModuleOneDemo,
   2: ModuleTwoDemo,
@@ -563,6 +586,8 @@ export function ModuleGameplayDemo({ moduleId, weekId = 1 }: { moduleId: ModuleI
         ? WeekSixSimulationRepairDemo
       : weekId === 6 && moduleId === 3
         ? WeekSixModelAgencyDemo
+      : weekId === 7 && moduleId === 1
+        ? WeekSevenLoopRepairDemo
       : demos[moduleId];
   return <MotionConfig reducedMotion="user"><Demo /></MotionConfig>;
 }
