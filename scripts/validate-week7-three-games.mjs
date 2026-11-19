@@ -19,7 +19,7 @@ assert.equal(loopSignCases.every((item) => item.edges.length === item.nodes.leng
 
 assert.equal(stockRaceRounds.length, 5);
 const outcomes = stockRaceRounds.map(raceResult);
-assert.deepEqual(outcomes.map((result) => result.winner), ["A", "B", "C", "B", "A"]);
+assert.deepEqual(outcomes.map((result) => result.winner), ["A", "B", "C", "A", "C"]);
 for (const [index, result] of outcomes.entries()) {
   assert.equal(Number.isFinite(result.time), true);
   assert.ok(result.arrivals[1].time - result.arrivals[0].time > 0.2, `round ${index + 1} must have a unique winner`);
@@ -31,6 +31,10 @@ for (const [index, result] of outcomes.entries()) {
   }
 }
 assert.equal(timeToTarget(stockRaceRounds[1].tanks[1], 80), 6.25);
+const stockRaceSource = fs.readFileSync("src/components/modules/Week7_StockRace/stockRaceContent.ts", "utf8");
+const stockRaceEngine = fs.readFileSync("src/components/modules/Week7_StockRace/stockRaceEngine.ts", "utf8");
+assert.doesNotMatch(stockRaceSource, /change\s*:/, "Stock race flow rates must not change mid-race");
+assert.doesNotMatch(stockRaceEngine, /ratesAt|change\./, "Stock race calculations must use fixed inflow and outflow rates");
 assert.equal(scoreStockRaceAttempts(stockRaceRounds.map((round, index) => ({ roundId: round.id, prediction: outcomes[index].winner }))), 100);
 const stockSources = [
   "src/components/modules/Week7_StockRace/index.tsx",

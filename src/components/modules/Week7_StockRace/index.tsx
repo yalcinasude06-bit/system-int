@@ -7,7 +7,7 @@ import { useI18n } from "@/lib/i18n/I18nContext";
 import type { LearningModuleProps, ModuleDraft, ModuleSubmission } from "@/types";
 import styles from "../week7Games.module.css";
 import { WEEK7_REVIEW_TIMING } from "../week7ReviewTiming";
-import { stockRaceRounds, type StockTank, type TankId } from "./stockRaceContent";
+import { stockRaceRounds, type TankId } from "./stockRaceContent";
 import { raceResult, scoreStockRaceAttempts, stockAtTime, STOCK_RACE_GAME_ID, STOCK_RACE_MS_PER_SECOND, type StockRaceAttempt } from "./stockRaceEngine";
 
 type DraftPayload = { gameId?: unknown; attempts?: unknown; currentIndex?: unknown; currentPrediction?: unknown };
@@ -41,11 +41,6 @@ function restore(draft?: ModuleDraft | null) {
   const current = stockRaceRounds[Math.min(attempts.length, 4)]!;
   const prediction = payload.currentIndex === attempts.length && current.tanks.some((tank) => tank.id === payload.currentPrediction) ? payload.currentPrediction as TankId : null;
   return { attempts, prediction };
-}
-
-function currentFlows(tank: StockTank, time: number) {
-  if (!tank.change || time < tank.change.at) return { inflow: tank.inflow, outflow: tank.outflow };
-  return { inflow: tank.change.field === "inflow" ? tank.change.value : tank.inflow, outflow: tank.change.field === "outflow" ? tank.change.value : tank.outflow };
 }
 
 export function Week7StockRace({ onSubmit, onDraft, existingSubmission, existingDraft, forceSubmit }: LearningModuleProps) {
@@ -143,12 +138,11 @@ export function Week7StockRace({ onSubmit, onDraft, existingSubmission, existing
     <div key={current.id} className={styles.tankStage} data-round-id={current.id} style={{ "--tank-count": current.tanks.length } as React.CSSProperties}>
       {current.tanks.map((tank) => {
         const level = stockAtTime(tank, clock);
-        const flows = currentFlows(tank, clock);
         const winner = review?.winner === tank.id;
         return <motion.button type="button" key={tank.id} className={`${styles.tankCard} ${prediction === tank.id ? styles.selected : ""} ${winner ? styles.winner : ""}`} disabled={running || Boolean(review) || finalizing || Boolean(forceSubmit) || Boolean(existingSubmission)} whileTap={{ scale: .96 }} onClick={() => choose(tank.id)} aria-pressed={prediction === tank.id}>
           <div className={styles.tankVisual}><div className={styles.tankInterior}><div className={styles.water} data-level={level.toFixed(2)} aria-hidden="true" style={{ transform: `scaleY(${Math.max(0, Math.min(100, level)) / 100})` }}><i /></div><div className={styles.tankTargetLine} style={{ bottom: `${current.target}%` }}>{tank.id === current.tanks[0]!.id && <span>{text.target} {current.target}</span>}</div></div><b>{Math.round(level)}</b><span className={styles.inflowDrop}>↓</span><span className={styles.outflowDrop}>↘</span></div>
           <strong>{tank.id}</strong><small>{text.start} {tank.start}</small>
-          <div className={styles.flowLabels}><span>↓ {text.input} +{flows.inflow}</span><span>↘ {text.output} −{flows.outflow}</span></div>
+          <div className={styles.flowLabels}><span>↓ {text.input} +{tank.inflow}</span><span>↘ {text.output} −{tank.outflow}</span></div>
         </motion.button>;
       })}
     </div>

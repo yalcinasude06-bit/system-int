@@ -1,18 +1,12 @@
 import type { LocalizedText } from "../Week7_LoopSigns/loopSignsContent";
 
 export type TankId = "A" | "B" | "C";
-export type FlowChange = {
-  at: number;
-  field: "inflow" | "outflow";
-  value: number;
-};
 
 export type StockTank = {
   id: TankId;
   start: number;
   inflow: number;
   outflow: number;
-  change?: FlowChange;
 };
 
 export type StockRaceRound = {
@@ -61,10 +55,10 @@ export const stockRaceRounds: StockRaceRound[] = [
   {
     id: "SR4",
     target: 90,
-    prompt: t("4. saniyedeki Giriş değişimini hesaba kat.", "Account for the Inflow change at second 4."),
-    note: t("4. saniyede A: Giriş 12 → 5", "At second 4, A: Inflow 12 → 5"),
+    prompt: t("Yüksek başlangıç mı, hızlı dolum mu?", "A higher start or faster filling?"),
+    note: t("Başlangıç, Giriş ve Çıkış değerleri yarış boyunca sabit kalır.", "Start, Inflow, and Outflow stay constant throughout the race."),
     tanks: [
-      { id: "A", start: 35, inflow: 12, outflow: 3, change: { at: 4, field: "inflow", value: 5 } },
+      { id: "A", start: 35, inflow: 12, outflow: 3 },
       { id: "B", start: 55, inflow: 8, outflow: 3 },
       { id: "C", start: 60, inflow: 7, outflow: 3 },
     ],
@@ -72,10 +66,10 @@ export const stockRaceRounds: StockRaceRound[] = [
   {
     id: "SR5",
     target: 85,
-    prompt: t("2. saniyedeki Çıkış değişimini hesaba kat.", "Account for the Outflow change at second 2."),
-    note: t("2. saniyede A: Çıkış 6 → 1", "At second 2, A: Outflow 6 → 1"),
+    prompt: t("Giriş ve Çıkışı birlikte karşılaştır.", "Compare Inflow and Outflow together."),
+    note: t("Her deponun akış değerleri yarış boyunca değişmez.", "Each tank's flow values stay unchanged throughout the race."),
     tanks: [
-      { id: "A", start: 55, inflow: 8, outflow: 6, change: { at: 2, field: "outflow", value: 1 } },
+      { id: "A", start: 55, inflow: 8, outflow: 6 },
       { id: "B", start: 50, inflow: 8, outflow: 3 },
       { id: "C", start: 60, inflow: 7, outflow: 3 },
     ],

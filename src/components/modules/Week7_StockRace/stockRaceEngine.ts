@@ -8,32 +8,15 @@ export type StockRaceAttempt = {
   prediction: TankId;
 };
 
-function ratesAt(tank: StockTank, time: number) {
-  const changed = tank.change && time >= tank.change.at;
-  return {
-    inflow: changed && tank.change?.field === "inflow" ? tank.change.value : tank.inflow,
-    outflow: changed && tank.change?.field === "outflow" ? tank.change.value : tank.outflow,
-  };
-}
-
 export function stockAtTime(tank: StockTank, time: number): number {
-  const firstDuration = tank.change ? Math.min(time, tank.change.at) : time;
-  const first = tank.start + firstDuration * (tank.inflow - tank.outflow);
-  if (!tank.change || time <= tank.change.at) return Math.max(0, Math.min(100, first));
-  const changed = ratesAt(tank, time);
-  const result = first + (time - tank.change.at) * (changed.inflow - changed.outflow);
-  return Math.max(0, Math.min(100, result));
+  const level = tank.start + time * (tank.inflow - tank.outflow);
+  return Math.max(0, Math.min(100, level));
 }
 
 export function timeToTarget(tank: StockTank, target: number): number {
   if (tank.start >= target) return 0;
-  const firstRate = tank.inflow - tank.outflow;
-  if (!tank.change) return firstRate > 0 ? (target - tank.start) / firstRate : Number.POSITIVE_INFINITY;
-  const valueAtChange = tank.start + firstRate * tank.change.at;
-  if (firstRate > 0 && valueAtChange >= target) return (target - tank.start) / firstRate;
-  const changed = ratesAt(tank, tank.change.at);
-  const secondRate = changed.inflow - changed.outflow;
-  return secondRate > 0 ? tank.change.at + (target - valueAtChange) / secondRate : Number.POSITIVE_INFINITY;
+  const netRate = tank.inflow - tank.outflow;
+  return netRate > 0 ? (target - tank.start) / netRate : Number.POSITIVE_INFINITY;
 }
 
 export function raceResult(round: StockRaceRound) {
