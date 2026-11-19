@@ -29,8 +29,8 @@ const copy = {
   },
   en: {
     title: "WEEK 7 · MODULE 1", stage: "Stage", score: "Score", instruction: "Tap the empty signs: choose + / −.", reset: "Reset", check: "Check",
-    loopQuestion: "This loop?", reinforcing: "R Reinforcing", balancing: "B Balancing", same: "Same-direction effect", opposite: "Opposite-direction effect",
-    correct: "Signs completed", reconsider: "Reconsider the sign", completed: "You completed all five loops", partial: "Your checked stages were saved",
+    loopQuestion: "What kind of loop?", reinforcing: "R Reinforcing", balancing: "B Balancing", same: "Same-direction effect", opposite: "Opposite-direction effect",
+    correct: "Signs complete", reconsider: "Reconsider the sign", completed: "You completed all five loops", partial: "Your checked stages were saved",
     saveError: "Your answer could not be saved. Check your connection and try again.", saving: "Saving your answer…", locked: "Your answers for this round are locked.", retry: "Save again",
   },
 } as const;

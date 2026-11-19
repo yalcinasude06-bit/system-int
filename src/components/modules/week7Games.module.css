@@ -26,9 +26,9 @@
 .shell > * { min-width: 0; }
 
 .header { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 7px; }
-.header > b { min-width: 0; overflow: hidden; padding: 7px 10px; color: #fff; background: #426f5c; border-radius: 10px; font-size: 12px; letter-spacing: .025em; text-overflow: ellipsis; white-space: nowrap; }
-.header > span { min-width: 82px; padding: 6px 8px; color: #617069; background: rgba(255, 255, 255, .88); border: 1px solid #d8e3da; border-radius: 9px; font-size: 11px; font-weight: 800; text-align: center; }
-.header strong { color: var(--w7-ink); font-size: 13px; }
+.header > b { min-width: 0; overflow: hidden; padding: 7px 10px; color: #fff; background: #426f5c; border-radius: 10px; font-size: 13px; letter-spacing: .025em; text-overflow: ellipsis; white-space: nowrap; }
+.header > span { min-width: 82px; padding: 6px 8px; color: #617069; background: rgba(255, 255, 255, .88); border: 1px solid #d8e3da; border-radius: 9px; font-size: 12px; font-weight: 800; text-align: center; }
+.header strong { color: var(--w7-ink); font-size: 14px; }
 
 .progress { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; }
 .progress i { height: 4px; background: #dbe4dc; border-radius: 999px; }
@@ -36,18 +36,18 @@
 .progress i.done { background: #55a379; }
 
 .prompt { min-width: 0; display: grid; gap: 2px; padding: 6px 9px; background: rgba(255, 255, 255, .76); border: 1px solid #dce5dd; border-radius: 10px; line-height: 1.18; text-align: center; }
-.prompt strong { font-size: 13px; }
-.prompt small { overflow: hidden; color: #62736b; font-size: 10px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.prompt strong { font-size: 14px; }
+.prompt small { color: #62736b; font-size: 12px; font-weight: 700; line-height: 1.25; }
 
 .loopCanvas { min-height: 0; flex: 1 1 250px; position: relative; overflow: hidden; background: linear-gradient(rgba(255, 255, 255, .76), rgba(255, 255, 255, .76)), radial-gradient(circle, #cadbd0 1px, transparent 1px); background-size: auto, 17px 17px; border: 1px solid #d5e2d8; border-radius: 17px; isolation: isolate; }
 .loopCanvas > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .loopEdge { fill: none; stroke: #6e837a; stroke-width: 1.65; stroke-linecap: round; vector-effect: non-scaling-stroke; }
 .loopEdgeReviewed { stroke: #3d8b65; stroke-dasharray: 8 5; animation: travel 1s linear both; }
 .loopCanvas marker path { fill: #637a70; }
-.loopNode { width: clamp(78px, 22%, 132px); min-height: 44px; position: absolute; z-index: 2; display: grid; place-items: center; padding: 5px 7px; color: #314e43; background: #fffef9; border: 2px solid #b8cfc0; border-radius: 13px; box-shadow: 0 5px 14px rgba(42, 73, 62, .09); font-size: 11px; font-weight: 900; line-height: 1.1; text-align: center; transform: translate(-50%, -50%); }
+.loopNode { width: clamp(78px, 22%, 132px); min-height: 44px; position: absolute; z-index: 2; display: grid; place-items: center; padding: 5px 7px; color: #314e43; background: #fffef9; border: 2px solid #b8cfc0; border-radius: 13px; box-shadow: 0 5px 14px rgba(42, 73, 62, .09); font-size: 12px; font-weight: 900; line-height: 1.15; text-align: center; transform: translate(-50%, -50%); }
 .signPositioner { position: absolute; z-index: 4; display: grid; place-items: center; transform: translate(-50%, -50%); }
 .signButton { width: 44px; height: 44px; min-width: 44px; min-height: 44px; display: grid; place-items: center; padding: 0; color: #38584c; background: #fff; border: 2px solid #8eaa9d; border-radius: 50%; box-shadow: 0 3px 11px rgba(42, 73, 62, .15); font-size: 22px; font-weight: 950; cursor: pointer; }
-.signButton small { position: absolute; right: -6px; bottom: -4px; min-width: 18px; padding: 2px; color: #fff; background: #3d8b65; border: 2px solid #fff; border-radius: 50%; font-size: 10px; line-height: 12px; }
+.signButton small { position: absolute; right: -6px; bottom: -4px; min-width: 20px; padding: 2px; color: #fff; background: #3d8b65; border: 2px solid #fff; border-radius: 50%; font-size: 11px; line-height: 13px; }
 .signButton.incorrect { color: #a02d3e; background: #fff2f3; border-color: #cc5363; }
 .signButton.incorrect small { background: #a02d3e; }
 .signButton.correct { color: #236b49; background: #eaf7ef; border-color: #55a379; }
@@ -58,11 +58,11 @@
 .loopPulseInner span { position: absolute; right: -14px; top: -9px; color: var(--w7-gold); font-size: 21px; }
 
 .feedback { min-height: 48px; display: grid; place-items: center; align-content: center; gap: 2px; padding: 5px 9px; background: rgba(255, 255, 255, .82); border: 1px solid #d9e4db; border-radius: 10px; line-height: 1.15; text-align: center; }
-.feedback strong { font-size: 12px; }
-.feedback small { max-width: 100%; overflow: hidden; color: #617168; font-size: 9px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.feedback strong { font-size: 13px; }
+.feedback small { max-width: 100%; color: #617168; font-size: 11px; font-weight: 700; line-height: 1.2; white-space: normal; }
 .loopChoice { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 6px; }
-.loopChoice > b { font-size: 10px; }
-.loopChoice button, .tankChoices button { min-height: 44px; padding: 5px 8px; color: #38584c; background: #fff; border: 1.5px solid #b9cbbf; border-radius: 9px; font-size: 10px; font-weight: 850; cursor: pointer; }
+.loopChoice > b { font-size: 12px; }
+.loopChoice button, .tankChoices button { min-height: 44px; padding: 5px 8px; color: #38584c; background: #fff; border: 1.5px solid #b9cbbf; border-radius: 9px; font-size: 12px; font-weight: 850; cursor: pointer; }
 .loopChoice button.selected, .tankChoices button.selected { color: #fff; background: #39775c; border-color: #39775c; box-shadow: 0 0 0 3px rgba(57, 119, 92, .13); }
 
 .actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -83,16 +83,16 @@
 .water::before { top: -5px; background: rgba(226, 251, 255, .74); animation: waterSurface 1.8s ease-in-out infinite alternate; }
 .water::after { top: -2px; left: -48%; background: rgba(255, 255, 255, .22); animation: waterSurface 2.5s ease-in-out -1s infinite alternate-reverse; }
 .tankTargetLine { position: absolute; z-index: 2; left: -4px; right: -4px; border-top: 2px dashed #d59a2f; pointer-events: none; }
-.tankTargetLine span { position: absolute; left: 0; top: 2px; max-width: 100%; padding: 1px 3px; color: #805b1a; background: rgba(255, 249, 231, .94); border-radius: 4px; font-size: 8px; font-weight: 900; white-space: nowrap; }
+.tankTargetLine span { position: absolute; left: 0; top: 2px; max-width: 100%; padding: 1px 3px; color: #805b1a; background: rgba(255, 249, 231, .94); border-radius: 4px; font-size: 11px; font-weight: 900; white-space: nowrap; }
 .water i { position: absolute; left: -12%; top: -4px; width: 124%; height: 9px; background: rgba(220, 249, 255, .72); border-radius: 50%; animation: waterWave 1.25s ease-in-out infinite alternate; }
 .tankVisual > b { position: absolute; z-index: 3; left: 50%; top: 50%; color: #24516a; text-shadow: 0 1px #fff; font-size: 16px; transform: translate(-50%, -50%); }
 .inflowDrop, .outflowDrop { position: absolute; z-index: 5; color: #247eb0; font-size: 18px; font-weight: 950; }
 .inflowDrop { left: 7px; top: 2px; animation: flowDown .85s linear infinite; }
 .outflowDrop { right: 4px; bottom: 2px; animation: flowOut .9s linear infinite; }
 .tankCard > strong { color: #284f60; font-size: 17px; }
-.tankCard > small { color: #637982; font-size: 9px; font-weight: 800; }
+.tankCard > small { color: #637982; font-size: 11px; font-weight: 800; }
 .flowLabels { min-width: 0; display: grid; gap: 2px; }
-.flowLabels span { overflow: hidden; padding: 2px 3px; background: #f0f8fa; border-radius: 5px; font-size: 9px; font-weight: 850; text-overflow: ellipsis; white-space: nowrap; }
+.flowLabels span { overflow: hidden; padding: 3px; background: #f0f8fa; border-radius: 5px; font-size: 11px; font-weight: 850; text-overflow: ellipsis; white-space: nowrap; }
 .flowLabels span:last-child { color: #755c39; background: #fff7e8; }
 .tankChoices { display: flex; gap: 6px; }
 .tankChoices button { width: 48px; padding-inline: 5px; font-size: 13px; }
@@ -108,11 +108,11 @@
 .studentCurve { stroke: #226b8f; stroke-width: 4; filter: drop-shadow(0 2px 2px rgba(34, 107, 143, .15)); }
 .studentCurve.reviewed { opacity: .48; }
 .actualCurve { stroke: #2d8b57; stroke-width: 3.5; stroke-dasharray: 7 4; }
-.yLabel, .xLabel, .today { position: absolute; z-index: 3; color: #5d7168; font-size: 9px; font-weight: 900; pointer-events: none; }
+.yLabel, .xLabel, .today { position: absolute; z-index: 3; color: #5d7168; font-size: 11px; font-weight: 900; pointer-events: none; }
 .yLabel { left: 4px; top: 4px; writing-mode: vertical-rl; transform: rotate(180deg); }
 .xLabel { right: 7px; bottom: 3px; }
 .today { left: 42%; bottom: 3px; color: #9a6d1e; transform: translateX(-50%); }
-.chartLegend { position: absolute; z-index: 5; right: 10px; top: 8px; display: flex; gap: 8px; padding: 3px 5px; background: rgba(255, 255, 255, .82); border-radius: 6px; font-size: 8px; font-weight: 800; }
+.chartLegend { position: absolute; z-index: 5; right: 10px; top: 8px; display: flex; gap: 8px; padding: 4px 6px; background: rgba(255, 255, 255, .88); border-radius: 6px; font-size: 11px; font-weight: 800; }
 .chartLegend span { display: flex; align-items: center; gap: 3px; }
 .chartLegend i { width: 14px; border-top: 3px solid; }
 .studentLegend { border-color: #226b8f !important; }
@@ -123,7 +123,7 @@
 .centered { align-items: center; justify-content: center; text-align: center; }
 .centered h2, .centered p { max-width: 540px; margin: 0; }
 .centered svg { color: #3c7d5d; }
-.retryButton { min-height: 38px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 4px 10px; color: #fff; background: #367859; border: 1px solid #367859; border-radius: 8px; font-size: 11px; font-weight: 850; cursor: pointer; }
+.retryButton { min-height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 5px 11px; color: #fff; background: #367859; border: 1px solid #367859; border-radius: 8px; font-size: 12px; font-weight: 850; cursor: pointer; }
 
 @keyframes travel { from { stroke-dashoffset: 34; } to { stroke-dashoffset: 0; } }
 @keyframes winnerPop { 50% { transform: translateY(-3px) scale(1.025); } }
@@ -136,50 +136,50 @@
   :global(main.student-game-page):has(.shell) { padding-top: 5px; padding-bottom: 0; }
   .shell { height: calc(100dvh - 61px - env(safe-area-inset-bottom)); max-height: calc(100dvh - 61px - env(safe-area-inset-bottom)); margin-inline: -5px; gap: 4px; padding: 5px max(6px, env(safe-area-inset-right)) max(4px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left)); border-radius: 12px; }
   .header { gap: 4px; }
-  .header > b { padding: 5px 7px; font-size: 10px; }
-  .header > span { min-width: 57px; padding: 4px; font-size: 10px; }
-  .header strong { font-size: 11px; }
+  .header > b { padding: 6px 7px; font-size: 11.5px; }
+  .header > span { min-width: 62px; padding: 5px; font-size: 11px; }
+  .header strong { font-size: 12px; }
   .progress { gap: 3px; }
   .progress i { height: 3px; }
   .prompt { padding: 4px 6px; }
-  .prompt strong { font-size: 12px; }
-  .prompt small { display: block; font-size: 10px; white-space: normal; line-height: 1.12; }
+  .prompt strong { font-size: 13px; }
+  .prompt small { display: block; font-size: 11.5px; white-space: normal; line-height: 1.2; }
   .loopCanvas { flex-basis: 210px; border-radius: 11px; }
-  .loopNode { width: clamp(64px, 23%, 88px); min-height: 40px; padding: 3px 4px; border-radius: 9px; font-size: 9px; }
+  .loopNode { width: clamp(72px, 24%, 98px); min-height: 42px; padding: 4px 5px; border-radius: 9px; font-size: 11px; }
   .signButton { font-size: 19px; }
   .feedback { min-height: 43px; padding: 3px 6px; }
-  .feedback strong { font-size: 11px; }
-  .feedback small { font-size: 9px; }
+  .feedback strong { font-size: 12.5px; }
+  .feedback small { font-size: 11px; }
   .loopChoice { gap: 4px; }
-  .loopChoice > b { font-size: 10px; }
-  .loopChoice button { font-size: 10px; }
-  .primaryButton, .secondaryButton { padding: 5px 10px; font-size: 11px; }
+  .loopChoice > b { font-size: 11.5px; }
+  .loopChoice button { font-size: 11.5px; }
+  .primaryButton, .secondaryButton { padding: 6px 11px; font-size: 12px; }
   .primaryButton { min-width: 115px; }
   .tankStage { flex-basis: 210px; gap: 5px; padding: 22px 4px 3px; border-radius: 11px; }
   .tankCard { grid-template-rows: minmax(90px, 1fr) auto auto auto; padding: 3px; }
   .tankVisual { width: min(76px, 88%); min-height: 90px; }
   .tankCard > strong { font-size: 14px; }
-  .tankCard > small, .flowLabels span { font-size: 9px; line-height: 1.1; }
-  .tankTargetLine span { font-size: 8px; }
+  .tankCard > small, .flowLabels span { font-size: 10.5px; line-height: 1.15; }
+  .tankTargetLine span { font-size: 10.5px; }
   .tankChoices { gap: 4px; }
   .tankChoices button { width: 44px; min-height: 44px; }
   .chartWrap { flex-basis: 230px; padding: 2px 4px 15px 14px; border-radius: 11px; }
   .drawSurface { min-height: 175px; }
-  .chartLegend { top: 5px; right: 5px; font-size: 9px; }
+  .chartLegend { top: 5px; right: 5px; font-size: 10.5px; }
 }
 
 @media (max-width: 340px), (max-height: 590px) {
   .shell { gap: 2px; padding-top: 3px; }
   .prompt small { display: none; }
-  .prompt strong { font-size: 11px; }
-  .loopNode { width: 62px; min-height: 36px; font-size: 8.5px; }
+  .prompt strong { font-size: 12px; }
+  .loopNode { width: 68px; min-height: 38px; font-size: 10.5px; }
   .feedback { min-height: 38px; }
   .feedback small { max-height: 18px; white-space: normal; }
   .loopChoice button { min-height: 40px; }
   .primaryButton, .secondaryButton { min-height: 41px; }
   .tankCard { grid-template-rows: minmax(75px, 1fr) auto auto auto; }
   .tankVisual { min-height: 75px; }
-  .flowLabels span { padding: 1px 2px; font-size: 8.5px; }
+  .flowLabels span { padding: 2px; font-size: 10.5px; }
   .drawSurface { min-height: 145px; }
 }
 
