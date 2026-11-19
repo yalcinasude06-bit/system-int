@@ -26,6 +26,9 @@ for (const [index, result] of outcomes.entries()) {
   const winnerTank = stockRaceRounds[index].tanks.find((tank) => tank.id === result.winner);
   assert.ok(winnerTank);
   assert.ok(Math.abs(stockAtTime(winnerTank, result.time) - stockRaceRounds[index].target) < 0.001);
+  for (const tank of stockRaceRounds[index].tanks) {
+    assert.notEqual(stockAtTime(tank, result.time / 2), tank.start, `round ${index + 1} tank ${tank.id} must visibly change level while racing`);
+  }
 }
 assert.equal(timeToTarget(stockRaceRounds[1].tanks[1], 80), 6.25);
 assert.equal(scoreStockRaceAttempts(stockRaceRounds.map((round, index) => ({ roundId: round.id, prediction: outcomes[index].winner }))), 100);
@@ -51,14 +54,15 @@ for (const source of [loopUi, stockUi, curveUi]) {
   assert.doesNotMatch(source, /if \(completed\) return/, "A module-specific completion screen must not replace common feedback");
   assert.match(source, /saveError:[\s\S]*?retry:/, "Failed final submissions must be retryable in the game");
 }
-assert.match(stockUi, /height: `\$\{level\}%`/, "The tank fill must track the same 0-100 value displayed to students");
+assert.match(stockUi, /data-level=\{level\.toFixed\(2\)\}[^>]*scaleY\(\$\{Math\.max\(0, Math\.min\(100, level\)\) \/ 100\}\)/, "The tank fill's DOM level and animated height must track the live stock calculation");
 assert.match(stockUi, /bottom: `\$\{current\.target\}%`/, "The target line must use the scenario's target scale");
 assert.match(stockUi, /className=\{styles\.tankStage\} data-round-id=\{current\.id\}/, "Each stock round should remount its visual stage to avoid leaking prior-round liquid state");
 assert.match(stockUi, /review\?\.roundIndex \?\? Math\.min\(attempts\.length, stockRaceRounds\.length - 1\)/, "The reviewed stock race must remain selected until its result delay ends");
 assert.match(week7Css, /\.tankInterior \{[^}]*inset: 4px[^}]*overflow: hidden/);
-assert.match(week7Css, /\.water \{[^}]*bottom: 0/);
+assert.match(week7Css, /\.water \{[^}]*inset: 0; height: 100%[^}]*transform-origin: center bottom/);
 assert.match(week7Css, /\.water::before, \.water::after/);
-assert.match(stockUi, /styles\.water\} style=\{\{ height: `\$\{level\}%` \}\}/);
+assert.match(stockUi, /className=\{styles\.water\} data-level=\{level\.toFixed\(2\)\}[^>]*style=\{\{ transform:/);
+assert.match(week7Css, /\.water \{[^}]*inset: 0; height: 100%[^}]*transform-origin: center bottom[^}]*transition: transform/);
 assert.match(reviewTiming, /loopSigns: \{ normal: 1450, reducedMotion: 700 \}/);
 assert.match(reviewTiming, /stockRace: \{ normal: 1550, reducedMotion: 650 \}/);
 assert.match(reviewTiming, /drawCurve: \{ normal: 1550, reducedMotion: 800 \}/);
