@@ -40,7 +40,11 @@ const stockUi = fs.readFileSync("src/components/modules/Week7_StockRace/index.ts
 const curveUi = fs.readFileSync("src/components/modules/Week7_DrawTheCurve/index.tsx", "utf8");
 const week7Css = fs.readFileSync("src/components/modules/week7Games.module.css", "utf8");
 const demos = fs.readFileSync("src/components/common/ModuleGameplayDemo.tsx", "utf8");
+const reviewTiming = fs.readFileSync("src/components/modules/week7ReviewTiming.ts", "utf8");
 assert.match(loopUi, /signPositioner/, "Sign positioning must be separate from its motion button transform");
+assert.match(loopUi, /className=\{styles\.loopPulse\}><motion\.div className=\{styles\.loopPulseInner\}/, "Loop result must have a fixed center wrapper separate from its scale animation");
+assert.match(week7Css, /\.loopPulse \{[^}]*left: 50%; top: 50%; width: 0; height: 0/);
+assert.doesNotMatch(week7Css, /\.loopPulse \{[^}]*transform:/, "The fixed loop center must not share a transform with Framer Motion");
 assert.match(loopUi, /markerEnd=\{`url\(#w7-loop-arrow-\$\{item\.id\}\)`\}/, "Every causal edge needs a visible direction marker");
 assert.match(loopUi, /refX="9"[\s\S]*?markerUnits="userSpaceOnUse"/, "Loop arrowheads should sit at the trimmed node boundary");
 for (const source of [loopUi, stockUi, curveUi]) {
@@ -49,13 +53,27 @@ for (const source of [loopUi, stockUi, curveUi]) {
 }
 assert.match(stockUi, /height: `\$\{level\}%`/, "The tank fill must track the same 0-100 value displayed to students");
 assert.match(stockUi, /bottom: `\$\{current\.target\}%`/, "The target line must use the scenario's target scale");
+assert.match(stockUi, /className=\{styles\.tankStage\} data-round-id=\{current\.id\}/, "Each stock round should remount its visual stage to avoid leaking prior-round liquid state");
 assert.match(week7Css, /\.tankInterior \{[^}]*inset: 4px[^}]*overflow: hidden/);
+assert.match(week7Css, /\.water \{[^}]*bottom: 0/);
+assert.match(stockUi, /styles\.water\} style=\{\{ height: `\$\{level\}%` \}\}/);
+assert.match(reviewTiming, /loopSigns: \{ normal: 1450, reducedMotion: 700 \}/);
+assert.match(reviewTiming, /stockRace: \{ normal: 1550, reducedMotion: 650 \}/);
+assert.match(reviewTiming, /drawCurve: \{ normal: 1550, reducedMotion: 800 \}/);
+for (const [source, key] of [[loopUi, "loopSigns"], [stockUi, "stockRace"], [curveUi, "drawCurve"]]) {
+  assert.match(source, new RegExp(`WEEK7_REVIEW_TIMING\\.${key}\\.reducedMotion`));
+  assert.match(source, new RegExp(`WEEK7_REVIEW_TIMING\\.${key}\\.normal`));
+}
+assert.match(curveUi, /<div className=\{styles\.prompt\}><strong>\{text\.instruction\}<\/strong><\/div>/, "The curve prompt above the chart should only contain the drawing instruction");
+assert.match(curveUi, /review \? `\+\$\{review\.points\}\/20 · \$\{current\.label\[locale\]\}` : current\.label\[locale\]/, "Curve label must remain visible below the chart during play and review");
+assert.match(curveUi, /<small>\{current\.prompt\[locale\]\}<\/small>/, "The concise scenario description should remain below the chart");
 assert.match(curveUi, /const sharedStart = current\.pastValues\.at\(-1\)!/);
 assert.match(curveUi, /\{ x: 0, y: sharedStart \}/, "Student and actual curves must share the past-curve endpoint");
 assert.match(curveUi, /\(92 - svgY\) \/ 82/, "Pointer input must map to the chart plot coordinates");
 assert.doesNotMatch(demos.match(/function WeekSevenStockRaceDemo\(\)[\s\S]*?\n}\n\nfunction WeekSevenDrawCurveDemo/)?.[0] ?? "", /week-seven-stock-demo-start|text\.start/, "The stock intro must not show a decorative Start control");
 assert.doesNotMatch(demos.match(/function WeekSevenLoopSignsDemo\(\)[\s\S]*?\n}\n\nfunction WeekSevenStockRaceDemo/)?.[0] ?? "", /text\.prompt/, "Loop intro instruction is already shown once in the briefing");
 assert.doesNotMatch(demos.match(/function WeekSevenDrawCurveDemo\(\)[\s\S]*?\n}\n\nconst demos/)?.[0] ?? "", /<strong>/, "Curve intro instruction is already shown once in the briefing");
+assert.match(demos, /M0 0L\.8 4\.2L1\.8 3\.2L3 5\.8L4 5\.3L2\.9 2\.5L5\.1 2\.5Z/, "The demo pointer should be small and anchored at the shared curve start");
 
 assert.equal(curveRounds.length, 5);
 const perfectCurves = curveRounds.map((round) => ({ roundId: round.id, points: targetPoints(round.id) }));

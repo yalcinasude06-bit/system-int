@@ -17,7 +17,7 @@ export const curveRounds: CurveRound[] = [
   {
     id: "DC1",
     kind: "linear",
-    prompt: t("Giriş, çıkıştan sabit miktarda fazla.", "Inflow exceeds outflow by a constant amount."),
+    prompt: t("Giriş, çıkıştan sabit miktarda fazla.", "Inflow exceeds outflow by a fixed amount."),
     label: t("Doğrusal artış", "Linear growth"),
     feedback: t("Sabit fark, aynı eğimle süren doğrusal artış üretir.", "A constant difference produces linear growth with the same slope."),
     pastValues: [.16, .18, .2, .22, .24, .26, .28, .3, .32, .34, .36, .38],
@@ -25,7 +25,7 @@ export const curveRounds: CurveRound[] = [
   {
     id: "DC2",
     kind: "exponential",
-    prompt: t("Büyüme miktarı mevcut nüfusla artıyor.", "The amount of growth rises with the current population."),
+    prompt: t("Büyüme miktarı mevcut nüfusla artar.", "Growth increases with the current population."),
     label: t("Üstel büyüme", "Exponential growth"),
     feedback: t("Büyüme mevcut miktara bağlı olduğunda çizgi giderek dikleşir.", "When growth depends on the current amount, the curve becomes progressively steeper."),
     pastValues: [.12, .13, .14, .15, .17, .19, .21, .23, .25, .27, .29, .31],
@@ -33,7 +33,7 @@ export const curveRounds: CurveRound[] = [
   {
     id: "DC3",
     kind: "goal-seeking",
-    prompt: t("Sistem sabit bir hedefe yaklaşıyor.", "The system is approaching a fixed target."),
+    prompt: t("Sistem sabit bir hedefe yaklaşıyor.", "The system approaches a fixed target."),
     label: t("Hedef arama", "Goal seeking"),
     feedback: t("Hedefe yaklaştıkça değişim yavaşlar ve çizgi yataylaşır.", "As the target gets closer, change slows and the curve levels off."),
     pastValues: [.12, .16, .2, .24, .27, .3, .32, .34, .36, .37, .38, .39],
@@ -41,7 +41,7 @@ export const curveRounds: CurveRound[] = [
   {
     id: "DC4",
     kind: "s-shaped",
-    prompt: t("Büyüme var ama kaynaklar sınırlı.", "Growth continues, but resources are limited."),
+    prompt: t("Büyüme sürer, ancak kaynaklar sınırlıdır.", "Growth continues, but resources are limited."),
     label: t("S-şekilli büyüme", "S-shaped growth"),
     feedback: t("Büyüme önce hızlanır, kaynak sınırına yaklaşırken yavaşlar.", "Growth first accelerates, then slows as it approaches the resource limit."),
     pastValues: [.08, .09, .1, .11, .12, .14, .16, .18, .2, .23, .26, .29],

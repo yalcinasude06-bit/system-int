@@ -52,9 +52,10 @@
 .signButton.incorrect small { background: #a02d3e; }
 .signButton.correct { color: #236b49; background: #eaf7ef; border-color: #55a379; }
 .signButton:disabled { opacity: 1; cursor: default; }
-.loopPulse { position: absolute; z-index: 5; left: 50%; top: 50%; display: grid; place-items: center; color: #fff; transform: translate(-50%, -50%); }
-.loopPulse b { width: 54px; height: 54px; display: grid; place-items: center; background: #35775a; border: 5px solid #d9efdf; border-radius: 50%; box-shadow: 0 8px 22px rgba(34, 99, 68, .22); font-size: 24px; }
-.loopPulse span { position: absolute; right: -14px; top: -9px; color: var(--w7-gold); font-size: 21px; }
+.loopPulse { position: absolute; z-index: 5; left: 50%; top: 50%; width: 0; height: 0; display: grid; place-items: center; }
+.loopPulseInner { position: relative; display: grid; place-items: center; color: #fff; }
+.loopPulseInner b { width: 54px; height: 54px; display: grid; place-items: center; background: #35775a; border: 5px solid #d9efdf; border-radius: 50%; box-shadow: 0 8px 22px rgba(34, 99, 68, .22); font-size: 24px; }
+.loopPulseInner span { position: absolute; right: -14px; top: -9px; color: var(--w7-gold); font-size: 21px; }
 
 .feedback { min-height: 48px; display: grid; place-items: center; align-content: center; gap: 2px; padding: 5px 9px; background: rgba(255, 255, 255, .82); border: 1px solid #d9e4db; border-radius: 10px; line-height: 1.15; text-align: center; }
 .feedback strong { font-size: 12px; }
@@ -113,6 +114,7 @@
 .chartLegend i { width: 14px; border-top: 3px solid; }
 .studentLegend { border-color: #226b8f !important; }
 .actualLegend { border-color: #2d8b57 !important; border-top-style: dashed !important; }
+.curveWarning { color: #8a641f !important; }
 
 .centered { align-items: center; justify-content: center; text-align: center; }
 .centered h2, .centered p { max-width: 540px; margin: 0; }

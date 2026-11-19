@@ -8,8 +8,7 @@ import type { LearningModuleProps, ModuleDraft, ModuleSubmission } from "@/types
 import styles from "../week7Games.module.css";
 import { loopSignCases, type LoopPolarity, type LoopSignCase, type LoopType } from "./loopSignsContent";
 import { LOOP_SIGNS_GAME_ID, scoreLoopSignAttempt, scoreLoopSignAttempts, toggleLoopSign, type LoopSignAttempt } from "./loopSignsEngine";
-
-const reviewMs = 1450;
+import { WEEK7_REVIEW_TIMING } from "../week7ReviewTiming";
 
 type DraftPayload = {
   gameId?: unknown;
@@ -113,7 +112,7 @@ function LoopCanvas({ item, signs, review, locked, onToggle }: { item: LoopSignC
         {review && <small>{edge.sign === "+" ? "+" : "−"}</small>}
       </motion.button></span>;
     })}
-    {review && <motion.div className={styles.loopPulse} initial={{ opacity: 0, scale: .65 }} animate={{ opacity: [0, 1, 1, 0], scale: [0.65, 1, 1.04, 1.08] }} transition={{ duration: 1.05 }}><b>{item.loopType}</b><span>{item.loopType === "R" ? "↗" : "◎"}</span></motion.div>}
+    {review && <div className={styles.loopPulse}><motion.div className={styles.loopPulseInner} initial={{ opacity: 0, scale: .65 }} animate={{ opacity: [0, 1, 1, 0], scale: [0.65, 1, 1.04, 1.08] }} transition={{ duration: 1.05 }}><b>{item.loopType}</b><span aria-hidden="true">{item.loopType === "R" ? "↗" : "◎"}</span></motion.div></div>}
   </div>;
 }
 
@@ -198,7 +197,7 @@ export function Week7LoopSigns({ onSubmit, onDraft, existingSubmission, existing
     const next = [...attemptsRef.current, attempt];
     attemptsRef.current = next; setAttempts(next); setReview({ incorrect, points });
     void onDraft?.(submissionFor(next, "draft"));
-    timerRef.current = window.setTimeout(() => advance(next), reduceMotion ? 700 : reviewMs);
+    timerRef.current = window.setTimeout(() => advance(next), reduceMotion ? WEEK7_REVIEW_TIMING.loopSigns.reducedMotion : WEEK7_REVIEW_TIMING.loopSigns.normal);
   };
 
   useEffect(() => { if (forceSubmit && !finalizing && !existingSubmission) finalize(attemptsRef.current, "teacher-ended"); }, [finalizing, existingSubmission, finalize, forceSubmit]);

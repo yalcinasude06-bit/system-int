@@ -6,6 +6,7 @@ import { LockKeyhole, Play, RotateCcw } from "lucide-react";
 import { useI18n } from "@/lib/i18n/I18nContext";
 import type { LearningModuleProps, ModuleDraft, ModuleSubmission } from "@/types";
 import styles from "../week7Games.module.css";
+import { WEEK7_REVIEW_TIMING } from "../week7ReviewTiming";
 import { stockRaceRounds, type StockTank, type TankId } from "./stockRaceContent";
 import { raceResult, scoreStockRaceAttempts, stockAtTime, STOCK_RACE_GAME_ID, STOCK_RACE_MS_PER_SECOND, type StockRaceAttempt } from "./stockRaceEngine";
 
@@ -125,7 +126,7 @@ export function Week7StockRace({ onSubmit, onDraft, existingSubmission, existing
       attemptsRef.current = next;
       setAttempts(next); setReview({ winner: outcome.winner, time: outcome.time, correct: selected === outcome.winner });
       void onDraft?.(submissionFor(next, "draft", null));
-      timerRef.current = window.setTimeout(() => advance(next), reduceMotion ? 650 : 1550);
+      timerRef.current = window.setTimeout(() => advance(next), reduceMotion ? WEEK7_REVIEW_TIMING.stockRace.reducedMotion : WEEK7_REVIEW_TIMING.stockRace.normal);
     };
     frameRef.current = requestAnimationFrame(tick);
   };
@@ -139,7 +140,7 @@ export function Week7StockRace({ onSubmit, onDraft, existingSubmission, existing
     <header className={styles.header}><b>{text.title}</b><span>{text.round} <strong>{index + 1}/5</strong></span><span>{text.score} <strong>{score}</strong></span></header>
     <div className={styles.progress}>{stockRaceRounds.map((round, roundIndex) => <i key={round.id} className={roundIndex < attempts.length ? styles.done : roundIndex === index ? styles.active : ""} />)}</div>
     <div className={styles.prompt}><strong>{current.prompt[locale]}</strong><small>{current.note[locale]}</small></div>
-    <div className={styles.tankStage} style={{ "--tank-count": current.tanks.length } as React.CSSProperties}>
+    <div key={current.id} className={styles.tankStage} data-round-id={current.id} style={{ "--tank-count": current.tanks.length } as React.CSSProperties}>
       {current.tanks.map((tank) => {
         const level = stockAtTime(tank, clock);
         const flows = currentFlows(tank, clock);

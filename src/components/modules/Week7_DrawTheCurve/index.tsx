@@ -6,6 +6,7 @@ import { Check, Eraser, LockKeyhole, RotateCcw } from "lucide-react";
 import { useI18n } from "@/lib/i18n/I18nContext";
 import type { LearningModuleProps, ModuleDraft, ModuleSubmission } from "@/types";
 import styles from "../week7Games.module.css";
+import { WEEK7_REVIEW_TIMING } from "../week7ReviewTiming";
 import { curveRounds } from "./curveContent";
 import { CURVE_SAMPLE_COUNT, DRAW_CURVE_GAME_ID, resamplePoints, scoreCurveAttempts, scoreCurvePoints, targetPoints, type CurveAttempt, type NormalizedPoint } from "./curveScoring";
 
@@ -151,7 +152,7 @@ export function Week7DrawTheCurve({ onSubmit, onDraft, existingSubmission, exist
     const attempt: CurveAttempt = { roundId: current.id, points: sampled };
     const next = [...attemptsRef.current, attempt]; attemptsRef.current = next; setAttempts(next); setReview({ points: earned, sampled });
     void onDraft?.(submissionFor(next, "draft", sampled));
-    timerRef.current = window.setTimeout(() => advance(next), reduceMotion ? 800 : 1550);
+    timerRef.current = window.setTimeout(() => advance(next), reduceMotion ? WEEK7_REVIEW_TIMING.drawCurve.reducedMotion : WEEK7_REVIEW_TIMING.drawCurve.normal);
   };
 
   useEffect(() => { if (forceSubmit && !finalizing && !existingSubmission) finalize(attemptsRef.current, "teacher-ended"); }, [finalizing, existingSubmission, finalize, forceSubmit]);
@@ -165,7 +166,7 @@ export function Week7DrawTheCurve({ onSubmit, onDraft, existingSubmission, exist
   return <section className={`${styles.shell} ${styles.curveShell}`} data-week7-game="draw-curve">
     <header className={styles.header}><b>{text.title}</b><span>{text.stage} <strong>{index + 1}/5</strong></span><span>{text.score} <strong>{score}</strong></span></header>
     <div className={styles.progress}>{curveRounds.map((round, roundIndex) => <i key={round.id} className={roundIndex < attempts.length ? styles.done : roundIndex === index ? styles.active : ""} />)}</div>
-    <div className={styles.prompt}><strong>{text.instruction}</strong><small>{current.prompt[locale]}</small></div>
+    <div className={styles.prompt}><strong>{text.instruction}</strong></div>
     <div className={styles.chartWrap}>
       <span className={styles.yLabel}>{text.stock} ↑</span><span className={styles.xLabel}>{text.time} →</span><span className={styles.today}>{text.today}</span>
       <svg className={styles.drawSurface} viewBox="0 0 100 100" preserveAspectRatio="none" role="application" aria-label={text.instruction} onPointerDown={begin} onPointerMove={move} onPointerUp={end} onPointerCancel={end}>
@@ -180,7 +181,7 @@ export function Week7DrawTheCurve({ onSubmit, onDraft, existingSubmission, exist
       </svg>
       <div className={styles.chartLegend}><span><i className={styles.studentLegend} />{text.yourLine}</span>{review && <span><i className={styles.actualLegend} />{text.actual}</span>}</div>
     </div>
-    <div className={styles.feedback} aria-live="polite">{finalizing ? <><strong>{submitting ? text.saving : failed ? text.saveError : ""}</strong>{failed && finalSubmission && <button type="button" className={styles.retryButton} onClick={() => void send(finalSubmission)}><RotateCcw size={15} />{text.retry}</button>}</> : review ? <><strong>+{review.points}/20 · {current.label[locale]}</strong><small>{current.feedback[locale]}</small></> : <><strong>{current.label[locale]}</strong><small>{enough ? current.prompt[locale] : text.drawMore}</small></>}</div>
+    <div className={styles.feedback} aria-live="polite">{finalizing ? <><strong>{submitting ? text.saving : failed ? text.saveError : ""}</strong>{failed && finalSubmission && <button type="button" className={styles.retryButton} onClick={() => void send(finalSubmission)}><RotateCcw size={15} />{text.retry}</button>}</> : <><strong>{review ? `+${review.points}/20 · ${current.label[locale]}` : current.label[locale]}</strong><small>{current.prompt[locale]}</small>{!review && !enough && <small className={styles.curveWarning}>{text.drawMore}</small>}</>}</div>
     <footer className={styles.actions}><button type="button" className={styles.secondaryButton} disabled={Boolean(review) || finalizing} onClick={clear}><Eraser size={17} />{text.clear}</button><button type="button" className={styles.primaryButton} disabled={!enough || Boolean(review) || finalizing} onClick={check}><Check size={18} />{text.check}</button></footer>
   </section>;
 }
