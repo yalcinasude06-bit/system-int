@@ -530,11 +530,11 @@ function WeekSixModelAgencyDemo() {
   </div>;
 }
 
-function WeekSevenLoopRepairDemo() {
+function WeekSevenLoopSignsDemo() {
   const { locale } = useI18n();
   const demoCopy = {
-    tr: { prompt: "İki işareti düzelt, sonucu tahmin et", stock: "Stok", gap: "Stok açığı", plan: "Üretim planı", question: "Stok artarsa açık ne olur?", options: ["Artar", "Azalır", "Aynı kalır"], result: "Doğru · +20 puan" },
-    en: { prompt: "Fix two signs and predict the outcome", stock: "Inventory", gap: "Inventory gap", plan: "Production plan", question: "What happens to the gap if inventory rises?", options: ["Increases", "Decreases", "Stays same"], result: "Correct · +20 points" },
+    tr: { prompt: "Boş işaretlere dokun, döngüyü tamamla", stock: "Reklam", gap: "Bilinirlik", plan: "Satış geliri", question: "Bu döngü?", options: ["R Pekiştirici", "B Dengeleyici"], result: "R · Tüm işaretler doğru" },
+    en: { prompt: "Tap the empty signs and complete the loop", stock: "Advertising", gap: "Awareness", plan: "Sales revenue", question: "This loop?", options: ["R Reinforcing", "B Balancing"], result: "R · All signs correct" },
   } as const;
   const text = demoCopy[locale];
   const transition = { duration: 10, repeat: Infinity, ease: "easeInOut" as const, times: [0, .12, .24, .36, .48, .62, .76, .9, 1] };
@@ -545,12 +545,45 @@ function WeekSevenLoopRepairDemo() {
       <span className="week-seven-demo-node gap">{text.gap}</span>
       <span className="week-seven-demo-node plan">{text.plan}</span>
       <svg viewBox="0 0 100 64" preserveAspectRatio="none"><defs><marker id="week-seven-demo-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" /></marker></defs><path markerEnd="url(#week-seven-demo-arrow)" d="M 29 16 Q 50 4 71 16" /><path markerEnd="url(#week-seven-demo-arrow)" d="M 78 24 Q 82 48 57 51" /><path markerEnd="url(#week-seven-demo-arrow)" d="M 43 51 Q 18 47 22 24" /></svg>
-      <motion.button className="week-seven-demo-control sign first" tabIndex={-1} animate={{ backgroundColor: ["#fff", "#fff", "#fee2e2", "#dcfce7", "#dcfce7", "#dcfce7", "#dcfce7", "#dcfce7", "#fff"], borderColor: ["#cbd5e1", "#cbd5e1", "#ef4444", "#22c55e", "#22c55e", "#22c55e", "#22c55e", "#22c55e", "#cbd5e1"], scale: [1, 1, .94, 1.08, 1, 1, 1, 1, 1] }} transition={transition}><motion.span animate={{ opacity: [1, 1, 1, 0, 0, 0, 0, 0, 1] }} transition={transition}>+</motion.span><motion.span className="fixed" animate={{ opacity: [0, 0, 0, 1, 1, 1, 1, 1, 0] }} transition={transition}>−</motion.span></motion.button>
-      <motion.button className="week-seven-demo-control sign second" tabIndex={-1} animate={{ backgroundColor: ["#fff", "#fff", "#fff", "#fff", "#fee2e2", "#dcfce7", "#dcfce7", "#dcfce7", "#fff"], borderColor: ["#cbd5e1", "#cbd5e1", "#cbd5e1", "#cbd5e1", "#ef4444", "#22c55e", "#22c55e", "#22c55e", "#cbd5e1"], scale: [1, 1, 1, 1, .94, 1.08, 1, 1, 1] }} transition={transition}><motion.span animate={{ opacity: [1, 1, 1, 1, 1, 0, 0, 0, 1] }} transition={transition}>−</motion.span><motion.span className="fixed" animate={{ opacity: [0, 0, 0, 0, 0, 1, 1, 1, 0] }} transition={transition}>+</motion.span></motion.button>
+      <motion.button className="week-seven-demo-control sign first" tabIndex={-1} animate={{ backgroundColor: ["#fff", "#fff", "#fff", "#dcfce7", "#dcfce7", "#dcfce7", "#dcfce7", "#dcfce7", "#fff"], borderColor: ["#cbd5e1", "#cbd5e1", "#cbd5e1", "#22c55e", "#22c55e", "#22c55e", "#22c55e", "#22c55e", "#cbd5e1"], scale: [1, 1, .94, 1.08, 1, 1, 1, 1, 1] }} transition={transition}><motion.span animate={{ opacity: [1, 1, 1, 0, 0, 0, 0, 0, 1] }} transition={transition}>?</motion.span><motion.span className="fixed" animate={{ opacity: [0, 0, 0, 1, 1, 1, 1, 1, 0] }} transition={transition}>+</motion.span></motion.button>
+      <motion.button className="week-seven-demo-control sign second" tabIndex={-1} animate={{ backgroundColor: ["#fff", "#fff", "#fff", "#fff", "#fff", "#dcfce7", "#dcfce7", "#dcfce7", "#fff"], borderColor: ["#cbd5e1", "#cbd5e1", "#cbd5e1", "#cbd5e1", "#cbd5e1", "#22c55e", "#22c55e", "#22c55e", "#cbd5e1"], scale: [1, 1, 1, 1, .94, 1.08, 1, 1, 1] }} transition={transition}><motion.span animate={{ opacity: [1, 1, 1, 1, 1, 0, 0, 0, 1] }} transition={transition}>?</motion.span><motion.span className="fixed" animate={{ opacity: [0, 0, 0, 0, 0, 1, 1, 1, 0] }} transition={transition}>−</motion.span></motion.button>
       <motion.span className="week-seven-demo-hand" animate={{ x: [-52, -52, -52, -52, 49, 49, 49, 0, -52], y: [5, 5, -2, 5, 34, 27, 34, 83, 5], opacity: [1, 1, 1, .25, 1, 1, .25, 1, 1], scale: [1, 1, .82, 1, 1, .82, 1, .82, 1] }} transition={transition}><MousePointer2 /></motion.span>
     </div>
     <div className="week-seven-demo-prediction"><b>{text.question}</b><div>{text.options.map((option, index) => <motion.span key={option} className={index === 1 ? "answer" : ""} animate={index === 1 ? { color: ["#526078", "#526078", "#526078", "#526078", "#526078", "#526078", "#17643e", "#17643e", "#526078"], backgroundColor: ["#fff", "#fff", "#fff", "#fff", "#fff", "#fff", "#e8f5ee", "#e8f5ee", "#fff"], borderColor: ["#d6dbe7", "#d6dbe7", "#d6dbe7", "#d6dbe7", "#d6dbe7", "#d6dbe7", "#65ad8a", "#65ad8a", "#d6dbe7"] } : undefined} transition={transition}>{String.fromCharCode(65 + index)} · {option}</motion.span>)}</div></div>
     <motion.div className="week-seven-demo-success" animate={{ opacity: [0, 0, 0, 0, 0, 0, 0, 1, 0], y: [3, 3, 3, 3, 3, 3, 3, 0, 3] }} transition={transition}>✓ {text.result}</motion.div>
+  </div>;
+}
+
+function WeekSevenStockRaceDemo() {
+  const { locale } = useI18n();
+  const demoCopy = {
+    tr: { prompt: "İlk dolacak depoyu tahmin et", input: "Giriş", output: "Çıkış", start: "Başlat", result: "A ilk ulaştı" },
+    en: { prompt: "Predict which tank fills first", input: "Inflow", output: "Outflow", start: "Start", result: "A arrived first" },
+  } as const;
+  const text = demoCopy[locale];
+  const transition = { duration: 10, repeat: Infinity, ease: "easeInOut" as const, times: [0, .13, .26, .42, .6, .76, .9, 1] };
+  return <div className="module-demo week-seven-stock-demo" aria-hidden="true">
+    <strong>{text.prompt}</strong>
+    <div className="week-seven-stock-demo-stage">
+      {[{ id: "A", input: 12, output: 4, heights: [24, 24, 24, 42, 65, 84, 84, 24] }, { id: "B", input: 7, output: 3, heights: [48, 48, 48, 57, 67, 75, 75, 48] }].map((tank) => <div className="week-seven-stock-demo-tank" key={tank.id}><div><motion.i animate={{ height: tank.heights.map((height) => `${height}%`) }} transition={transition} /></div><b>{tank.id}</b><small>↓ {text.input} +{tank.input}</small><small>↘ {text.output} −{tank.output}</small></div>)}
+      <motion.span className="week-seven-stock-demo-hand" animate={{ x: [-42, -42, -42, -42, -42, 0, 0, -42], y: [33, 33, 27, 33, 69, 69, 69, 33], scale: [1, 1, .82, 1, .82, 1, 1, 1], opacity: [1, 1, 1, .3, 1, .3, 0, 1] }} transition={transition}><MousePointer2 /></motion.span>
+    </div>
+    <motion.div className="week-seven-stock-demo-start" animate={{ backgroundColor: ["#fff", "#fff", "#e8f5ee", "#e8f5ee", "#e8f5ee", "#e8f5ee", "#e8f5ee", "#fff"] }} transition={transition}>{text.start}</motion.div>
+    <motion.div className="week-seven-demo-success" animate={{ opacity: [0, 0, 0, 0, 0, 0, 1, 0] }} transition={transition}>✓ {text.result}</motion.div>
+  </div>;
+}
+
+function WeekSevenDrawCurveDemo() {
+  const { locale } = useI18n();
+  const text = locale === "tr" ? "Grafiğin devamını çiz, sonucu karşılaştır" : "Draw the rest of the graph and compare";
+  const transition = { duration: 10, repeat: Infinity, ease: "easeInOut" as const, times: [0, .15, .3, .48, .65, .8, .92, 1] };
+  return <div className="module-demo week-seven-curve-demo" aria-hidden="true">
+    <strong>{text}</strong>
+    <div className="week-seven-curve-demo-chart">
+      <svg viewBox="0 0 100 58" preserveAspectRatio="none"><path className="axis" d="M5 4V53H96" /><line x1="43" y1="4" x2="43" y2="53" /><path className="past" d="M7 48 C20 44 31 37 43 30" /><motion.path className="student" d="M43 30 C57 25 70 17 93 9" initial={false} animate={{ pathLength: [0, 0, .2, .7, 1, 1, 1, 0], opacity: [0, 0, 1, 1, 1, .55, .55, 0] }} transition={transition} /><motion.path className="actual" d="M43 30 C57 27 72 19 93 8" initial={false} animate={{ pathLength: [0, 0, 0, 0, 0, .2, 1, 0], opacity: [0, 0, 0, 0, 0, 1, 1, 0] }} transition={transition} /></svg>
+      <motion.span className="week-seven-curve-demo-hand" animate={{ x: [-48, -48, -26, 4, 42, 42, 42, -48], y: [31, 31, 25, 14, 1, 1, 1, 31], opacity: [0, 1, 1, 1, 1, .3, 0, 0] }} transition={transition}><MousePointer2 /></motion.span>
+    </div>
+    <motion.div className="week-seven-demo-success" animate={{ opacity: [0, 0, 0, 0, 0, 0, 1, 0] }} transition={transition}>✓</motion.div>
   </div>;
 }
 
@@ -588,7 +621,11 @@ export function ModuleGameplayDemo({ moduleId, weekId = 1 }: { moduleId: ModuleI
       : weekId === 6 && moduleId === 3
         ? WeekSixModelAgencyDemo
       : weekId === 7 && moduleId === 1
-        ? WeekSevenLoopRepairDemo
+        ? WeekSevenLoopSignsDemo
+      : weekId === 7 && moduleId === 2
+        ? WeekSevenStockRaceDemo
+      : weekId === 7 && moduleId === 3
+        ? WeekSevenDrawCurveDemo
       : demos[moduleId];
   return <MotionConfig reducedMotion="user"><Demo /></MotionConfig>;
 }

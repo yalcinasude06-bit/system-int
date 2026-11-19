@@ -170,8 +170,18 @@ const weekSixModuleThreeBrief: Record<"tr" | "en", ModuleBrief> = {
 };
 
 const weekSevenModuleOneBrief: Record<"tr" | "en", ModuleBrief> = {
-  tr: { icon: "🔁", title: "Modül 1: Döngüyü Onar", description: "Yanlış işareti değiştir, ters oku çevir ve nedensel döngüyü tamamla." },
-  en: { icon: "🔁", title: "Module 1: Repair the Loop", description: "Toggle the wrong sign, reverse the wrong arrow, and complete the causal loop." },
+  tr: { icon: "🔁", title: "Modül 1: Döngü İşaretle", description: "Boş işaretlere dokun, döngüyü tamamla." },
+  en: { icon: "🔁", title: "Module 1: Sign the Loop", description: "Tap the empty signs and complete the loop." },
+};
+
+const weekSevenModuleTwoBrief: Record<"tr" | "en", ModuleBrief> = {
+  tr: { icon: "💧", title: "Modül 2: Stok Yarışı", description: "İlk dolacak depoyu tahmin et." },
+  en: { icon: "💧", title: "Module 2: Stock Race", description: "Predict which tank will fill first." },
+};
+
+const weekSevenModuleThreeBrief: Record<"tr" | "en", ModuleBrief> = {
+  tr: { icon: "📈", title: "Modül 3: Grafiğin Devamını Çiz", description: "Grafiğin devamını çiz, sonucu karşılaştır." },
+  en: { icon: "📈", title: "Module 3: Draw the Rest", description: "Draw the rest of the graph and compare the result." },
 };
 
 type ModuleStartCountdownProps = {
@@ -213,6 +223,10 @@ export function ModuleStartCountdown({ weekId = 1, moduleId, startedAt, onComple
         ? weekSixModuleThreeBrief[locale]
       : weekId === 7 && moduleId === 1
         ? weekSevenModuleOneBrief[locale]
+      : weekId === 7 && moduleId === 2
+        ? weekSevenModuleTwoBrief[locale]
+      : weekId === 7 && moduleId === 3
+        ? weekSevenModuleThreeBrief[locale]
       : moduleBriefs[moduleId];
 
   useEffect(() => {

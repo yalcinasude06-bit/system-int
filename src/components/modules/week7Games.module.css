@@ -1,0 +1,190 @@
+.shell {
+  --w7-ink: #29463d;
+  --w7-green: #2f7959;
+  --w7-soft-green: #e9f5ec;
+  --w7-gold: #d99a2b;
+  width: 100%;
+  max-width: 920px;
+  min-width: 0;
+  height: min(760px, calc(100dvh - 92px - env(safe-area-inset-bottom)));
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 11px;
+  overflow: hidden;
+  color: var(--w7-ink);
+  background:
+    radial-gradient(circle at 8% 4%, rgba(244, 207, 135, .25), transparent 28%),
+    radial-gradient(circle at 94% 8%, rgba(127, 188, 157, .23), transparent 31%),
+    linear-gradient(145deg, #fffdf7, #f8fbf7 58%, #f4f8f3);
+  border: 1px solid #d9e4da;
+  border-radius: 20px;
+  box-shadow: 0 18px 48px rgba(49, 86, 72, .13);
+}
+
+.shell > * { min-width: 0; }
+
+.header { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 7px; }
+.header > b { min-width: 0; overflow: hidden; padding: 7px 10px; color: #fff; background: #426f5c; border-radius: 10px; font-size: 12px; letter-spacing: .025em; text-overflow: ellipsis; white-space: nowrap; }
+.header > span { min-width: 82px; padding: 6px 8px; color: #617069; background: rgba(255, 255, 255, .88); border: 1px solid #d8e3da; border-radius: 9px; font-size: 11px; font-weight: 800; text-align: center; }
+.header strong { color: var(--w7-ink); font-size: 13px; }
+
+.progress { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; }
+.progress i { height: 4px; background: #dbe4dc; border-radius: 999px; }
+.progress i.active { background: var(--w7-gold); box-shadow: 0 0 0 3px rgba(217, 154, 43, .13); }
+.progress i.done { background: #55a379; }
+
+.prompt { min-width: 0; display: grid; gap: 2px; padding: 6px 9px; background: rgba(255, 255, 255, .76); border: 1px solid #dce5dd; border-radius: 10px; line-height: 1.18; text-align: center; }
+.prompt strong { font-size: 13px; }
+.prompt small { overflow: hidden; color: #62736b; font-size: 10px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+
+.loopCanvas { min-height: 0; flex: 1 1 250px; position: relative; overflow: hidden; background: linear-gradient(rgba(255, 255, 255, .76), rgba(255, 255, 255, .76)), radial-gradient(circle, #cadbd0 1px, transparent 1px); background-size: auto, 17px 17px; border: 1px solid #d5e2d8; border-radius: 17px; isolation: isolate; }
+.loopCanvas > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.loopEdge { fill: none; stroke: #6e837a; stroke-width: 1.65; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.loopEdgeReviewed { stroke: #3d8b65; stroke-dasharray: 8 5; animation: travel 1s linear both; }
+.loopCanvas marker path { fill: #637a70; }
+.loopNode { width: clamp(78px, 22%, 132px); min-height: 44px; position: absolute; z-index: 2; display: grid; place-items: center; padding: 5px 7px; color: #314e43; background: #fffef9; border: 2px solid #b8cfc0; border-radius: 13px; box-shadow: 0 5px 14px rgba(42, 73, 62, .09); font-size: 11px; font-weight: 900; line-height: 1.1; text-align: center; transform: translate(-50%, -50%); }
+.signButton { width: 44px; height: 44px; min-width: 44px; min-height: 44px; position: absolute; z-index: 4; display: grid; place-items: center; padding: 0; color: #38584c; background: #fff; border: 2px solid #8eaa9d; border-radius: 50%; box-shadow: 0 3px 11px rgba(42, 73, 62, .15); font-size: 22px; font-weight: 950; transform: translate(-50%, -50%); cursor: pointer; }
+.signButton small { position: absolute; right: -6px; bottom: -4px; min-width: 18px; padding: 2px; color: #fff; background: #3d8b65; border: 2px solid #fff; border-radius: 50%; font-size: 10px; line-height: 12px; }
+.signButton.incorrect { color: #a02d3e; background: #fff2f3; border-color: #cc5363; }
+.signButton.incorrect small { background: #a02d3e; }
+.signButton.correct { color: #236b49; background: #eaf7ef; border-color: #55a379; }
+.signButton:disabled { opacity: 1; cursor: default; }
+.loopPulse { position: absolute; z-index: 5; left: 50%; top: 50%; display: grid; place-items: center; color: #fff; transform: translate(-50%, -50%); }
+.loopPulse b { width: 54px; height: 54px; display: grid; place-items: center; background: #35775a; border: 5px solid #d9efdf; border-radius: 50%; box-shadow: 0 8px 22px rgba(34, 99, 68, .22); font-size: 24px; }
+.loopPulse span { position: absolute; right: -14px; top: -9px; color: var(--w7-gold); font-size: 21px; }
+
+.feedback { min-height: 48px; display: grid; place-items: center; align-content: center; gap: 2px; padding: 5px 9px; background: rgba(255, 255, 255, .82); border: 1px solid #d9e4db; border-radius: 10px; line-height: 1.15; text-align: center; }
+.feedback strong { font-size: 12px; }
+.feedback small { max-width: 100%; overflow: hidden; color: #617168; font-size: 9px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.loopChoice { display: grid; grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 6px; }
+.loopChoice > b { font-size: 10px; }
+.loopChoice button, .tankChoices button { min-height: 44px; padding: 5px 8px; color: #38584c; background: #fff; border: 1.5px solid #b9cbbf; border-radius: 9px; font-size: 10px; font-weight: 850; cursor: pointer; }
+.loopChoice button.selected, .tankChoices button.selected { color: #fff; background: #39775c; border-color: #39775c; box-shadow: 0 0 0 3px rgba(57, 119, 92, .13); }
+
+.actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.primaryButton, .secondaryButton { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 7px 15px; border-radius: 10px; font-size: 12px; font-weight: 900; cursor: pointer; }
+.primaryButton { min-width: 138px; color: #fff; background: #367859; border: 1px solid #367859; box-shadow: 0 6px 15px rgba(54, 120, 89, .2); }
+.secondaryButton { color: #466158; background: #fff; border: 1px solid #c6d6cb; }
+.primaryButton:disabled, .secondaryButton:disabled { opacity: .45; box-shadow: none; cursor: not-allowed; }
+
+.stockShell { --water: #4ca9de; }
+.tankStage { --tank-count: 3; min-height: 0; flex: 1 1 250px; position: relative; display: grid; grid-template-columns: repeat(var(--tank-count), minmax(0, 1fr)); align-items: stretch; gap: clamp(8px, 2vw, 18px); padding: 25px 9px 5px; background: linear-gradient(180deg, rgba(219, 244, 251, .72), rgba(255, 255, 255, .78)); border: 1px solid #d5e5e5; border-radius: 17px; }
+.targetLine { position: absolute; z-index: 4; left: 4%; right: 4%; top: 21%; border-top: 2px dashed #d59a2f; pointer-events: none; }
+.targetLine span { position: absolute; right: 0; top: -20px; padding: 2px 5px; color: #8c641d; background: #fff9e7; border-radius: 5px; font-size: 9px; font-weight: 900; }
+.tankCard { min-width: 0; min-height: 0; display: grid; grid-template-rows: minmax(105px, 1fr) auto auto auto; align-items: center; gap: 2px; padding: 4px 5px 6px; color: #315064; background: rgba(255, 255, 255, .54); border: 2px solid transparent; border-radius: 13px; cursor: pointer; }
+.tankCard.selected { background: #fff9e9; border-color: #d9a442; box-shadow: 0 0 0 3px rgba(217, 164, 66, .12); }
+.tankCard.winner { background: #edf9f1; border-color: #55a379; animation: winnerPop .48s ease both; }
+.tankVisual { width: min(92px, 82%); height: 100%; min-height: 105px; position: relative; justify-self: center; overflow: hidden; background: rgba(255, 255, 255, .58); border: 3px solid #72a8bd; border-top-color: #b9d9e2; border-radius: 12px 12px 18px 18px; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .55), 0 7px 16px rgba(52, 111, 137, .12); }
+.water { position: absolute; left: 0; right: 0; bottom: 0; min-height: 1px; overflow: hidden; background: linear-gradient(180deg, #72c8ee, #3498cf); transition: height 80ms linear; }
+.water i { position: absolute; left: -12%; top: -4px; width: 124%; height: 9px; background: rgba(220, 249, 255, .72); border-radius: 50%; animation: waterWave 1.25s ease-in-out infinite alternate; }
+.tankVisual > b { position: absolute; z-index: 3; left: 50%; top: 50%; color: #24516a; text-shadow: 0 1px #fff; font-size: 16px; transform: translate(-50%, -50%); }
+.inflowDrop, .outflowDrop { position: absolute; z-index: 5; color: #247eb0; font-size: 18px; font-weight: 950; }
+.inflowDrop { left: 7px; top: 2px; animation: flowDown .85s linear infinite; }
+.outflowDrop { right: 4px; bottom: 2px; animation: flowOut .9s linear infinite; }
+.tankCard > strong { color: #284f60; font-size: 17px; }
+.tankCard > small { color: #637982; font-size: 9px; font-weight: 800; }
+.flowLabels { min-width: 0; display: grid; gap: 2px; }
+.flowLabels span { overflow: hidden; padding: 2px 3px; background: #f0f8fa; border-radius: 5px; font-size: 9px; font-weight: 850; text-overflow: ellipsis; white-space: nowrap; }
+.flowLabels span:last-child { color: #755c39; background: #fff7e8; }
+.tankChoices { display: flex; gap: 6px; }
+.tankChoices button { width: 48px; padding-inline: 5px; font-size: 13px; }
+
+.curveShell { --chart-blue: #347eaa; }
+.chartWrap { min-height: 0; flex: 1 1 270px; position: relative; padding: 3px 7px 17px 17px; background: rgba(255, 255, 255, .76); border: 1px solid #d6e3db; border-radius: 17px; }
+.drawSurface { width: 100%; height: 100%; min-height: 185px; display: block; overflow: visible; touch-action: none; user-select: none; cursor: crosshair; }
+.axis { fill: none; stroke: #72877e; stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+.futureArea { fill: rgba(224, 242, 234, .32); }
+.todayLine { stroke: #d0a24e; stroke-width: 1.2; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; }
+.pastCurve, .studentCurve, .actualCurve { fill: none; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.pastCurve { stroke: #63746d; stroke-width: 3; }
+.studentCurve { stroke: #226b8f; stroke-width: 4; filter: drop-shadow(0 2px 2px rgba(34, 107, 143, .15)); }
+.studentCurve.reviewed { opacity: .48; }
+.actualCurve { stroke: #2d8b57; stroke-width: 3.5; stroke-dasharray: 7 4; }
+.yLabel, .xLabel, .today { position: absolute; z-index: 3; color: #5d7168; font-size: 9px; font-weight: 900; pointer-events: none; }
+.yLabel { left: 4px; top: 4px; writing-mode: vertical-rl; transform: rotate(180deg); }
+.xLabel { right: 7px; bottom: 3px; }
+.today { left: 42%; bottom: 3px; color: #9a6d1e; transform: translateX(-50%); }
+.chartLegend { position: absolute; z-index: 5; right: 10px; top: 8px; display: flex; gap: 8px; padding: 3px 5px; background: rgba(255, 255, 255, .82); border-radius: 6px; font-size: 8px; font-weight: 800; }
+.chartLegend span { display: flex; align-items: center; gap: 3px; }
+.chartLegend i { width: 14px; border-top: 3px solid; }
+.studentLegend { border-color: #226b8f !important; }
+.actualLegend { border-color: #2d8b57 !important; border-top-style: dashed !important; }
+
+.centered { align-items: center; justify-content: center; text-align: center; }
+.centered h2, .centered p { max-width: 540px; margin: 0; }
+.centered svg { color: #3c7d5d; }
+
+@keyframes travel { from { stroke-dashoffset: 34; } to { stroke-dashoffset: 0; } }
+@keyframes winnerPop { 50% { transform: translateY(-3px) scale(1.025); } }
+@keyframes waterWave { to { transform: translateX(9%); } }
+@keyframes flowDown { from { transform: translateY(-5px); opacity: .25; } to { transform: translateY(10px); opacity: 1; } }
+@keyframes flowOut { from { transform: translate(-5px, -5px); opacity: .25; } to { transform: translate(6px, 6px); opacity: 1; } }
+
+@media (max-width: 600px) {
+  :global(main.student-game-page):has(.shell) { padding-top: 5px; padding-bottom: 0; }
+  .shell { height: calc(100dvh - 61px - env(safe-area-inset-bottom)); max-height: calc(100dvh - 61px - env(safe-area-inset-bottom)); margin-inline: -5px; gap: 4px; padding: 5px max(6px, env(safe-area-inset-right)) max(4px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left)); border-radius: 12px; }
+  .header { gap: 4px; }
+  .header > b { padding: 5px 7px; font-size: 9px; }
+  .header > span { min-width: 57px; padding: 4px; font-size: 9px; }
+  .header strong { font-size: 10px; }
+  .progress { gap: 3px; }
+  .progress i { height: 3px; }
+  .prompt { padding: 4px 6px; }
+  .prompt strong { font-size: 10px; }
+  .prompt small { font-size: 8px; }
+  .loopCanvas { flex-basis: 210px; border-radius: 11px; }
+  .loopNode { width: clamp(64px, 23%, 88px); min-height: 38px; padding: 3px 4px; border-radius: 9px; font-size: 8px; }
+  .signButton { font-size: 19px; }
+  .feedback { min-height: 43px; padding: 3px 6px; }
+  .feedback strong { font-size: 10px; }
+  .feedback small { font-size: 8px; }
+  .loopChoice { gap: 4px; }
+  .loopChoice > b { font-size: 8px; }
+  .loopChoice button { font-size: 8px; }
+  .primaryButton, .secondaryButton { padding: 5px 10px; font-size: 10px; }
+  .primaryButton { min-width: 115px; }
+  .tankStage { flex-basis: 210px; gap: 5px; padding: 22px 4px 3px; border-radius: 11px; }
+  .tankCard { grid-template-rows: minmax(90px, 1fr) auto auto auto; padding: 3px; }
+  .tankVisual { width: min(76px, 88%); min-height: 90px; }
+  .tankCard > strong { font-size: 14px; }
+  .tankCard > small, .flowLabels span { font-size: 7.5px; }
+  .targetLine span { font-size: 8px; }
+  .tankChoices { gap: 4px; }
+  .tankChoices button { width: 44px; min-height: 44px; }
+  .chartWrap { flex-basis: 230px; padding: 2px 4px 15px 14px; border-radius: 11px; }
+  .drawSurface { min-height: 175px; }
+  .chartLegend { top: 5px; right: 5px; font-size: 7px; }
+}
+
+@media (max-width: 340px), (max-height: 590px) {
+  .shell { gap: 2px; padding-top: 3px; }
+  .prompt small { display: none; }
+  .prompt strong { font-size: 9px; }
+  .loopNode { width: 62px; min-height: 35px; font-size: 7.5px; }
+  .feedback { min-height: 38px; }
+  .feedback small { max-height: 18px; white-space: normal; }
+  .loopChoice button { min-height: 40px; }
+  .primaryButton, .secondaryButton { min-height: 41px; }
+  .tankCard { grid-template-rows: minmax(75px, 1fr) auto auto auto; }
+  .tankVisual { min-height: 75px; }
+  .flowLabels span { padding: 1px 2px; }
+  .drawSurface { min-height: 145px; }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .shell { position: relative; }
+  .shell::after { content: "Lütfen telefonu dik tutun"; position: absolute; z-index: 30; inset: 0; display: grid; place-items: center; padding: 24px; color: #29463d; background: #fffdf7; font-size: 18px; font-weight: 900; text-align: center; }
+  :global(html[lang="en"]) .shell::after { content: "Please hold your phone upright"; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loopEdgeReviewed, .tankCard.winner, .water i, .inflowDrop, .outflowDrop { animation: none !important; }
+  .water { transition: none; }
+}
+
+@media (forced-colors: active) {
+  .shell, .loopNode, .signButton, .tankCard, .loopChoice button, .tankChoices button { border: 2px solid CanvasText; }
+  .loopEdge, .axis, .pastCurve, .studentCurve, .actualCurve { stroke: CanvasText; }
+}

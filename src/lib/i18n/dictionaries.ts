@@ -730,6 +730,18 @@ Object.assign(dictionaries.en, {
   "Müşteri ihtiyacına en uygun fiziksel, analog, şematik veya matematiksel model aracını seç.": "Choose the physical, analog, schematic, or mathematical modelling tool that best fits the client's need.",
 });
 
+Object.assign(dictionaries.en, {
+  "Döngü İşaretle": "Sign the Loop",
+  "5 aşama · boş işaretlerden R/B döngüsüne": "5 stages · from empty signs to an R/B loop",
+  "Boş ilişki rozetlerini + veya − ile doldur; döngünün pekiştirici mi dengeleyici mi olduğunu bul.": "Fill the empty relation badges with + or − and identify whether the loop is reinforcing or balancing.",
+  "Stok Yarışı": "Stock Race",
+  "5 yarış · Giriş ve Çıkış akışları": "5 races · Inflow and Outflow",
+  "Başlangıç stoklarıyla Giriş ve Çıkış değerlerini karşılaştır; hedefe ilk ulaşacak depoyu tahmin et.": "Compare starting stocks with Inflow and Outflow values and predict which tank reaches the target first.",
+  "Grafiğin Devamını Çiz": "Draw the Rest of the Graph",
+  "5 davranış · parmakla gelecek tahmini": "5 behaviors · draw a future prediction",
+  "Geçmiş eğrisini incele, geleceği çiz ve gerçek sistem davranışıyla karşılaştır.": "Study the past curve, draw the future, and compare it with the actual system behavior.",
+});
+
 const dynamicTranslations: Array<[RegExp, (match: RegExpMatchArray) => string]> = [
   [/^Hafta (\d+)$/, (m) => `Week ${m[1]}`],
   [/^Hafta (\d+) modülleri$/, (m) => `Week ${m[1]} modules`],

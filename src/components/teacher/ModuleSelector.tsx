@@ -43,7 +43,9 @@ const weekSixModules: typeof weekOneModules = [
 ];
 
 const weekSevenModules: typeof weekOneModules = [
-  { id: 1, title: "Döngüyü Onar", subtitle: "5 diyagram · 20 vakalık havuz", description: "Nedensel döngülerdeki yanlış ilişki işaretini ve ters ok yönünü bulup onar.", Icon: RefreshCw },
+  { id: 1, title: "Döngü İşaretle", subtitle: "5 aşama · boş işaretlerden R/B döngüsüne", description: "Boş ilişki rozetlerini + veya − ile doldur; döngünün pekiştirici mi dengeleyici mi olduğunu bul.", Icon: RefreshCw },
+  { id: 2, title: "Stok Yarışı", subtitle: "5 yarış · Giriş ve Çıkış akışları", description: "Başlangıç stoklarıyla Giriş ve Çıkış değerlerini karşılaştır; hedefe ilk ulaşacak depoyu tahmin et.", Icon: Gauge },
+  { id: 3, title: "Grafiğin Devamını Çiz", subtitle: "5 davranış · parmakla gelecek tahmini", description: "Geçmiş eğrisini incele, geleceği çiz ve gerçek sistem davranışıyla karşılaştır.", Icon: BarChart3 },
 ];
 
 export function WeekSelector({ activeWeek, onChange, disabled }: { activeWeek: number; onChange: (week: number) => void; disabled?: boolean }) {
