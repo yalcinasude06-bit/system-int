@@ -156,7 +156,7 @@ export function Week7DrawTheCurve({ onSubmit, onDraft, existingSubmission, exist
   };
 
   useEffect(() => { if (forceSubmit && !finalizing && !existingSubmission) finalize(attemptsRef.current, "teacher-ended"); }, [finalizing, existingSubmission, finalize, forceSubmit]);
-  useEffect(() => { if (restored.attempts.length === curveRounds.length && !existingSubmission) finalize(restored.attempts, "completed"); }, [existingSubmission, finalize, restored.attempts]);
+  useEffect(() => { if (restored.attempts.length === curveRounds.length && !review && !existingSubmission) finalize(restored.attempts, "completed"); }, [existingSubmission, finalize, restored.attempts, review]);
 
   if (existingSubmission) return <section className={`${styles.shell} ${styles.centered}`}><LockKeyhole size={42} /><h2>{text.locked}</h2></section>;
 

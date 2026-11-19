@@ -52,7 +52,7 @@
 .signButton.incorrect small { background: #a02d3e; }
 .signButton.correct { color: #236b49; background: #eaf7ef; border-color: #55a379; }
 .signButton:disabled { opacity: 1; cursor: default; }
-.loopPulse { position: absolute; z-index: 5; left: 50%; top: 50%; width: 0; height: 0; display: grid; place-items: center; }
+.loopPulse { position: absolute; z-index: 5; left: 50%; top: 50%; width: 0; height: 0; display: grid; place-items: center; transform: translate(-50%, -50%); }
 .loopPulseInner { position: relative; display: grid; place-items: center; color: #fff; }
 .loopPulseInner b { width: 54px; height: 54px; display: grid; place-items: center; background: #35775a; border: 5px solid #d9efdf; border-radius: 50%; box-shadow: 0 8px 22px rgba(34, 99, 68, .22); font-size: 24px; }
 .loopPulseInner span { position: absolute; right: -14px; top: -9px; color: var(--w7-gold); font-size: 21px; }

@@ -132,7 +132,7 @@ export function Week7StockRace({ onSubmit, onDraft, existingSubmission, existing
   };
 
   useEffect(() => { if (forceSubmit && !finalizing && !existingSubmission) finalize(attemptsRef.current, "teacher-ended"); }, [finalizing, existingSubmission, finalize, forceSubmit]);
-  useEffect(() => { if (restored.attempts.length === stockRaceRounds.length && !existingSubmission) finalize(restored.attempts, "completed"); }, [existingSubmission, finalize, restored.attempts]);
+  useEffect(() => { if (restored.attempts.length === stockRaceRounds.length && !review && !existingSubmission) finalize(restored.attempts, "completed"); }, [existingSubmission, finalize, restored.attempts, review]);
 
   if (existingSubmission) return <section className={`${styles.shell} ${styles.centered}`}><LockKeyhole size={42} /><h2>{text.locked}</h2></section>;
 

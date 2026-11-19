@@ -43,8 +43,8 @@ const demos = fs.readFileSync("src/components/common/ModuleGameplayDemo.tsx", "u
 const reviewTiming = fs.readFileSync("src/components/modules/week7ReviewTiming.ts", "utf8");
 assert.match(loopUi, /signPositioner/, "Sign positioning must be separate from its motion button transform");
 assert.match(loopUi, /className=\{styles\.loopPulse\}><motion\.div className=\{styles\.loopPulseInner\}/, "Loop result must have a fixed center wrapper separate from its scale animation");
-assert.match(week7Css, /\.loopPulse \{[^}]*left: 50%; top: 50%; width: 0; height: 0/);
-assert.doesNotMatch(week7Css, /\.loopPulse \{[^}]*transform:/, "The fixed loop center must not share a transform with Framer Motion");
+assert.match(week7Css, /\.loopPulse \{[^}]*left: 50%; top: 50%; width: 0; height: 0[^}]*transform: translate\(-50%, -50%\)/, "The fixed outer wrapper must center the icon independently");
+assert.doesNotMatch(week7Css, /\.loopPulseInner \{[^}]*transform:/, "The animated inner element must not overwrite the outer centering transform");
 assert.match(loopUi, /markerEnd=\{`url\(#w7-loop-arrow-\$\{item\.id\}\)`\}/, "Every causal edge needs a visible direction marker");
 assert.match(loopUi, /refX="9"[\s\S]*?markerUnits="userSpaceOnUse"/, "Loop arrowheads should sit at the trimmed node boundary");
 for (const source of [loopUi, stockUi, curveUi]) {
@@ -63,6 +63,7 @@ assert.match(reviewTiming, /drawCurve: \{ normal: 1550, reducedMotion: 800 \}/);
 for (const [source, key] of [[loopUi, "loopSigns"], [stockUi, "stockRace"], [curveUi, "drawCurve"]]) {
   assert.match(source, new RegExp(`WEEK7_REVIEW_TIMING\\.${key}\\.reducedMotion`));
   assert.match(source, new RegExp(`WEEK7_REVIEW_TIMING\\.${key}\\.normal`));
+  assert.match(source, /restored\.attempts\.length === [A-Za-z]+\.length && !review && !existingSubmission/, "A live final answer saved as a draft must not bypass its visible review delay");
 }
 assert.match(curveUi, /<div className=\{styles\.prompt\}><strong>\{text\.instruction\}<\/strong><\/div>/, "The curve prompt above the chart should only contain the drawing instruction");
 assert.match(curveUi, /review \? `\+\$\{review\.points\}\/20 · \$\{current\.label\[locale\]\}` : current\.label\[locale\]/, "Curve label must remain visible below the chart during play and review");
