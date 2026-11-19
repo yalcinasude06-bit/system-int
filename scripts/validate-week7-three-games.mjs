@@ -35,6 +35,28 @@ const stockSources = [
 ].map((file) => fs.readFileSync(file, "utf8")).join("\n");
 assert.equal(/\bNet(?:\s+akış)?\b/i.test(stockSources), false, "Stock Race must not expose a Net label");
 
+const loopUi = fs.readFileSync("src/components/modules/Week7_LoopSigns/index.tsx", "utf8");
+const stockUi = fs.readFileSync("src/components/modules/Week7_StockRace/index.tsx", "utf8");
+const curveUi = fs.readFileSync("src/components/modules/Week7_DrawTheCurve/index.tsx", "utf8");
+const week7Css = fs.readFileSync("src/components/modules/week7Games.module.css", "utf8");
+const demos = fs.readFileSync("src/components/common/ModuleGameplayDemo.tsx", "utf8");
+assert.match(loopUi, /signPositioner/, "Sign positioning must be separate from its motion button transform");
+assert.match(loopUi, /markerEnd=\{`url\(#w7-loop-arrow-\$\{item\.id\}\)`\}/, "Every causal edge needs a visible direction marker");
+assert.match(loopUi, /refX="9"[\s\S]*?markerUnits="userSpaceOnUse"/, "Loop arrowheads should sit at the trimmed node boundary");
+for (const source of [loopUi, stockUi, curveUi]) {
+  assert.doesNotMatch(source, /if \(completed\) return/, "A module-specific completion screen must not replace common feedback");
+  assert.match(source, /saveError:[\s\S]*?retry:/, "Failed final submissions must be retryable in the game");
+}
+assert.match(stockUi, /height: `\$\{level\}%`/, "The tank fill must track the same 0-100 value displayed to students");
+assert.match(stockUi, /bottom: `\$\{current\.target\}%`/, "The target line must use the scenario's target scale");
+assert.match(week7Css, /\.tankInterior \{[^}]*inset: 4px[^}]*overflow: hidden/);
+assert.match(curveUi, /const sharedStart = current\.pastValues\.at\(-1\)!/);
+assert.match(curveUi, /\{ x: 0, y: sharedStart \}/, "Student and actual curves must share the past-curve endpoint");
+assert.match(curveUi, /\(92 - svgY\) \/ 82/, "Pointer input must map to the chart plot coordinates");
+assert.doesNotMatch(demos.match(/function WeekSevenStockRaceDemo\(\)[\s\S]*?\n}\n\nfunction WeekSevenDrawCurveDemo/)?.[0] ?? "", /week-seven-stock-demo-start|text\.start/, "The stock intro must not show a decorative Start control");
+assert.doesNotMatch(demos.match(/function WeekSevenLoopSignsDemo\(\)[\s\S]*?\n}\n\nfunction WeekSevenStockRaceDemo/)?.[0] ?? "", /text\.prompt/, "Loop intro instruction is already shown once in the briefing");
+assert.doesNotMatch(demos.match(/function WeekSevenDrawCurveDemo\(\)[\s\S]*?\n}\n\nconst demos/)?.[0] ?? "", /<strong>/, "Curve intro instruction is already shown once in the briefing");
+
 assert.equal(curveRounds.length, 5);
 const perfectCurves = curveRounds.map((round) => ({ roundId: round.id, points: targetPoints(round.id) }));
 assert.equal(scoreCurveAttempts(perfectCurves), 100);

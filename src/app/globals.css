@@ -2673,8 +2673,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 @media (forced-colors:active) { .loop-edge { stroke:CanvasText; }.loop-node,.loop-sign-control b,.loop-prediction-options button { border:2px solid CanvasText; }.loop-diagram.solved .loop-sign-control { opacity:1; } }
 
 /* Week 7 countdown demo */
-.week-seven-loop-demo { position:relative; display:grid; grid-template-rows:auto 78px auto auto; gap:3px; padding:7px 12px; color:#304255; }
-.week-seven-loop-demo>strong { font-size:.72rem; text-align:center; }
+.week-seven-loop-demo { position:relative; display:grid; grid-template-rows:78px auto auto; gap:3px; padding:7px 12px; color:#304255; }
 .week-seven-demo-diagram { position:relative; width:min(100%,350px); height:78px; margin:0 auto; }
 .week-seven-demo-diagram svg { position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
 .week-seven-demo-diagram svg>path { fill:none; stroke:#78918a; stroke-width:1.8; stroke-linecap:round; }.week-seven-demo-diagram marker path { fill:#78918a; }
@@ -2683,23 +2682,22 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .week-seven-demo-control { position:absolute; z-index:4; width:32px; height:32px; display:grid; place-items:center; padding:0; color:#334155; background:#fff; border:2px solid #cbd5e1; border-radius:8px; font-size:1rem; font-weight:900; }
 .week-seven-demo-control span { position:absolute; }.week-seven-demo-control.first { left:calc(50% - 16px); top:-1px; }.week-seven-demo-control.second { right:14%; bottom:1px; }
 .week-seven-demo-hand { position:absolute; z-index:7; left:50%; top:13px; color:#274c40; filter:drop-shadow(0 2px 3px rgba(0,0,0,.18)); }.week-seven-demo-hand svg { width:22px; height:22px; fill:#fff; }
-.week-seven-demo-prediction { display:grid; gap:2px; font-size:7px; font-weight:850; text-align:center; }.week-seven-demo-prediction>div { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:3px; }.week-seven-demo-prediction span { padding:3px 2px; color:#526078; background:#fff; border:1px solid #d6dbe7; border-radius:5px; }
+.week-seven-demo-prediction { display:grid; gap:2px; font-size:9px; font-weight:850; text-align:center; }.week-seven-demo-prediction>div { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:3px; }.week-seven-demo-prediction span { padding:4px 3px; color:#526078; background:#fff; border:1px solid #d6dbe7; border-radius:5px; }
 .week-seven-demo-success { min-height:14px; color:#17643e; font-size:.68rem; font-weight:900; text-align:center; }
-@media (max-width:430px) { .week-seven-loop-demo { padding-inline:6px; }.week-seven-demo-node { min-width:66px; max-width:88px; padding:5px; font-size:.58rem; }.week-seven-demo-prediction { font-size:6.5px; } }
+@media (max-width:430px) { .week-seven-loop-demo { padding-inline:6px; }.week-seven-demo-node { min-width:66px; max-width:88px; padding:5px; font-size:.62rem; }.week-seven-demo-prediction { font-size:8px; } }
 @media (prefers-reduced-motion:reduce) { .week-seven-demo-hand { display:none; }.week-seven-demo-control.sign span:first-child { opacity:0!important; }.week-seven-demo-control .fixed,.week-seven-demo-success { opacity:1!important; }.week-seven-demo-prediction .answer { color:#17643e!important; background:#e8f5ee!important; border-color:#65ad8a!important; } }
 
-.week-seven-stock-demo,.week-seven-curve-demo { position:relative; display:grid; grid-template-rows:auto minmax(98px,1fr) auto auto; gap:4px; padding:8px 12px; color:#304b43; }
-.week-seven-stock-demo>strong,.week-seven-curve-demo>strong { font-size:.72rem; text-align:center; }
+.week-seven-stock-demo,.week-seven-curve-demo { position:relative; display:grid; grid-template-rows:minmax(98px,1fr) auto; gap:4px; padding:8px 12px; color:#304b43; }
 .week-seven-stock-demo-stage { position:relative; display:flex; align-items:stretch; justify-content:center; gap:22px; min-height:98px; padding-top:5px; }
 .week-seven-stock-demo-tank { width:76px; display:grid; grid-template-rows:minmax(58px,1fr) auto auto auto; gap:1px; text-align:center; }
 .week-seven-stock-demo-tank>div { position:relative; overflow:hidden; border:2px solid #73a9bd; border-radius:8px 8px 12px 12px; }
 .week-seven-stock-demo-tank i { position:absolute; left:0; right:0; bottom:0; display:block; background:linear-gradient(#72c8ee,#3498cf); }
-.week-seven-stock-demo-tank b { font-size:.7rem; }.week-seven-stock-demo-tank small { font-size:6.5px; font-weight:850; }
-.week-seven-stock-demo-hand,.week-seven-curve-demo-hand { position:absolute; z-index:5; left:50%; top:16px; color:#274c40; filter:drop-shadow(0 2px 3px rgba(0,0,0,.18)); }.week-seven-stock-demo-hand svg,.week-seven-curve-demo-hand svg { width:20px; height:20px; fill:#fff; }
-.week-seven-stock-demo-start { justify-self:center; min-width:88px; padding:4px 10px; border:1px solid #80af98; border-radius:7px; font-size:.65rem; font-weight:900; text-align:center; }
+.week-seven-stock-demo-tank b { font-size:.8rem; }.week-seven-stock-demo-tank small { font-size:9px; font-weight:850; }
+.week-seven-demo-hand,.week-seven-stock-demo-hand { position:absolute; z-index:5; color:#274c40; filter:drop-shadow(0 2px 3px rgba(0,0,0,.18)); }.week-seven-demo-hand svg,.week-seven-stock-demo-hand svg { width:22px; height:22px; fill:#fff; }
 .week-seven-curve-demo-chart { position:relative; min-height:105px; }.week-seven-curve-demo-chart svg { width:100%; height:100%; overflow:visible; }
+.week-seven-curve-demo-hand { fill:#fff; stroke:#274c40; stroke-width:1.5; filter:drop-shadow(0 2px 2px rgba(0,0,0,.2)); pointer-events:none; }
 .week-seven-curve-demo-chart .axis { fill:none; stroke:#70877d; stroke-width:1.1; }.week-seven-curve-demo-chart line { stroke:#d0a24e; stroke-width:1; stroke-dasharray:3 2; }
 .week-seven-curve-demo-chart .past,.week-seven-curve-demo-chart .student,.week-seven-curve-demo-chart .actual { fill:none; stroke-linecap:round; vector-effect:non-scaling-stroke; }
 .week-seven-curve-demo-chart .past { stroke:#65746d; stroke-width:3; }.week-seven-curve-demo-chart .student { stroke:#277a9f; stroke-width:4; }.week-seven-curve-demo-chart .actual { stroke:#2f8a60; stroke-width:3; stroke-dasharray:6 4; }
 @media (max-width:430px) { .week-seven-stock-demo,.week-seven-curve-demo { padding-inline:6px; }.week-seven-stock-demo-stage { gap:12px; } }
-@media (prefers-reduced-motion:reduce) { .week-seven-stock-demo-hand,.week-seven-curve-demo-hand { display:none; }.week-seven-stock-demo-tank i { height:75%!important; }.week-seven-curve-demo-chart .student,.week-seven-curve-demo-chart .actual { opacity:1!important; stroke-dasharray:none!important; } }
+@media (prefers-reduced-motion:reduce) { .week-seven-stock-demo-hand,.week-seven-demo-hand,.week-seven-curve-demo-hand { display:none; }.week-seven-demo-control.sign { color:#17643e!important; background:#e8f5ee!important; border-color:#65ad8a!important; }.week-seven-stock-demo-tank:first-child { background:#e8f5ee; outline:2px solid #65ad8a; outline-offset:1px; }.week-seven-stock-demo-tank:first-child i { height:84%!important; }.week-seven-stock-demo-tank:nth-child(2) i { height:75%!important; }.week-seven-stock-demo .week-seven-demo-success { opacity:1!important; }.week-seven-curve-demo-chart .student,.week-seven-curve-demo-chart .actual { opacity:1!important; stroke-dasharray:none!important; stroke-dashoffset:0!important; }.week-seven-curve-demo .week-seven-demo-success { opacity:1!important; } }

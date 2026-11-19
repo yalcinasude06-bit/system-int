@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { Check, LockKeyhole, RotateCcw, Sparkles } from "lucide-react";
+import { Check, LockKeyhole, RotateCcw } from "lucide-react";
 import { useI18n } from "@/lib/i18n/I18nContext";
 import type { LearningModuleProps, ModuleDraft, ModuleSubmission } from "@/types";
 import styles from "../week7Games.module.css";
@@ -26,13 +26,13 @@ const copy = {
     title: "7. HAFTA · MODÜL 1", stage: "Aşama", score: "Puan", instruction: "Boş işaretlere dokun: + / − seç.", reset: "Sıfırla", check: "Kontrol Et",
     loopQuestion: "Bu döngü?", reinforcing: "R Pekiştirici", balancing: "B Dengeleyici", same: "Aynı yönlü etki", opposite: "Ters yönlü etki",
     correct: "İşaretler tamamlandı", reconsider: "İşareti yeniden düşün", completed: "Beş döngüyü de tamamladın", partial: "Kontrol ettiğin aşamalar kaydedildi",
-    detail: (score: number) => `Doğrulanmış puanın: ${score}/100. Hız bonusu tur kapanınca ayrıca hesaplanır.`, locked: "Bu turdaki yanıtların kilitli.", retry: "Tekrar kaydet",
+    saveError: "Yanıt kaydedilemedi. Bağlantını kontrol edip yeniden dene.", saving: "Yanıt kaydediliyor…", locked: "Bu turdaki yanıtların kilitli.", retry: "Tekrar kaydet",
   },
   en: {
     title: "WEEK 7 · MODULE 1", stage: "Stage", score: "Score", instruction: "Tap the empty signs: choose + / −.", reset: "Reset", check: "Check",
     loopQuestion: "This loop?", reinforcing: "R Reinforcing", balancing: "B Balancing", same: "Same-direction effect", opposite: "Opposite-direction effect",
     correct: "Signs completed", reconsider: "Reconsider the sign", completed: "You completed all five loops", partial: "Your checked stages were saved",
-    detail: (score: number) => `Verified score: ${score}/100. The speed bonus is calculated separately when the round closes.`, locked: "Your answers for this round are locked.", retry: "Save again",
+    saveError: "Your answer could not be saved. Check your connection and try again.", saving: "Saving your answer…", locked: "Your answers for this round are locked.", retry: "Save again",
   },
 } as const;
 
@@ -62,7 +62,7 @@ function restore(draft?: ModuleDraft | null) {
   return { attempts, index, signs, loopType };
 }
 
-function edgeGeometry(item: LoopSignCase, index: number) {
+function edgeGeometry(item: LoopSignCase, index: number, canvasWidth: number, canvasHeight: number) {
   const from = item.nodes[index]!;
   const to = item.nodes[(index + 1) % item.nodes.length]!;
   const mid = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
@@ -70,25 +70,48 @@ function edgeGeometry(item: LoopSignCase, index: number) {
   const dy = mid.y - 48;
   const length = Math.max(1, Math.hypot(dx, dy));
   const control = { x: mid.x + (dx / length) * 7, y: mid.y + (dy / length) * 7 };
-  return { path: `M ${from.x} ${from.y} Q ${control.x} ${control.y} ${to.x} ${to.y}`, sign: control };
+  const nodeHalfWidth = Math.min(132, Math.max(78, canvasWidth * .22)) / canvasWidth * 50;
+  const nodeHalfHeight = 25 / canvasHeight * 100;
+  const boundary = (node: typeof from, toward: { x: number; y: number }) => {
+    const vx = toward.x - node.x;
+    const vy = toward.y - node.y;
+    const scale = 1 / Math.max(Math.abs(vx) / Math.max(nodeHalfWidth, 1), Math.abs(vy) / Math.max(nodeHalfHeight, 1), .001);
+    return { x: node.x + vx * scale, y: node.y + vy * scale };
+  };
+  const start = boundary(from, control);
+  const end = boundary(to, control);
+  const signLength = Math.max(1, Math.hypot(to.x - from.x, to.y - from.y));
+  const sign = { x: control.x + ((from.y - to.y) / signLength) * 8, y: control.y + ((to.x - from.x) / signLength) * 8 };
+  return { path: `M ${start.x} ${start.y} Q ${control.x} ${control.y} ${end.x} ${end.y}`, sign };
 }
 
 function LoopCanvas({ item, signs, review, locked, onToggle }: { item: LoopSignCase; signs: Array<LoopPolarity | null>; review: Review | null; locked: boolean; onToggle: (index: number) => void }) {
   const { locale } = useI18n();
-  return <div className={styles.loopCanvas}>
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const [canvasSize, setCanvasSize] = useState({ width: 400, height: 300 });
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const measure = () => setCanvasSize({ width: canvas.clientWidth || 400, height: canvas.clientHeight || 300 });
+    measure();
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
+    observer?.observe(canvas);
+    return () => observer?.disconnect();
+  }, []);
+  return <div ref={canvasRef} className={styles.loopCanvas}>
     <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-      <defs><marker id={`w7-loop-arrow-${item.id}`} viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" /></marker></defs>
-      {item.edges.map((edge, index) => <path key={edge.id} className={`${styles.loopEdge} ${review ? styles.loopEdgeReviewed : ""}`} d={edgeGeometry(item, index).path} markerEnd={`url(#w7-loop-arrow-${item.id})`} />)}
+      <defs><marker id={`w7-loop-arrow-${item.id}`} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0L10 5L0 10z" /></marker></defs>
+      {item.edges.map((edge, index) => <path key={edge.id} className={`${styles.loopEdge} ${review ? styles.loopEdgeReviewed : ""}`} d={edgeGeometry(item, index, canvasSize.width, canvasSize.height).path} markerEnd={`url(#w7-loop-arrow-${item.id})`} />)}
     </svg>
     {item.nodes.map((node) => <span key={node.id} className={styles.loopNode} style={{ left: `${node.x}%`, top: `${node.y}%` }}>{node.label[locale]}</span>)}
     {item.edges.map((edge, index) => {
-      const point = edgeGeometry(item, index).sign;
+      const point = edgeGeometry(item, index, canvasSize.width, canvasSize.height).sign;
       const incorrect = Boolean(review?.incorrect.includes(index));
       const correct = Boolean(review) && !incorrect;
-      return <motion.button key={edge.id} type="button" whileTap={locked ? undefined : { scale: .82 }} className={`${styles.signButton} ${incorrect ? styles.incorrect : ""} ${correct ? styles.correct : ""}`} style={{ left: `${point.x}%`, top: `${point.y}%` } as CSSProperties} disabled={locked} aria-label={`${item.nodes[index]!.label[locale]} → ${item.nodes[(index + 1) % item.nodes.length]!.label[locale]}`} onClick={() => onToggle(index)}>
+      return <span key={edge.id} className={styles.signPositioner} style={{ left: `${point.x}%`, top: `${point.y}%` } as CSSProperties}><motion.button type="button" whileTap={locked ? undefined : { scale: .82 }} className={`${styles.signButton} ${incorrect ? styles.incorrect : ""} ${correct ? styles.correct : ""}`} disabled={locked} aria-label={`${item.nodes[index]!.label[locale]} → ${item.nodes[(index + 1) % item.nodes.length]!.label[locale]}`} onClick={() => onToggle(index)}>
         {signs[index] === null ? "?" : signs[index] === "+" ? "+" : "−"}
         {review && <small>{edge.sign === "+" ? "+" : "−"}</small>}
-      </motion.button>;
+      </motion.button></span>;
     })}
     {review && <motion.div className={styles.loopPulse} initial={{ opacity: 0, scale: .65 }} animate={{ opacity: [0, 1, 1, 0], scale: [0.65, 1, 1.04, 1.08] }} transition={{ duration: 1.05 }}><b>{item.loopType}</b><span>{item.loopType === "R" ? "↗" : "◎"}</span></motion.div>}
   </div>;
@@ -103,7 +126,7 @@ export function Week7LoopSigns({ onSubmit, onDraft, existingSubmission, existing
   const [signs, setSigns] = useState<Array<LoopPolarity | null>>(() => restored.signs ?? loopSignCases[restored.index]!.signs.map(() => null));
   const [loopType, setLoopType] = useState<LoopType | null>(restored.loopType);
   const [review, setReview] = useState<Review | null>(null);
-  const [completed, setCompleted] = useState(false);
+  const [finalizing, setFinalizing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [failed, setFailed] = useState(false);
   const [finalSubmission, setFinalSubmission] = useState<ModuleSubmission | null>(null);
@@ -136,7 +159,7 @@ export function Week7LoopSigns({ onSubmit, onDraft, existingSubmission, existing
     submittedRef.current = true;
     if (timerRef.current !== null) window.clearTimeout(timerRef.current);
     const submission = submissionFor(nextAttempts, reason);
-    setFinalSubmission(submission); setAttempts(nextAttempts); setCompleted(true); void send(submission);
+    setFinalSubmission(submission); setAttempts(nextAttempts); setFinalizing(true); void send(submission);
   }, [existingSubmission, send, submissionFor]);
 
   const advance = useCallback((nextAttempts: LoopSignAttempt[]) => {
@@ -151,24 +174,24 @@ export function Week7LoopSigns({ onSubmit, onDraft, existingSubmission, existing
   const saveDraft = useCallback((nextSigns = signsRef.current, nextLoop = loopTypeRef.current) => { void onDraft?.(submissionFor(attemptsRef.current, "draft", index, nextSigns, nextLoop)); }, [index, onDraft, submissionFor]);
 
   const toggle = (signIndex: number) => {
-    if (review || forceSubmit || existingSubmission) return;
+    if (review || finalizing || forceSubmit || existingSubmission) return;
     const next = signsRef.current.map((sign, itemIndex) => itemIndex === signIndex ? toggleLoopSign(sign) : sign);
     signsRef.current = next; setSigns(next); saveDraft(next, loopTypeRef.current);
   };
 
   const reset = () => {
-    if (review || forceSubmit || existingSubmission) return;
+    if (review || finalizing || forceSubmit || existingSubmission) return;
     const next = current.signs.map(() => null);
     signsRef.current = next; loopTypeRef.current = null; setSigns(next); setLoopType(null); saveDraft(next, null);
   };
 
   const chooseLoop = (value: LoopType) => {
-    if (review || forceSubmit || existingSubmission) return;
+    if (review || finalizing || forceSubmit || existingSubmission) return;
     loopTypeRef.current = value; setLoopType(value); saveDraft(signsRef.current, value);
   };
 
   const check = () => {
-    if (!canCheck || forceSubmit || existingSubmission) return;
+    if (!canCheck || finalizing || forceSubmit || existingSubmission) return;
     const attempt: LoopSignAttempt = { caseId: current.id, signs: signsRef.current as LoopPolarity[], loopType: index === 4 ? loopTypeRef.current : null };
     const points = scoreLoopSignAttempt(index, attempt);
     const incorrect = current.signs.flatMap((sign, signIndex) => sign === attempt.signs[signIndex] ? [] : [signIndex]);
@@ -178,11 +201,10 @@ export function Week7LoopSigns({ onSubmit, onDraft, existingSubmission, existing
     timerRef.current = window.setTimeout(() => advance(next), reduceMotion ? 700 : reviewMs);
   };
 
-  useEffect(() => { if (forceSubmit && !completed && !existingSubmission) finalize(attemptsRef.current, "teacher-ended"); }, [completed, existingSubmission, finalize, forceSubmit]);
+  useEffect(() => { if (forceSubmit && !finalizing && !existingSubmission) finalize(attemptsRef.current, "teacher-ended"); }, [finalizing, existingSubmission, finalize, forceSubmit]);
   useEffect(() => { if (restored.attempts.length === loopSignCases.length && !existingSubmission) finalize(restored.attempts, "completed"); }, [existingSubmission, finalize, restored.attempts]);
 
-  if (existingSubmission && !completed) return <section className={`${styles.shell} ${styles.centered}`}><LockKeyhole size={42} /><h2>{text.locked}</h2></section>;
-  if (completed) return <section className={`${styles.shell} ${styles.centered}`}><Sparkles size={44} /><h2>{attempts.length === 5 ? text.completed : text.partial}</h2><p>{text.detail(finalSubmission?.score ?? currentScore)}</p>{submitting && <span>…</span>}{failed && finalSubmission && <button type="button" className={styles.primaryButton} onClick={() => void send(finalSubmission)}><RotateCcw size={17} />{text.retry}</button>}</section>;
+  if (existingSubmission) return <section className={`${styles.shell} ${styles.centered}`}><LockKeyhole size={42} /><h2>{text.locked}</h2></section>;
 
   return <section className={styles.shell} data-week7-game="loop-signs">
     <header className={styles.header}><b>{text.title}</b><span>{text.stage} <strong>{index + 1}/5</strong></span><span>{text.score} <strong>{currentScore}</strong></span></header>
@@ -190,9 +212,11 @@ export function Week7LoopSigns({ onSubmit, onDraft, existingSubmission, existing
     <div className={styles.prompt}><strong>{text.instruction}</strong><small>{current.assumption[locale]}</small></div>
     <LoopCanvas item={current} signs={signs} review={review} locked={Boolean(review) || Boolean(forceSubmit)} onToggle={toggle} />
     <div className={styles.feedback} aria-live="polite">
+      {finalizing ? <><strong>{submitting ? text.saving : failed ? text.saveError : ""}</strong>{failed && finalSubmission && <button type="button" className={styles.retryButton} onClick={() => void send(finalSubmission)}><RotateCcw size={15} />{text.retry}</button>}</> : <>
       {review ? <><strong>{review.incorrect.length === 0 ? `✓ ${text.correct}` : `× ${text.reconsider}`} · +{review.points}/20</strong><small>{review.incorrect.length ? current.edges[review.incorrect[0]!]!.explanation[locale] : `${current.loopType} · ${current.loopType === "R" ? text.reinforcing : text.balancing}`}</small></> : <><strong>{current.situation[locale]}</strong><small>+ {text.same} · − {text.opposite}</small></>}
+      </>}
     </div>
-    {index === 4 && !review && <div className={styles.loopChoice}><b>{text.loopQuestion}</b><button type="button" className={loopType === "R" ? styles.selected : ""} onClick={() => chooseLoop("R")}>{text.reinforcing}</button><button type="button" className={loopType === "B" ? styles.selected : ""} onClick={() => chooseLoop("B")}>{text.balancing}</button></div>}
-    <footer className={styles.actions}><button type="button" className={styles.secondaryButton} disabled={Boolean(review)} onClick={reset}><RotateCcw size={17} />{text.reset}</button><button type="button" className={styles.primaryButton} disabled={!canCheck} onClick={check}><Check size={18} />{text.check}</button></footer>
+    {index === 4 && !review && <div className={styles.loopChoice}><b>{text.loopQuestion}</b><button type="button" disabled={finalizing} className={loopType === "R" ? styles.selected : ""} onClick={() => chooseLoop("R")}>{text.reinforcing}</button><button type="button" disabled={finalizing} className={loopType === "B" ? styles.selected : ""} onClick={() => chooseLoop("B")}>{text.balancing}</button></div>}
+    <footer className={styles.actions}><button type="button" className={styles.secondaryButton} disabled={Boolean(review) || finalizing} onClick={reset}><RotateCcw size={17} />{text.reset}</button><button type="button" className={styles.primaryButton} disabled={!canCheck || finalizing} onClick={check}><Check size={18} />{text.check}</button></footer>
   </section>;
 }
