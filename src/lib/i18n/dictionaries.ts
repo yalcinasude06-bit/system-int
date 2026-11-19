@@ -738,6 +738,12 @@ Object.assign(dictionaries.en, {
   "5 yarış · Giriş ve Çıkış akışları": "5 races · Inflow and Outflow",
   "Başlangıç stoklarıyla Giriş ve Çıkış değerlerini karşılaştır; hedefe ilk ulaşacak depoyu tahmin et.": "Compare starting stocks with Inflow and Outflow values and predict which tank reaches the target first.",
   "Grafiğin Devamını Çiz": "Draw the Rest of the Graph",
+  "Kriz Toplantısı": "Crisis Meeting",
+  "5 kriz · karar dengesi": "5 crises · decision balance",
+  "3 karar jetonunu dağıt, en iyi dengeyi kur.": "Distribute 3 decision tokens and build the best balance.",
+  "Kanıt Pazarı": "Evidence Market",
+  "5 vaka · 100 kredi": "5 cases · 100 credits",
+  "Kanıtları aç, sonra en iyi çözümü seç.": "Open evidence, then choose the best solution.",
   "5 davranış · parmakla gelecek tahmini": "5 behaviors · draw a future prediction",
   "Geçmiş eğrisini incele, geleceği çiz ve gerçek sistem davranışıyla karşılaştır.": "Study the past curve, draw the future, and compare it with the actual system behavior.",
 });

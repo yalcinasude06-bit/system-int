@@ -1,4 +1,4 @@
-import { BarChart3, Boxes, CheckCircle2, Factory, Gauge, History, Layers3, ListChecks, Network, Play, RefreshCw, RotateCcw, ScanSearch, Shapes, Square, Target, UsersRound, Workflow, Wrench } from "lucide-react";
+import { BarChart3, Boxes, CheckCircle2, Factory, FileSearch, Gauge, Gavel, History, Layers3, ListChecks, Network, Play, RefreshCw, RotateCcw, ScanSearch, Shapes, Square, Target, UsersRound, Workflow, Wrench } from "lucide-react";
 import type { ComponentType } from "react";
 import type { ModuleId } from "@/types";
 
@@ -48,6 +48,11 @@ const weekSevenModules: typeof weekOneModules = [
   { id: 3, title: "Grafiğin Devamını Çiz", subtitle: "5 davranış · parmakla gelecek tahmini", description: "Geçmiş eğrisini incele, geleceği çiz ve gerçek sistem davranışıyla karşılaştır.", Icon: BarChart3 },
 ];
 
+const weekEightModules: typeof weekOneModules = [
+  { id: 1, title: "Kriz Toplantısı", subtitle: "5 kriz · karar dengesi", description: "3 karar jetonunu dağıt, en iyi dengeyi kur.", Icon: Gavel },
+  { id: 2, title: "Kanıt Pazarı", subtitle: "5 vaka · 100 kredi", description: "Kanıtları aç, sonra en iyi çözümü seç.", Icon: FileSearch },
+];
+
 export function WeekSelector({ activeWeek, onChange, disabled }: { activeWeek: number; onChange: (week: number) => void; disabled?: boolean }) {
   return (
     <div className="week-tabs dashboard-week-tabs" role="tablist" aria-label="Ders haftası">
@@ -84,7 +89,7 @@ type ModuleSelectorProps = {
 };
 
 export function ModuleSelector({ activeWeek, activeModule, moduleStage, isModuleStarted, currentModuleTurn, moduleTurnCounters, submittedCount, totalStudents, disabled, onStart, onFinish, onViewResults }: ModuleSelectorProps) {
-  if (activeWeek !== 1 && activeWeek !== 3 && activeWeek !== 4 && activeWeek !== 5 && activeWeek !== 6 && activeWeek !== 7) {
+  if (activeWeek !== 1 && activeWeek !== 3 && activeWeek !== 4 && activeWeek !== 5 && activeWeek !== 6 && activeWeek !== 7 && activeWeek !== 8) {
     return (
       <div className="coming-soon-card" role="status">
         <span aria-hidden="true">🚧</span>
@@ -93,7 +98,7 @@ export function ModuleSelector({ activeWeek, activeModule, moduleStage, isModule
     );
   }
 
-  const modules = activeWeek === 1 ? weekOneModules : activeWeek === 3 ? weekThreeModules : activeWeek === 4 ? weekFourModules : activeWeek === 5 ? weekFiveModules : activeWeek === 6 ? weekSixModules : weekSevenModules;
+  const modules = activeWeek === 1 ? weekOneModules : activeWeek === 3 ? weekThreeModules : activeWeek === 4 ? weekFourModules : activeWeek === 5 ? weekFiveModules : activeWeek === 6 ? weekSixModules : activeWeek === 7 ? weekSevenModules : weekEightModules;
 
   return (
     <div className="dashboard-module-list" role="list" aria-label={`Hafta ${activeWeek} modülleri`}>

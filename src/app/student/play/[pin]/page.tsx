@@ -28,6 +28,8 @@ import { Week6ModelAgency } from "@/components/modules/Week6_ModelAgency";
 import { Week7LoopSigns } from "@/components/modules/Week7_LoopSigns";
 import { Week7StockRace } from "@/components/modules/Week7_StockRace";
 import { Week7DrawTheCurve } from "@/components/modules/Week7_DrawTheCurve";
+import { Week8CrisisMeeting } from "@/components/modules/Week8_CrisisMeeting";
+import { Week8EvidenceMarket } from "@/components/modules/Week8_EvidenceMarket";
 import { getRemainingCountdown } from "@/lib/moduleCountdown";
 import { MODULE_STARTED_EVENT, moduleStartedEventKey, moduleStartChannelTopic, parseModuleStartedPayload, shouldRefreshForModuleStart } from "@/lib/moduleStartRealtime";
 import { getStudentGameState, getStudentSessionStatus, saveModuleDraft, saveSubmission, submitModuleFeedback } from "@/lib/session";
@@ -392,7 +394,7 @@ export default function StudentPlayPage() {
     : 8;
   const ranking = [...classmates].sort((a, b) => b.session_score - a.session_score || a.joined_at.localeCompare(b.joined_at));
   const ownRank = ranking.findIndex((item) => item.id === student.id) + 1;
-  const compactStudentGame = ((session.selected_week === 5 && session.current_module <= 3) || (session.selected_week === 6 && session.current_module <= 3) || (session.selected_week === 7 && session.current_module <= 3)) && session.is_module_started && !activeSubmission && !isAnswerReviewing;
+  const compactStudentGame = ((session.selected_week === 5 && session.current_module <= 3) || (session.selected_week === 6 && session.current_module <= 3) || (session.selected_week === 7 && session.current_module <= 3) || (session.selected_week === 8 && session.current_module <= 2)) && session.is_module_started && !activeSubmission && !isAnswerReviewing;
   const studentNav = <Navbar compactStudentGame={compactStudentGame} studentContext={{ sessionTitle: session.title, week: session.selected_week, studentName: student.nickname, studentNumber: student.student_number, score: student.session_score, onLeave: () => { localStorage.removeItem(`system-lab:${pin}:student`); router.push("/"); } }} />;
 
   if (shouldShowFeedback && activeSubmission) return <>{studentNav}<main className="container page student-submission-wait-page">
@@ -406,7 +408,8 @@ export default function StudentPlayPage() {
     || (session.selected_week === 4 && (session.current_module === 1 || session.current_module === 2 || session.current_module === 3))
     || (session.selected_week === 5 && session.current_module <= 3)
     || (session.selected_week === 6 && session.current_module <= 3)
-    || (session.selected_week === 7 && session.current_module <= 3);
+    || (session.selected_week === 7 && session.current_module <= 3)
+    || (session.selected_week === 8 && session.current_module <= 2);
   if (!isSupportedModule) return <>{studentNav}<main className="container page"><div className="student-waiting-card panel"><span className="waiting-illustration">🚧</span><span className="eyebrow">Hafta {session.selected_week}</span><h1>Yeni içerikler hazırlanıyor</h1><p>Bu haftanın modülleri ve interaktif içerikleri yakında eklenecektir.</p><div className="waiting-pulse"><i /> Öğretmenin yönlendirmesini bekleyin</div></div></main></>;
 
   if (!isAnswerReviewing && resultsRevealed && !activeSubmission) return <>{studentNav}<main className="container page"><section className="student-waiting-card panel"><span className="waiting-illustration">⏳</span><span className="eyebrow">Sonuç hazırlanıyor</span><h1>Puanın hesaplanıyor…</h1><div className="waiting-pulse"><i /> Sonuç kaydı alınıyor</div></section></main></>;
@@ -487,6 +490,10 @@ export default function StudentPlayPage() {
         ? <Week7StockRace key={activeModuleKey} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(2, draft)} onSubmit={(submission) => submit(2, submission)} />
       : session.selected_week === 7 && session.current_module === 3
         ? <Week7DrawTheCurve key={activeModuleKey} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(3, draft)} onSubmit={(submission) => submit(3, submission)} />
+      : session.selected_week === 8 && session.current_module === 1
+        ? <Week8CrisisMeeting key={activeModuleKey} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(1, draft)} onSubmit={(submission) => submit(1, submission)} />
+      : session.selected_week === 8 && session.current_module === 2
+        ? <Week8EvidenceMarket key={activeModuleKey} existingDraft={activeDraft} existingSubmission={activeSubmission} forceSubmit={session.module_stage === 4} onDraft={(draft) => saveDraft(2, draft)} onSubmit={(submission) => submit(2, submission)} />
       : modules[session.current_module];
 
   return <>{studentNav}<main className={`container student-module-page stack ${compactStudentGame ? "student-game-page" : ""}`}>

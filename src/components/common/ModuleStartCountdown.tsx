@@ -184,6 +184,16 @@ const weekSevenModuleThreeBrief: Record<"tr" | "en", ModuleBrief> = {
   en: { icon: "📈", title: "Module 3: Draw the Rest", description: "Draw the rest of the graph and compare the result." },
 };
 
+const weekEightModuleOneBrief: Record<"tr" | "en", ModuleBrief> = {
+  tr: { icon: "🪙", title: "Modül 1: Kriz Toplantısı", description: "3 jetonu paydaşlara dağıt, en iyi dengeyi kur." },
+  en: { icon: "🪙", title: "Module 1: Crisis Meeting", description: "Distribute 3 tokens among stakeholders and build the best balance." },
+};
+
+const weekEightModuleTwoBrief: Record<"tr" | "en", ModuleBrief> = {
+  tr: { icon: "🔎", title: "Modül 2: Kanıt Pazarı", description: "Kanıtları krediyle aç, sonra en uygun çözümü kilitle." },
+  en: { icon: "🔎", title: "Module 2: Evidence Market", description: "Spend credits on evidence, then lock the best solution." },
+};
+
 type ModuleStartCountdownProps = {
   weekId?: number;
   moduleId: ModuleId;
@@ -227,6 +237,10 @@ export function ModuleStartCountdown({ weekId = 1, moduleId, startedAt, onComple
         ? weekSevenModuleTwoBrief[locale]
       : weekId === 7 && moduleId === 3
         ? weekSevenModuleThreeBrief[locale]
+      : weekId === 8 && moduleId === 1
+        ? weekEightModuleOneBrief[locale]
+      : weekId === 8 && moduleId === 2
+        ? weekEightModuleTwoBrief[locale]
       : moduleBriefs[moduleId];
 
   useEffect(() => {

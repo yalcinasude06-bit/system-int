@@ -610,6 +610,24 @@ function WeekSevenDrawCurveDemo() {
   </div>;
 }
 
+function WeekEightCrisisDemo() {
+  const { locale } = useI18n();
+  const labels = locale === "tr" ? ["Planlama", "Ekip", "Kalite", "Üretim"] : ["Planning", "Team", "Quality", "Production"];
+  return <div className="module-demo week-eight-crisis-demo" aria-hidden="true">
+    <div className="week-eight-demo-table">8</div>
+    {labels.map((label, index) => <span key={label} className={`week-eight-demo-person person-${index + 1}`}>{label}</span>)}
+    {[0, 1, 2].map((token) => <motion.i key={token} animate={{ x: [0, 0, token === 2 ? 42 : -38, token === 2 ? 42 : -38, 0], y: [44, 44, token === 2 ? -31 : -22, token === 2 ? -31 : -22, 44], scale: [1, .85, 1.08, 1, 1] }} transition={{ duration: 4.6, repeat: Infinity, delay: token * .18, times: [0, .15, .48, .8, 1] }}>●</motion.i>)}
+  </div>;
+}
+
+function WeekEightEvidenceDemo() {
+  const { locale } = useI18n();
+  return <div className="module-demo week-eight-evidence-demo" aria-hidden="true">
+    {["?", "?", "?"].map((label, index) => <motion.span key={index} animate={{ rotateY: [0, 0, 90, 0, 0], backgroundColor: ["#fff", "#fff", "#fff", "#e9f8f1", "#fff"] }} transition={{ duration: 4.8, repeat: Infinity, delay: index * .45, times: [0, .2, .34, .58, 1] }}>{label}<motion.b animate={{ opacity: [0, 0, 0, 1, 0] }} transition={{ duration: 4.8, repeat: Infinity, delay: index * .45 }}>✓</motion.b></motion.span>)}
+    <motion.strong animate={{ opacity: [.35, .35, 1, 1, .35], scale: [.96, .96, 1.03, 1, .96] }} transition={{ duration: 4.8, repeat: Infinity }}>{locale === "tr" ? "Çözümü Kilitle" : "Lock Solution"}</motion.strong>
+  </div>;
+}
+
 const demos: Record<ModuleId, () => ReactNode> = {
   1: ModuleOneDemo,
   2: ModuleTwoDemo,
@@ -649,6 +667,10 @@ export function ModuleGameplayDemo({ moduleId, weekId = 1 }: { moduleId: ModuleI
         ? WeekSevenStockRaceDemo
       : weekId === 7 && moduleId === 3
         ? WeekSevenDrawCurveDemo
+      : weekId === 8 && moduleId === 1
+        ? WeekEightCrisisDemo
+      : weekId === 8 && moduleId === 2
+        ? WeekEightEvidenceDemo
       : demos[moduleId];
   return <MotionConfig reducedMotion="user"><Demo /></MotionConfig>;
 }
