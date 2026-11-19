@@ -54,8 +54,10 @@ for (const source of [loopUi, stockUi, curveUi]) {
 assert.match(stockUi, /height: `\$\{level\}%`/, "The tank fill must track the same 0-100 value displayed to students");
 assert.match(stockUi, /bottom: `\$\{current\.target\}%`/, "The target line must use the scenario's target scale");
 assert.match(stockUi, /className=\{styles\.tankStage\} data-round-id=\{current\.id\}/, "Each stock round should remount its visual stage to avoid leaking prior-round liquid state");
+assert.match(stockUi, /review\?\.roundIndex \?\? Math\.min\(attempts\.length, stockRaceRounds\.length - 1\)/, "The reviewed stock race must remain selected until its result delay ends");
 assert.match(week7Css, /\.tankInterior \{[^}]*inset: 4px[^}]*overflow: hidden/);
 assert.match(week7Css, /\.water \{[^}]*bottom: 0/);
+assert.match(week7Css, /\.water::before, \.water::after/);
 assert.match(stockUi, /styles\.water\} style=\{\{ height: `\$\{level\}%` \}\}/);
 assert.match(reviewTiming, /loopSigns: \{ normal: 1450, reducedMotion: 700 \}/);
 assert.match(reviewTiming, /stockRace: \{ normal: 1550, reducedMotion: 650 \}/);
@@ -67,7 +69,9 @@ for (const [source, key] of [[loopUi, "loopSigns"], [stockUi, "stockRace"], [cur
 }
 assert.match(curveUi, /<div className=\{styles\.prompt\}><strong>\{text\.instruction\}<\/strong><\/div>/, "The curve prompt above the chart should only contain the drawing instruction");
 assert.match(curveUi, /review \? `\+\$\{review\.points\}\/20 · \$\{current\.label\[locale\]\}` : current\.label\[locale\]/, "Curve label must remain visible below the chart during play and review");
-assert.match(curveUi, /<small>\{current\.prompt\[locale\]\}<\/small>/, "The concise scenario description should remain below the chart");
+assert.match(curveUi, /className=\{styles\.curveDescription\}>\{current\.prompt\[locale\]\}<\/small>/, "The concise scenario description should remain readable below the chart");
+assert.match(curveUi, /review\?\.roundIndex \?\? Math\.min\(attempts\.length, curveRounds\.length - 1\)/, "The reviewed curve must stay on its own historical line until its result delay ends");
+assert.doesNotMatch(curveUi, /drawMore|Gelecek alanında çizgiyi biraz daha uzat|Extend the line farther into the future area/);
 assert.match(curveUi, /const sharedStart = current\.pastValues\.at\(-1\)!/);
 assert.match(curveUi, /\{ x: 0, y: sharedStart \}/, "Student and actual curves must share the past-curve endpoint");
 assert.match(curveUi, /\(92 - svgY\) \/ 82/, "Pointer input must map to the chart plot coordinates");

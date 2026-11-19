@@ -78,7 +78,10 @@
 .tankCard.winner { background: #edf9f1; border-color: #55a379; animation: winnerPop .48s ease both; }
 .tankVisual { width: min(92px, 82%); height: 100%; min-height: 105px; position: relative; justify-self: center; overflow: visible; background: rgba(255, 255, 255, .58); border: 3px solid #72a8bd; border-top-color: #b9d9e2; border-radius: 12px 12px 18px 18px; box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .55), 0 7px 16px rgba(52, 111, 137, .12); }
 .tankInterior { position: absolute; inset: 4px; overflow: hidden; border-radius: 7px 7px 13px 13px; background: rgba(255, 255, 255, .28); }
-.water { position: absolute; left: 0; right: 0; bottom: 0; min-height: 0; overflow: hidden; background: linear-gradient(180deg, #72c8ee, #3498cf); transition: height 55ms linear; }
+.water { position: absolute; z-index: 1; left: 0; right: 0; bottom: 0; min-height: 0; overflow: hidden; background: linear-gradient(180deg, #70d9f3 0%, #35b9e7 24%, #2188c4 100%); box-shadow: inset 0 2px 0 rgba(255, 255, 255, .2); transition: height 55ms linear; will-change: height; }
+.water::before, .water::after { content: ""; position: absolute; left: -28%; width: 156%; height: 9px; border-radius: 50%; pointer-events: none; }
+.water::before { top: -5px; background: rgba(226, 251, 255, .74); animation: waterSurface 1.8s ease-in-out infinite alternate; }
+.water::after { top: -2px; left: -48%; background: rgba(255, 255, 255, .22); animation: waterSurface 2.5s ease-in-out -1s infinite alternate-reverse; }
 .tankTargetLine { position: absolute; z-index: 2; left: -4px; right: -4px; border-top: 2px dashed #d59a2f; pointer-events: none; }
 .tankTargetLine span { position: absolute; left: 0; top: 2px; max-width: 100%; padding: 1px 3px; color: #805b1a; background: rgba(255, 249, 231, .94); border-radius: 4px; font-size: 8px; font-weight: 900; white-space: nowrap; }
 .water i { position: absolute; left: -12%; top: -4px; width: 124%; height: 9px; background: rgba(220, 249, 255, .72); border-radius: 50%; animation: waterWave 1.25s ease-in-out infinite alternate; }
@@ -115,6 +118,7 @@
 .studentLegend { border-color: #226b8f !important; }
 .actualLegend { border-color: #2d8b57 !important; border-top-style: dashed !important; }
 .curveWarning { color: #8a641f !important; }
+.curveDescription { display: -webkit-box; overflow: hidden; white-space: normal !important; text-overflow: clip !important; line-height: 1.12; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 
 .centered { align-items: center; justify-content: center; text-align: center; }
 .centered h2, .centered p { max-width: 540px; margin: 0; }
@@ -124,6 +128,7 @@
 @keyframes travel { from { stroke-dashoffset: 34; } to { stroke-dashoffset: 0; } }
 @keyframes winnerPop { 50% { transform: translateY(-3px) scale(1.025); } }
 @keyframes waterWave { to { transform: translateX(9%); } }
+@keyframes waterSurface { to { transform: translateX(18%); } }
 @keyframes flowDown { from { transform: translateY(-5px); opacity: .25; } to { transform: translateY(10px); opacity: 1; } }
 @keyframes flowOut { from { transform: translate(-5px, -5px); opacity: .25; } to { transform: translate(6px, 6px); opacity: 1; } }
 

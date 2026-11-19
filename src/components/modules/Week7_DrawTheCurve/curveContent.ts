@@ -49,7 +49,7 @@ export const curveRounds: CurveRound[] = [
   {
     id: "DC5",
     kind: "oscillation",
-    prompt: t("Kontrol tepkisi gecikiyor.", "The control response is delayed."),
+    prompt: t("Sistemin düzeltme tepkisi gecikince hedefi aşar; değer bir yükselip bir düşer.", "When the system's correction is delayed, it overshoots the target and the value rises and falls."),
     label: t("Salınım", "Oscillation"),
     feedback: t("Gecikmeli düzeltme hedefi aşar; sistem yukarı ve aşağı salınır.", "Delayed correction overshoots the target, so the system oscillates up and down."),
     pastValues: [.4, .46, .53, .6, .66, .69, .67, .62, .56, .52, .51, .54],

@@ -11,7 +11,7 @@ import { stockRaceRounds, type StockTank, type TankId } from "./stockRaceContent
 import { raceResult, scoreStockRaceAttempts, stockAtTime, STOCK_RACE_GAME_ID, STOCK_RACE_MS_PER_SECOND, type StockRaceAttempt } from "./stockRaceEngine";
 
 type DraftPayload = { gameId?: unknown; attempts?: unknown; currentIndex?: unknown; currentPrediction?: unknown };
-type RaceReview = { winner: TankId; time: number; correct: boolean };
+type RaceReview = { winner: TankId; time: number; correct: boolean; roundIndex: number };
 
 const copy = {
   tr: {
@@ -67,7 +67,7 @@ export function Week7StockRace({ onSubmit, onDraft, existingSubmission, existing
   const timerRef = useRef<number | null>(null);
   const submittedRef = useRef(false);
   const reduceMotion = useReducedMotion();
-  const index = Math.min(attempts.length, stockRaceRounds.length - 1);
+  const index = review?.roundIndex ?? Math.min(attempts.length, stockRaceRounds.length - 1);
   const current = stockRaceRounds[index]!;
   const outcome = useMemo(() => raceResult(current), [current]);
   const score = scoreStockRaceAttempts(attempts);
@@ -124,7 +124,7 @@ export function Week7StockRace({ onSubmit, onDraft, existingSubmission, existing
       const attempt: StockRaceAttempt = { roundId: current.id, prediction: selected };
       const next = [...attemptsRef.current, attempt];
       attemptsRef.current = next;
-      setAttempts(next); setReview({ winner: outcome.winner, time: outcome.time, correct: selected === outcome.winner });
+      setAttempts(next); setReview({ winner: outcome.winner, time: outcome.time, correct: selected === outcome.winner, roundIndex: index });
       void onDraft?.(submissionFor(next, "draft", null));
       timerRef.current = window.setTimeout(() => advance(next), reduceMotion ? WEEK7_REVIEW_TIMING.stockRace.reducedMotion : WEEK7_REVIEW_TIMING.stockRace.normal);
     };

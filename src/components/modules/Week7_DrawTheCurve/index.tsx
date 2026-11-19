@@ -11,16 +11,16 @@ import { curveRounds } from "./curveContent";
 import { CURVE_SAMPLE_COUNT, DRAW_CURVE_GAME_ID, resamplePoints, scoreCurveAttempts, scoreCurvePoints, targetPoints, type CurveAttempt, type NormalizedPoint } from "./curveScoring";
 
 type DraftPayload = { gameId?: unknown; attempts?: unknown; currentIndex?: unknown; currentPoints?: unknown };
-type CurveReview = { points: number; sampled: NormalizedPoint[] };
+type CurveReview = { points: number; sampled: NormalizedPoint[]; roundIndex: number };
 
 const copy = {
   tr: {
     title: "7. HAFTA · MODÜL 3", stage: "Aşama", score: "Puan", instruction: "Çizginin devamını parmağınla tamamla.", today: "BUGÜN", time: "zaman", stock: "Stok", clear: "Temizle", check: "Kontrol Et",
-    drawMore: "Gelecek alanında çizgiyi biraz daha uzat.", yourLine: "Senin çizgin", actual: "Gerçek davranış", saveError: "Yanıt kaydedilemedi. Bağlantını kontrol edip yeniden dene.", saving: "Yanıt kaydediliyor…", locked: "Bu çizim turundaki yanıtların kilitli.", retry: "Tekrar kaydet",
+    yourLine: "Senin çizgin", actual: "Gerçek davranış", saveError: "Yanıt kaydedilemedi. Bağlantını kontrol edip yeniden dene.", saving: "Yanıt kaydediliyor…", locked: "Bu çizim turundaki yanıtların kilitli.", retry: "Tekrar kaydet",
   },
   en: {
-    title: "WEEK 7 · MODULE 3", stage: "Stage", score: "Score", instruction: "Complete the line with your finger.", today: "TODAY", time: "time", stock: "Stock", clear: "Clear", check: "Check",
-    drawMore: "Extend the line farther into the future area.", yourLine: "Your line", actual: "Actual behavior", saveError: "Your answer could not be saved. Check your connection and try again.", saving: "Saving your answer…", locked: "Your answers for this drawing round are locked.", retry: "Save again",
+    title: "WEEK 7 · MODULE 3", stage: "Stage", score: "Score", instruction: "Continue the line with your finger.", today: "TODAY", time: "time", stock: "Stock", clear: "Clear", check: "Check",
+    yourLine: "Your line", actual: "Actual behavior", saveError: "Your answer could not be saved. Check your connection and try again.", saving: "Saving your answer…", locked: "Your answers for this drawing round are locked.", retry: "Save again",
   },
 } as const;
 
@@ -72,7 +72,7 @@ export function Week7DrawTheCurve({ onSubmit, onDraft, existingSubmission, exist
   const submittedRef = useRef(false);
   const timerRef = useRef<number | null>(null);
   const reduceMotion = useReducedMotion();
-  const index = Math.min(attempts.length, curveRounds.length - 1);
+  const index = review?.roundIndex ?? Math.min(attempts.length, curveRounds.length - 1);
   const current = curveRounds[index]!;
   const score = scoreCurveAttempts(attempts);
   const enough = points.length >= 6 && Math.max(...points.map((point) => point.x), 0) - Math.min(...points.map((point) => point.x), 1) >= .55;
@@ -150,7 +150,7 @@ export function Week7DrawTheCurve({ onSubmit, onDraft, existingSubmission, exist
     const sampled = resamplePoints(pointsRef.current);
     const earned = scoreCurvePoints(current, sampled);
     const attempt: CurveAttempt = { roundId: current.id, points: sampled };
-    const next = [...attemptsRef.current, attempt]; attemptsRef.current = next; setAttempts(next); setReview({ points: earned, sampled });
+    const next = [...attemptsRef.current, attempt]; attemptsRef.current = next; setAttempts(next); setReview({ points: earned, sampled, roundIndex: index });
     void onDraft?.(submissionFor(next, "draft", sampled));
     timerRef.current = window.setTimeout(() => advance(next), reduceMotion ? WEEK7_REVIEW_TIMING.drawCurve.reducedMotion : WEEK7_REVIEW_TIMING.drawCurve.normal);
   };
@@ -181,7 +181,7 @@ export function Week7DrawTheCurve({ onSubmit, onDraft, existingSubmission, exist
       </svg>
       <div className={styles.chartLegend}><span><i className={styles.studentLegend} />{text.yourLine}</span>{review && <span><i className={styles.actualLegend} />{text.actual}</span>}</div>
     </div>
-    <div className={styles.feedback} aria-live="polite">{finalizing ? <><strong>{submitting ? text.saving : failed ? text.saveError : ""}</strong>{failed && finalSubmission && <button type="button" className={styles.retryButton} onClick={() => void send(finalSubmission)}><RotateCcw size={15} />{text.retry}</button>}</> : <><strong>{review ? `+${review.points}/20 · ${current.label[locale]}` : current.label[locale]}</strong><small>{current.prompt[locale]}</small>{!review && !enough && <small className={styles.curveWarning}>{text.drawMore}</small>}</>}</div>
+    <div className={styles.feedback} aria-live="polite">{finalizing ? <><strong>{submitting ? text.saving : failed ? text.saveError : ""}</strong>{failed && finalSubmission && <button type="button" className={styles.retryButton} onClick={() => void send(finalSubmission)}><RotateCcw size={15} />{text.retry}</button>}</> : <><strong>{review ? `+${review.points}/20 · ${current.label[locale]}` : current.label[locale]}</strong><small className={styles.curveDescription}>{current.prompt[locale]}</small></>}</div>
     <footer className={styles.actions}><button type="button" className={styles.secondaryButton} disabled={Boolean(review) || finalizing} onClick={clear}><Eraser size={17} />{text.clear}</button><button type="button" className={styles.primaryButton} disabled={!enough || Boolean(review) || finalizing} onClick={check}><Check size={18} />{text.check}</button></footer>
   </section>;
 }
