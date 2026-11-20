@@ -22,6 +22,8 @@ const migration = fs.readFileSync("supabase/migrations/202610190041_week_eight_c
 assert.match(crisisUi, /function MeetingAvatar/, "Crisis Meeting must use illustrated participants instead of emoji-only badges");
 assert.match(crisisUi, /const displayedGauges = review \? gauges : \[50, 50, 50\]/, "Crisis gauges must not reveal the answer while tokens are being distributed");
 assert.match(crisisUi, /className=\{styles\.speech\}/, "Each participant must keep their role and proposal beside the avatar");
+assert.match(crisisUi, /if \(nextTotal < 3\)[\s\S]*?setReview\(attempt\)/, "The third token must evaluate and lock the crisis decision automatically");
+assert.doesNotMatch(crisisUi, /applyDecision|text\.apply/, "Crisis Meeting must not require a separate Apply Decision button");
 assert.doesNotMatch(week8Css, /\.table\s*\{[^}]*display:\s*none/, "The meeting table must remain visible on mobile");
 assert.match(evidenceUi, /type EvidenceVisualKind/, "Evidence Market must render semantic mini data visuals");
 assert.match(evidenceUi, /useState<"inspect" \| "decide">/, "Evidence Market must use separate inspect and decision phases");
@@ -32,12 +34,16 @@ assert.match(evidenceUi, /className=\{styles\.folderCover\}/, "Evidence cards mu
 assert.match(evidenceUi, /opened\.includes\(id\)\) return/, "Reopening evidence must not spend credit twice");
 assert.match(evidenceUi, /decisionStamp/, "The decision must receive an in-scene approval or rejection stamp");
 assert.match(evidenceUi, /className=\{styles\.decisionEvidence\}/, "Collected evidence must remain inspectable inside the automatic decision phase");
+assert.match(evidenceUi, /className=\{styles\.desk\}[\s\S]*?\{card\.detail\[locale\]\}<\/button>/, "Evidence notes on the desk must show findings instead of file titles");
 assert.match(week8Css, /\.researchDesk\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/, "Evidence Market must use a single-column research flow");
 assert.match(week8Css, /\.decisionPhase \.fileShelf\s*\{\s*display:\s*none/, "The compact decision phase must replace the full evidence shelf");
 assert.match(demos, /function WeekEightCrisisDemo\(\)[\s\S]*?week-eight-demo-gauges/, "The Week 8 crisis demo must mirror the table, people, tokens, and gauges");
-assert.match(demos, /const tokenTargets = \[\{ x: -78, y: -34 \}, \{ x: -66, y: -25 \}, \{ x: 78, y: -34 \}\]/, "The crisis intro tokens must target the selected stakeholders instead of arbitrary positions");
+assert.match(demos, /useMeasuredDemoTargets\(demoRef, tokenSlotRefs\)/, "The crisis intro tokens must target measured stakeholder token slots");
+assert.match(demos, /const tokenOwners = \[2, 2, 3\]/, "The crisis intro must distribute the three tokens to the intended stakeholders");
 assert.match(demos, /function WeekEightEvidenceDemo\(\)[\s\S]*?week-eight-demo-report[\s\S]*?week-eight-demo-stamp/, "The Week 8 evidence demo must mirror folders, a report, and approval stamp");
 assert.match(demos, /week-eight-demo-collected[\s\S]*?week-eight-demo-solutions/, "The evidence intro must show collected evidence and the automatic solution stage");
+assert.match(demos, /Rota verimsiz[\s\S]*?Yoğunluk yüksek/, "The evidence intro must summarize findings instead of repeating file labels");
+assert.match(demos, />100<\/[\s\S]*?>70<\/[\s\S]*?>45<\//, "The evidence intro must show staged credit spending");
 assert.match(migration, /Week 8 speed bonus must remain enabled/, "Week 8 must remain eligible for the shared speed bonus");
 assert.doesNotMatch(migration, /when target_session\.selected_week = 8[^\n]*then 0/i, "Week 8 must not be excluded from the speed bonus calculation");
 console.log("Week 8 game validation passed.");

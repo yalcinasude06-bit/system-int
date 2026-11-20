@@ -132,7 +132,7 @@ export function Week8EvidenceMarket({ onSubmit, onDraft, existingSubmission, exi
         </motion.aside> : null}
       </AnimatePresence>
 
-      {opened.length > 0 && <div className={styles.desk}><h2>{text.desk}</h2><div>{opened.map((id) => { const card = current.evidence.find((item) => item.id === id)!; return <button type="button" key={id} className={review && current.required.includes(id) ? styles.relevantChip : ""} disabled={Boolean(review)} onClick={() => setSelectedEvidence(id)}><Check />{card.title[locale]}</button>; })}</div></div>}
+      {opened.length > 0 && <div className={styles.desk}><h2>{text.desk}</h2><div>{opened.map((id) => { const card = current.evidence.find((item) => item.id === id)!; return <button type="button" key={id} className={review && current.required.includes(id) ? styles.relevantChip : ""} disabled={Boolean(review)} onClick={() => setSelectedEvidence(id)} aria-label={`${card.title[locale]}: ${card.detail[locale]}`}><Check />{card.detail[locale]}</button>; })}</div></div>}
 
       <AnimatePresence mode="wait">
         {(phase === "decide" || review) && <motion.section key="decision" className={styles.decisionBoard} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>

@@ -53,6 +53,23 @@ function useMeasuredDemoTargets(containerRef: RefObject<HTMLElement | null>, tar
   return points;
 }
 
+function useMeasuredDemoSize(containerRef: RefObject<HTMLElement | null>) {
+  const [size, setSize] = useState({ width: 0, height: 0 });
+  useEffect(() => {
+    const measure = () => {
+      const container = containerRef.current;
+      if (!container) return;
+      setSize({ width: container.clientWidth, height: container.clientHeight });
+    };
+    measure();
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
+    if (containerRef.current) observer?.observe(containerRef.current);
+    window.addEventListener("resize", measure);
+    return () => { observer?.disconnect(); window.removeEventListener("resize", measure); };
+  }, [containerRef]);
+  return size;
+}
+
 function getRelativeRect(container: DOMRect, element: Element): RelativeRect {
   const rect = element.getBoundingClientRect();
   return { left: rect.left - container.left, top: rect.top - container.top, width: rect.width, height: rect.height };
@@ -612,18 +629,31 @@ function WeekSevenDrawCurveDemo() {
 
 function WeekEightCrisisDemo() {
   const { locale } = useI18n();
+  const demoRef = useRef<HTMLDivElement>(null);
+  const tokenSlotRefs = useRef<Array<HTMLElement | null>>([]);
+  const tokenSlots = useMeasuredDemoTargets(demoRef, tokenSlotRefs);
+  const demoSize = useMeasuredDemoSize(demoRef);
   const people = [
     { role: { tr: "Planlama", en: "Planning" }, proposal: { tr: "İkiye bölelim.", en: "Split it in two." } },
     { role: { tr: "Ekip", en: "Team" }, proposal: { tr: "Deneyimi taşıyalım.", en: "Move experience." } },
     { role: { tr: "Kalite", en: "Quality" }, proposal: { tr: "Kontrol ekleyelim.", en: "Add inspection." } },
     { role: { tr: "Üretim", en: "Production" }, proposal: { tr: "Hattı hızlandıralım.", en: "Speed up the line." } },
   ];
-  const tokenTargets = [{ x: -78, y: -34 }, { x: -66, y: -25 }, { x: 78, y: -34 }];
+  const tokenOwners = [2, 2, 3] as const;
+  const tokenTimes = [[0, .08, .22, .82, .9, 1], [0, .25, .39, .82, .9, 1], [0, .42, .56, .82, .9, 1]];
   const loop = { duration: 5.2, repeat: Infinity, ease: "easeInOut" as const, times: [0, .18, .44, .7, .88, 1] };
-  return <div className="module-demo week-eight-crisis-demo" aria-hidden="true">
+  return <div ref={demoRef} className="module-demo week-eight-crisis-demo" aria-hidden="true">
     <motion.div className="week-eight-demo-table" animate={{ boxShadow: ["0 8px 18px #7e572826", "0 8px 18px #7e572826", "0 0 0 7px #78c7a433", "0 0 0 7px #78c7a400", "0 8px 18px #7e572826", "0 8px 18px #7e572826"] }} transition={loop}><span>8</span></motion.div>
-    {people.map((person, index) => <motion.div key={person.role.en} className={`week-eight-demo-person person-${index + 1}`} animate={index >= 2 ? { scale: [1, 1, 1.04, 1.04, 1, 1], filter: ["brightness(1)", "brightness(1)", "brightness(1.08)", "brightness(1.08)", "brightness(1)", "brightness(1)"] } : undefined} transition={loop}><i><b /></i><span><strong>{person.role[locale]}</strong><small>{person.proposal[locale]}</small></span></motion.div>)}
-    {[0, 1, 2].map((token) => { const target = tokenTargets[token]!; return <motion.i className={`week-eight-demo-token token-${token + 1}`} key={token} animate={{ x: [0, 0, target.x, target.x, target.x, 0], y: [42, 42, target.y, target.y, target.y, 42], scale: [1, .82, 1.08, 1, .9, 1] }} transition={{ ...loop, delay: token * .1 }}>●</motion.i>; })}
+    {people.map((person, index) => <motion.div key={person.role.en} className={`week-eight-demo-person person-${index + 1}`} animate={index >= 2 ? { scale: [1, 1, 1.04, 1.04, 1, 1], filter: ["brightness(1)", "brightness(1)", "brightness(1.08)", "brightness(1.08)", "brightness(1)", "brightness(1)"] } : undefined} transition={loop}><i><b /></i><span><strong>{person.role[locale]}</strong><small>{person.proposal[locale]}</small></span><em ref={(node) => { tokenSlotRefs.current[index] = node; }} className="week-eight-demo-token-slot" /></motion.div>)}
+    {[0, 1, 2].map((token) => {
+      const owner = tokenOwners[token]!;
+      const target = tokenSlots[owner];
+      const { width, height } = demoSize;
+      const spread = token < 2 ? (token === 0 ? -8 : 8) : 0;
+      const x = target && width ? target.x - width / 2 + spread : token < 2 ? -72 + spread : 72;
+      const y = target && height ? target.y - (height - 17) : -28;
+      return <motion.i className={`week-eight-demo-token token-${token + 1}`} key={token} animate={{ x: [0, 0, x, x, x, 0], y: [32, 32, y, y, y, 32], opacity: [0, 1, 1, 1, 0, 0], scale: [1, .82, 1.08, 1, .9, 1] }} transition={{ duration: 5.2, repeat: Infinity, repeatDelay: .35, ease: "easeInOut", times: tokenTimes[token] }}>●</motion.i>;
+    })}
     <div className="week-eight-demo-gauges">{["", "", ""].map((_, index) => <span key={index}><motion.i animate={{ width: ["50%", "50%", `${72 + index * 6}%`, `${72 + index * 6}%`, "50%", "50%"] }} transition={loop} /></span>)}</div>
   </div>;
 }
@@ -634,9 +664,9 @@ function WeekEightEvidenceDemo() {
   return <div className="module-demo week-eight-evidence-demo" aria-hidden="true">
     <div className="week-eight-demo-files">{[0, 1, 2, 3, 4].map((index) => <motion.span key={index} animate={index === 1 || index === 3 ? { rotateX: [0, 0, -68, -68, 0, 0], backgroundColor: ["#f5c768", "#f5c768", "#bde6d2", "#bde6d2", "#bde6d2", "#f5c768"] } : undefined} transition={{ ...loop, delay: index === 3 ? .35 : 0 }}><i>{index + 1}</i></motion.span>)}</div>
     <motion.div className="week-eight-demo-report" animate={{ opacity: [0, 0, 1, 1, 0, 0], y: [8, 8, 0, 0, -5, 8], scale: [.94, .94, 1, 1, .96, .94] }} transition={loop}><b>{locale === "tr" ? "Rota raporu" : "Route report"}</b><svg viewBox="0 0 80 30"><path d="M7 24c14-22 20 5 33-12s21 12 33-5" /><circle cx="7" cy="24" r="3" /><circle cx="73" cy="7" r="3" /></svg></motion.div>
-    <motion.div className="week-eight-demo-collected" animate={{ opacity: [0, 0, 1, 1, 0, 0] }} transition={loop}><span>✓ {locale === "tr" ? "Rota" : "Route"}</span><span>✓ {locale === "tr" ? "Yoğunluk" : "Density"}</span></motion.div>
-    <motion.div className="week-eight-demo-solutions" animate={{ opacity: [0, 0, 0, .2, 1, 0], y: [8, 8, 8, 8, 0, 8] }} transition={loop}><span /><span className="selected" /><span /></motion.div>
-    <motion.span className="week-eight-demo-credit" animate={{ opacity: [1, 1, 1, 1, .55, 1] }} transition={loop}>100 → 0</motion.span>
+    <motion.div className="week-eight-demo-collected" animate={{ opacity: [0, 0, 1, 1, 0, 0] }} transition={loop}><span>✓ {locale === "tr" ? "Rota verimsiz" : "Route inefficient"}</span><span>✓ {locale === "tr" ? "Yoğunluk yüksek" : "High density"}</span></motion.div>
+    <motion.div className="week-eight-demo-solutions" animate={{ opacity: [0, 0, 0, .2, 1, 0], y: [8, 8, 8, 8, 0, 8] }} transition={loop}><span>{locale === "tr" ? "Forklift" : "Forklift"}</span><span className="selected">{locale === "tr" ? "Rota düzeni" : "Route plan"}</span><span>{locale === "tr" ? "Depoyu büyüt" : "Expand storage"}</span></motion.div>
+    <span className="week-eight-demo-credit"><motion.b animate={{ opacity: [1, 1, 0, 0, 0, 1] }} transition={loop}>100</motion.b><motion.b animate={{ opacity: [0, 0, 1, 1, 0, 0] }} transition={loop}>70</motion.b><motion.b animate={{ opacity: [0, 0, 0, 0, 1, 0] }} transition={loop}>45</motion.b></span>
     <motion.strong className="week-eight-demo-stamp" animate={{ opacity: [0, 0, 0, 0, 1, 0], scale: [1.5, 1.5, 1.5, 1.5, 1, 1.5], rotate: [-10, -10, -10, -10, -5, -10] }} transition={loop}>{locale === "tr" ? "ONAY" : "APPROVED"}</motion.strong>
   </div>;
 }

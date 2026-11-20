@@ -31,8 +31,8 @@ function MeetingAvatar({ index, reacting = false }: { index: number; reacting?: 
 }
 
 const copy = {
-  tr: { title: "8. HAFTA · MODÜL 1", crisis: "Kriz", score: "Puan", instruction: "Kişiye dokun, 3 karar jetonunu dağıt.", goal: "HEDEF", apply: "Kararı Uygula", next: "Sonraki Kriz", finish: "Toplantıyı Tamamla", flow: "Akış", quality: "Kalite", team: "Ekip", strong: "Güçlü denge", partial: "Kısmen uygun", oneSided: "Tek taraflı karar", locked: "Bu toplantı turundaki kararların kilitli.", saved: "Kararlar kaydediliyor…", failed: "Kararlar kaydedilemedi. İlerlemen korundu.", retry: "Tekrar kaydet", remove: "Jetonu geri al", complete: "Kriz toplantısı tamamlandı", early: "Kısmi kararların kaydedildi", tokensLeft: "Kalan jeton" },
-  en: { title: "WEEK 8 · MODULE 1", crisis: "Crisis", score: "Score", instruction: "Tap a person to distribute 3 decision tokens.", goal: "GOAL", apply: "Apply Decision", next: "Next Crisis", finish: "Complete Meeting", flow: "Flow", quality: "Quality", team: "Team", strong: "Strong balance", partial: "Partly suitable", oneSided: "One-sided decision", locked: "Your decisions for this meeting round are locked.", saved: "Saving decisions…", failed: "Decisions could not be saved. Your progress is preserved.", retry: "Save again", remove: "Take token back", complete: "Crisis meeting complete", early: "Your partial decisions were saved", tokensLeft: "Tokens left" },
+  tr: { title: "8. HAFTA · MODÜL 1", crisis: "Kriz", score: "Puan", instruction: "Kişiye dokun, 3 karar jetonunu dağıt.", goal: "HEDEF", next: "Sonraki Kriz", finish: "Toplantıyı Tamamla", flow: "Akış", quality: "Kalite", team: "Ekip", strong: "Güçlü denge", partial: "Kısmen uygun", oneSided: "Tek taraflı karar", locked: "Bu toplantı turundaki kararların kilitli.", saved: "Kararlar kaydediliyor…", failed: "Kararlar kaydedilemedi. İlerlemen korundu.", retry: "Tekrar kaydet", remove: "Jetonu geri al", complete: "Kriz toplantısı tamamlandı", early: "Kısmi kararların kaydedildi", tokensLeft: "Kalan jeton" },
+  en: { title: "WEEK 8 · MODULE 1", crisis: "Crisis", score: "Score", instruction: "Tap a person to distribute 3 decision tokens.", goal: "GOAL", next: "Next Crisis", finish: "Complete Meeting", flow: "Flow", quality: "Quality", team: "Team", strong: "Strong balance", partial: "Partly suitable", oneSided: "One-sided decision", locked: "Your decisions for this meeting round are locked.", saved: "Saving decisions…", failed: "Decisions could not be saved. Your progress is preserved.", retry: "Save again", remove: "Take token back", complete: "Crisis meeting complete", early: "Your partial decisions were saved", tokensLeft: "Tokens left" },
 } as const;
 
 function restore(draft?: ModuleDraft | null) {
@@ -97,23 +97,25 @@ export function Week8CrisisMeeting({ onSubmit, onDraft, existingSubmission, exis
   }, [onDraft, submissionFor]);
 
   const addToken = (stakeholderIndex: number) => {
-    if (review || finalizing || forceSubmit || distributed >= 3) return;
-    const next = allocation.map((value, itemIndex) => itemIndex === stakeholderIndex ? value + 1 : value);
-    allocationRef.current = next; setAllocation(next); saveCurrentDraft(next);
+    const currentAllocation = allocationRef.current;
+    const currentTotal = currentAllocation.reduce((sum, value) => sum + value, 0);
+    if (review || finalizing || forceSubmit || currentTotal >= 3) return;
+    const next = currentAllocation.map((value, itemIndex) => itemIndex === stakeholderIndex ? value + 1 : value);
+    const nextTotal = next.reduce((sum, value) => sum + value, 0);
+    allocationRef.current = next; setAllocation(next);
+    if (nextTotal < 3) { saveCurrentDraft(next); return; }
+
+    const attempt = { caseId: current.id, allocation: [...next] };
+    const nextAttempts = [...attemptsRef.current, attempt];
+    attemptsRef.current = nextAttempts; setAttempts(nextAttempts); setReview(attempt);
+    void onDraft?.(submissionFor(nextAttempts, "draft", emptyAllocation()));
   };
 
   const removeToken = (stakeholderIndex: number) => {
-    if (review || finalizing || forceSubmit || allocation[stakeholderIndex] === 0) return;
-    const next = allocation.map((value, itemIndex) => itemIndex === stakeholderIndex ? value - 1 : value);
+    const currentAllocation = allocationRef.current;
+    if (review || finalizing || forceSubmit || currentAllocation[stakeholderIndex] === 0) return;
+    const next = currentAllocation.map((value, itemIndex) => itemIndex === stakeholderIndex ? value - 1 : value);
     allocationRef.current = next; setAllocation(next); saveCurrentDraft(next);
-  };
-
-  const applyDecision = () => {
-    if (distributed !== 3 || review || finalizing || forceSubmit) return;
-    const attempt = { caseId: current.id, allocation: [...allocation] };
-    const next = [...attemptsRef.current, attempt];
-    attemptsRef.current = next; setAttempts(next); setReview(attempt);
-    void onDraft?.(submissionFor(next, "draft", emptyAllocation()));
   };
 
   const advance = () => {
@@ -154,6 +156,6 @@ export function Week8CrisisMeeting({ onSubmit, onDraft, existingSubmission, exis
     </div>
     <div className={styles.gauges}>{[text.flow, text.quality, text.team].map((label, gaugeIndex) => <div key={label}><span><b>{label}</b><strong>{Math.round(displayedGauges[gaugeIndex] ?? 0)}</strong></span><i><motion.em animate={{ width: `${displayedGauges[gaugeIndex]}%` }} transition={{ duration: reducedMotion ? 0 : .75 }} /></i></div>)}</div>
     {review && <motion.div className={`${styles.result} ${distance === 0 ? styles.success : ""}`} initial={{ opacity: 0, scale: .96 }} animate={{ opacity: 1, scale: 1 }}><span>{distance === 0 ? <Check /> : "◌"}</span><div><strong>{verdict} · +{roundPoints}/20</strong><p>{current.learning[locale]}</p></div></motion.div>}
-    <footer className={styles.actions}><div className={styles.looseTokens} aria-label={`${text.tokensLeft}: ${Math.max(0, 3 - distributed)}`}>{Array.from({ length: Math.max(0, 3 - distributed) }, (_, item) => <motion.i key={item} layout>●</motion.i>)}</div>{review ? <button className={styles.primaryButton} onClick={advance}>{attempts.length === 5 ? text.finish : text.next}</button> : <button className={styles.primaryButton} disabled={distributed !== 3} onClick={applyDecision}>{text.apply}</button>}</footer>
+    <footer className={styles.actions}><div className={styles.looseTokens} aria-label={`${text.tokensLeft}: ${Math.max(0, 3 - distributed)}`}>{Array.from({ length: Math.max(0, 3 - distributed) }, (_, item) => <motion.i key={item} layout>●</motion.i>)}</div>{review && <button className={styles.primaryButton} onClick={advance}>{attempts.length === 5 ? text.finish : text.next}</button>}</footer>
   </section>;
 }
