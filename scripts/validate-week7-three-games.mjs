@@ -69,17 +69,25 @@ assert.match(stockUi, /className=\{styles\.water\} data-level=\{level\.toFixed\(
 assert.match(week7Css, /\.water \{[^}]*inset: 0; height: 100%[^}]*transform-origin: center bottom[^}]*transition: transform/);
 assert.match(reviewTiming, /loopSigns: \{ normal: 1450, reducedMotion: 700 \}/);
 assert.match(reviewTiming, /stockRace: \{ normal: 1550, reducedMotion: 650 \}/);
-assert.match(reviewTiming, /drawCurve: \{ normal: 1550, reducedMotion: 800 \}/);
+assert.match(reviewTiming, /drawCurve: \{ normal: 4100, reducedMotion: 2900 \}/);
 for (const [source, key] of [[loopUi, "loopSigns"], [stockUi, "stockRace"], [curveUi, "drawCurve"]]) {
   assert.match(source, new RegExp(`WEEK7_REVIEW_TIMING\\.${key}\\.reducedMotion`));
   assert.match(source, new RegExp(`WEEK7_REVIEW_TIMING\\.${key}\\.normal`));
   assert.match(source, /restored\.attempts\.length === [A-Za-z]+\.length && !review && !existingSubmission/, "A live final answer saved as a draft must not bypass its visible review delay");
 }
 assert.match(curveUi, /<div className=\{styles\.prompt\}><strong>\{text\.instruction\}<\/strong><\/div>/, "The curve prompt above the chart should only contain the drawing instruction");
+assert.match(loopUi, /<div className=\{styles\.prompt\}><strong>\{text\.instruction\}<\/strong><\/div>/, "Loop Signs must show only one instruction above the canvas");
+assert.doesNotMatch(loopUi, /<small>\{current\.assumption\[locale\]\}<\/small>/, "Loop Signs must not repeat the scenario assumption above the canvas");
+assert.match(stockUi, /<div className=\{styles\.prompt\}><strong>\{text\.target\} \{current\.target\}<\/strong><\/div>/, "Stock Race must show only the live target above the tanks");
+assert.match(stockUi, /<strong>\{text\.choose\}<\/strong><small>\{text\.startHint\}<\/small>/, "Stock Race must keep the two concise hints directly below the tanks");
+assert.doesNotMatch(stockUi, /tankTargetLine[^\n]*<span>/, "The tank target line must not repeat the target label");
 assert.match(curveUi, /review \? `\+\$\{review\.points\}\/20 · \$\{current\.label\[locale\]\}` : current\.label\[locale\]/, "Curve label must remain visible below the chart during play and review");
 assert.match(curveUi, /className=\{styles\.curveDescription\}>\{current\.prompt\[locale\]\}<\/small>/, "The concise scenario description should remain readable below the chart");
 assert.match(curveUi, /review\?\.roundIndex \?\? Math\.min\(attempts\.length, curveRounds\.length - 1\)/, "The reviewed curve must stay on its own historical line until its result delay ends");
 assert.doesNotMatch(curveUi, /drawMore|Gelecek alanında çizgiyi biraz daha uzat|Extend the line farther into the future area/);
+assert.match(curveUi, /Math\.round\(\(review\.points \/ 20\) \* 100\)/, "Curve review must derive similarity from the existing 0-20 score");
+assert.match(curveUi, /className=\{styles\.similarityBadge\}/, "Curve review must show a centered similarity badge");
+assert.match(week7Css, /\.similarityBadge \{[^}]*left: 50%; top: 50%[^}]*transform: translate\(-50%, -50%\)/, "Similarity badge must stay centered over the graph");
 assert.match(curveUi, /const sharedStart = current\.pastValues\.at\(-1\)!/);
 assert.match(curveUi, /\{ x: 0, y: sharedStart \}/, "Student and actual curves must share the past-curve endpoint");
 assert.match(curveUi, /\(92 - svgY\) \/ 82/, "Pointer input must map to the chart plot coordinates");

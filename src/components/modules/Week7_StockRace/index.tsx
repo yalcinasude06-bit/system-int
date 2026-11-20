@@ -15,12 +15,12 @@ type RaceReview = { winner: TankId; time: number; correct: boolean; roundIndex: 
 
 const copy = {
   tr: {
-    title: "7. HAFTA · MODÜL 2", round: "Yarış", score: "Puan", target: "HEDEF", start: "Başlangıç", input: "Giriş", output: "Çıkış", choose: "Önce hangi depo?",
+    title: "7. HAFTA · MODÜL 2", round: "Yarış", score: "Puan", target: "Hedef", start: "Başlangıç", input: "Giriş", output: "Çıkış", choose: "Önce hangi depo dolar?", startHint: "Yüksek başlangıç tek başına yeterli değildir.",
     run: "Yarışı Başlat", correct: "Doğru tahmin!", wrong: "Bu kez farklı depo kazandı.", result: (id: string, time: number) => `${id} ilk ulaştı · ${time.toLocaleString("tr-TR", { maximumFractionDigits: 1 })} sn`,
     learning: "Başlangıç, Giriş ve Çıkış birlikte belirleyicidir.", saveError: "Yanıt kaydedilemedi. Bağlantını kontrol edip yeniden dene.", saving: "Yanıt kaydediliyor…", locked: "Bu yarış turundaki yanıtların kilitli.", retry: "Tekrar kaydet",
   },
   en: {
-    title: "WEEK 7 · MODULE 2", round: "Race", score: "Score", target: "TARGET", start: "Start", input: "Inflow", output: "Outflow", choose: "Which tank arrives first?",
+    title: "WEEK 7 · MODULE 2", round: "Race", score: "Score", target: "Target", start: "Start", input: "Inflow", output: "Outflow", choose: "Which tank fills first?", startHint: "A high starting level is not enough on its own.",
     run: "Start Race", correct: "Correct prediction!", wrong: "A different tank won this time.", result: (id: string, time: number) => `${id} arrived first · ${time.toLocaleString("en-US", { maximumFractionDigits: 1 })} s`,
     learning: "Start, Inflow, and Outflow determine the result together.", saveError: "Your answer could not be saved. Check your connection and try again.", saving: "Saving your answer…", locked: "Your answers for this race round are locked.", retry: "Save again",
   },
@@ -134,19 +134,19 @@ export function Week7StockRace({ onSubmit, onDraft, existingSubmission, existing
   return <section className={`${styles.shell} ${styles.stockShell}`} data-week7-game="stock-race">
     <header className={styles.header}><b>{text.title}</b><span>{text.round} <strong>{index + 1}/5</strong></span><span>{text.score} <strong>{score}</strong></span></header>
     <div className={styles.progress}>{stockRaceRounds.map((round, roundIndex) => <i key={round.id} className={roundIndex < attempts.length ? styles.done : roundIndex === index ? styles.active : ""} />)}</div>
-    <div className={styles.prompt}><strong>{current.prompt[locale]}</strong><small>{current.note[locale]}</small></div>
+    <div className={styles.prompt}><strong>{text.target} {current.target}</strong></div>
     <div key={current.id} className={styles.tankStage} data-round-id={current.id} style={{ "--tank-count": current.tanks.length } as React.CSSProperties}>
       {current.tanks.map((tank) => {
         const level = stockAtTime(tank, clock);
         const winner = review?.winner === tank.id;
         return <motion.button type="button" key={tank.id} className={`${styles.tankCard} ${prediction === tank.id ? styles.selected : ""} ${winner ? styles.winner : ""}`} disabled={running || Boolean(review) || finalizing || Boolean(forceSubmit) || Boolean(existingSubmission)} whileTap={{ scale: .96 }} onClick={() => choose(tank.id)} aria-pressed={prediction === tank.id}>
-          <div className={styles.tankVisual}><div className={styles.tankInterior}><div className={styles.water} data-level={level.toFixed(2)} aria-hidden="true" style={{ transform: `scaleY(${Math.max(0, Math.min(100, level)) / 100})` }}><i /></div><div className={styles.tankTargetLine} style={{ bottom: `${current.target}%` }}>{tank.id === current.tanks[0]!.id && <span>{text.target} {current.target}</span>}</div></div><b>{Math.round(level)}</b><span className={styles.inflowDrop}>↓</span><span className={styles.outflowDrop}>↘</span></div>
+          <div className={styles.tankVisual}><div className={styles.tankInterior}><div className={styles.water} data-level={level.toFixed(2)} aria-hidden="true" style={{ transform: `scaleY(${Math.max(0, Math.min(100, level)) / 100})` }}><i /></div><div className={styles.tankTargetLine} style={{ bottom: `${current.target}%` }} /></div><b>{Math.round(level)}</b><span className={styles.inflowDrop}>↓</span><span className={styles.outflowDrop}>↘</span></div>
           <strong>{tank.id}</strong><small>{text.start} {tank.start}</small>
           <div className={styles.flowLabels}><span>↓ {text.input} +{tank.inflow}</span><span>↘ {text.output} −{tank.outflow}</span></div>
         </motion.button>;
       })}
     </div>
-    <div className={styles.feedback} aria-live="polite">{finalizing ? <><strong>{submitting ? text.saving : failed ? text.saveError : ""}</strong>{failed && finalSubmission && <button type="button" className={styles.retryButton} onClick={() => void send(finalSubmission)}><RotateCcw size={15} />{text.retry}</button>}</> : review ? <><strong>{review.correct ? `✓ ${text.correct}` : `× ${text.wrong}`} · +{review.correct ? 20 : 0}/20</strong><small>{text.result(review.winner, review.time)} · {text.learning}</small></> : <><strong>{text.choose}</strong><small>{current.note[locale]}</small></>}</div>
+    <div className={styles.feedback} aria-live="polite">{finalizing ? <><strong>{submitting ? text.saving : failed ? text.saveError : ""}</strong>{failed && finalSubmission && <button type="button" className={styles.retryButton} onClick={() => void send(finalSubmission)}><RotateCcw size={15} />{text.retry}</button>}</> : review ? <><strong>{review.correct ? `✓ ${text.correct}` : `× ${text.wrong}`} · +{review.correct ? 20 : 0}/20</strong><small>{text.result(review.winner, review.time)} · {text.learning}</small></> : <><strong>{text.choose}</strong><small>{text.startHint}</small></>}</div>
     <footer className={styles.actions}><div className={styles.tankChoices}>{current.tanks.map((tank) => <button key={tank.id} type="button" className={prediction === tank.id ? styles.selected : ""} disabled={running || Boolean(review) || finalizing} onClick={() => choose(tank.id)}>{tank.id}</button>)}</div><button type="button" className={styles.primaryButton} disabled={!prediction || running || Boolean(review) || finalizing} onClick={start}><Play size={18} fill="currentColor" />{text.run}</button></footer>
   </section>;
 }

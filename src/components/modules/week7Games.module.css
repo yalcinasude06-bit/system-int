@@ -99,6 +99,9 @@
 
 .curveShell { --chart-blue: #347eaa; }
 .chartWrap { min-height: 0; flex: 1 1 270px; position: relative; padding: 3px 7px 17px 17px; background: rgba(255, 255, 255, .76); border: 1px solid #d6e3db; border-radius: 17px; }
+.similarityBadge { position: absolute; z-index: 6; left: 50%; top: 50%; display: grid; min-width: 118px; place-items: center; gap: 1px; padding: 11px 18px; transform: translate(-50%, -50%); border: 2px solid rgba(255,255,255,.9); border-radius: 18px; background: rgba(31, 68, 81, .94); box-shadow: 0 14px 35px rgba(31,68,81,.28); color: #fff; pointer-events: none; }
+.similarityBadge span { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.similarityBadge strong { font-size: 30px; line-height: 1; }
 .drawSurface { width: 100%; height: 100%; min-height: 185px; display: block; overflow: visible; touch-action: none; user-select: none; cursor: crosshair; }
 .axis { fill: none; stroke: #72877e; stroke-width: 1.2; vector-effect: non-scaling-stroke; }
 .futureArea { fill: rgba(224, 242, 234, .32); }

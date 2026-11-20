@@ -12,9 +12,27 @@ import { CRISIS_MEETING_GAME_ID, crisisDistance, crisisGauges, scoreCrisisAttemp
 type DraftPayload = { gameId?: unknown; attempts?: unknown; currentAllocation?: unknown };
 const emptyAllocation = () => [0, 0, 0, 0];
 
+function MeetingAvatar({ index, reacting = false }: { index: number; reacting?: boolean }) {
+  const palettes = [
+    ["#315f8d", "#efb38f", "#173d63"],
+    ["#7f527b", "#d99a78", "#57304f"],
+    ["#39745d", "#bc7d5f", "#214d3c"],
+    ["#9a6237", "#f0bd98", "#633919"],
+  ] as const;
+  const [shirt, skin, hair] = palettes[index % palettes.length]!;
+  return <motion.svg className={styles.avatar} viewBox="0 0 72 72" aria-hidden="true" animate={reacting ? { y: [0, -3, 0], rotate: [0, index % 2 ? -2 : 2, 0] } : undefined} transition={{ duration: .72 }}>
+    <circle cx="36" cy="36" r="34" fill="#f7fbff" />
+    <path d="M13 68c2-18 11-27 23-27s21 9 23 27" fill={shirt} />
+    <path d="M24 30c0-11 5-18 12-18s12 7 12 18c0 9-5 16-12 16s-12-7-12-16Z" fill={skin} />
+    <path d="M23 29c0-13 6-20 14-20 8 0 13 7 13 18-5-2-9-6-11-11-3 6-9 10-16 11Z" fill={hair} />
+    <circle cx="31" cy="31" r="1.4" fill="#28384a" /><circle cx="42" cy="31" r="1.4" fill="#28384a" />
+    <path d={reacting ? "M32 37q4 4 8 0" : "M32 38h8"} fill="none" stroke="#8c4f42" strokeWidth="1.5" strokeLinecap="round" />
+  </motion.svg>;
+}
+
 const copy = {
-  tr: { title: "8. HAFTA · MODÜL 1", crisis: "Kriz", score: "Puan", instruction: "3 jetonu dağıt. En iyi dengeyi kur.", goal: "HEDEF", apply: "Kararı Uygula", next: "Sonraki Kriz", finish: "Toplantıyı Tamamla", flow: "Akış", quality: "Kalite", team: "Ekip", strong: "Güçlü denge", partial: "Kısmen uygun", oneSided: "Tek taraflı karar", locked: "Bu toplantı turundaki kararların kilitli.", saved: "Kararlar kaydediliyor…", failed: "Kararlar kaydedilemedi. İlerlemen korundu.", retry: "Tekrar kaydet", remove: "Jetonu geri al", complete: "Kriz toplantısı tamamlandı", early: "Kısmi kararların kaydedildi" },
-  en: { title: "WEEK 8 · MODULE 1", crisis: "Crisis", score: "Score", instruction: "Distribute 3 tokens. Build the best balance.", goal: "GOAL", apply: "Apply Decision", next: "Next Crisis", finish: "Complete Meeting", flow: "Flow", quality: "Quality", team: "Team", strong: "Strong balance", partial: "Partly suitable", oneSided: "One-sided decision", locked: "Your decisions for this meeting round are locked.", saved: "Saving decisions…", failed: "Decisions could not be saved. Your progress is preserved.", retry: "Save again", remove: "Take token back", complete: "Crisis meeting complete", early: "Your partial decisions were saved" },
+  tr: { title: "8. HAFTA · MODÜL 1", crisis: "Kriz", score: "Puan", instruction: "Kişiye dokun, 3 karar jetonunu dağıt.", goal: "HEDEF", apply: "Kararı Uygula", next: "Sonraki Kriz", finish: "Toplantıyı Tamamla", flow: "Akış", quality: "Kalite", team: "Ekip", strong: "Güçlü denge", partial: "Kısmen uygun", oneSided: "Tek taraflı karar", locked: "Bu toplantı turundaki kararların kilitli.", saved: "Kararlar kaydediliyor…", failed: "Kararlar kaydedilemedi. İlerlemen korundu.", retry: "Tekrar kaydet", remove: "Jetonu geri al", complete: "Kriz toplantısı tamamlandı", early: "Kısmi kararların kaydedildi", tokensLeft: "Kalan jeton" },
+  en: { title: "WEEK 8 · MODULE 1", crisis: "Crisis", score: "Score", instruction: "Tap a person to distribute 3 decision tokens.", goal: "GOAL", apply: "Apply Decision", next: "Next Crisis", finish: "Complete Meeting", flow: "Flow", quality: "Quality", team: "Team", strong: "Strong balance", partial: "Partly suitable", oneSided: "One-sided decision", locked: "Your decisions for this meeting round are locked.", saved: "Saving decisions…", failed: "Decisions could not be saved. Your progress is preserved.", retry: "Save again", remove: "Take token back", complete: "Crisis meeting complete", early: "Your partial decisions were saved", tokensLeft: "Tokens left" },
 } as const;
 
 function restore(draft?: ModuleDraft | null) {
@@ -53,6 +71,7 @@ export function Week8CrisisMeeting({ onSubmit, onDraft, existingSubmission, exis
   const distributed = allocation.reduce((sum, value) => sum + value, 0);
   const visibleAllocation = review?.allocation ?? allocation;
   const gauges = crisisGauges(index, visibleAllocation);
+  const displayedGauges = review ? gauges : [50, 50, 50];
   const score = scoreCrisisAttempts(attempts);
 
   const submissionFor = useCallback((nextAttempts: CrisisAttempt[], reason: "draft" | "completed" | "teacher-ended", currentAllocation: number[]): ModuleSubmission => ({
@@ -119,16 +138,22 @@ export function Week8CrisisMeeting({ onSubmit, onDraft, existingSubmission, exis
     <div className={styles.caseBrief}><div><small>{current.title[locale]}</small><h1>{current.situation[locale]}</h1></div><span><b>{text.goal}</b>{current.target[locale]}</span></div>
     <p className={styles.instruction}><Coins size={19} />{text.instruction}<b>{3 - distributed}</b></p>
     <div className={styles.meetingScene}>
-      <motion.div className={styles.table} animate={reducedMotion ? undefined : { scale: [1, 1.012, 1] }} transition={{ duration: 4, repeat: Infinity }}><span>8</span></motion.div>
+      <motion.div className={`${styles.table} ${review ? styles.tableDecided : ""}`} animate={review && !reducedMotion ? { scale: [1, 1.035, 1] } : undefined} transition={{ duration: .7 }}>
+        <div className={styles.decisionRing}><span>{review ? "✓" : "8"}</span>{review && <div className={styles.tableTokens}>{[0, 1, 2].map((token) => <motion.i key={token} initial={{ opacity: 0, scale: .4, x: (token - 1) * 28, y: 35 }} animate={{ opacity: 1, scale: 1, x: (token - 1) * 18, y: 18 }} transition={{ delay: reducedMotion ? 0 : token * .1 }}>●</motion.i>)}</div>}</div>
+        {review && <motion.strong className={styles.tableVerdict} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: reducedMotion ? 0 : .45 }}>{verdict}</motion.strong>}
+      </motion.div>
       <div className={styles.stakeholders}>
-        {current.stakeholders.map((stakeholder, stakeholderIndex) => <motion.article key={stakeholder.id} className={`${styles.stakeholder} ${review && current.ideal[stakeholderIndex] > 0 ? styles.ideal : ""}`} animate={review && current.ideal[stakeholderIndex] === 0 && allocation[stakeholderIndex] > 0 && !reducedMotion ? { x: [0, -3, 3, 0] } : undefined}>
-          <button type="button" disabled={Boolean(review) || distributed >= 3} onClick={() => addToken(stakeholderIndex)}><span>{stakeholder.icon}</span><div><strong>{stakeholder.role[locale]}</strong><small>{stakeholder.proposal[locale]}</small></div></button>
-          <div className={styles.tokens}>{Array.from({ length: visibleAllocation[stakeholderIndex] ?? 0 }, (_, tokenIndex) => <motion.button initial={{ scale: 0, y: 15 }} animate={{ scale: 1, y: 0 }} type="button" key={tokenIndex} aria-label={text.remove} disabled={Boolean(review)} onClick={() => removeToken(stakeholderIndex)}>●</motion.button>)}</div>
+        {current.stakeholders.map((stakeholder, stakeholderIndex) => <motion.article key={stakeholder.id} className={`${styles.stakeholder} ${review && current.ideal[stakeholderIndex] > 0 ? styles.ideal : ""} ${visibleAllocation[stakeholderIndex] ? styles.hasToken : ""}`} animate={review && current.ideal[stakeholderIndex] === 0 && visibleAllocation[stakeholderIndex] > 0 && !reducedMotion ? { x: [0, -3, 3, 0] } : undefined}>
+          <button type="button" disabled={Boolean(review) || distributed >= 3} onClick={() => addToken(stakeholderIndex)} aria-label={`${stakeholder.role[locale]}: ${stakeholder.proposal[locale]}`}>
+            <MeetingAvatar index={stakeholderIndex} reacting={Boolean(review)} />
+            <div className={styles.speech}><strong>{stakeholder.role[locale]}</strong><small>{stakeholder.proposal[locale]}</small></div>
+          </button>
+          <div className={styles.tokens}>{Array.from({ length: visibleAllocation[stakeholderIndex] ?? 0 }, (_, tokenIndex) => <motion.button initial={{ scale: .35, x: stakeholderIndex % 2 ? -42 : 42, y: stakeholderIndex < 2 ? 42 : -42 }} animate={{ scale: 1, x: 0, y: 0 }} transition={{ type: "spring", stiffness: 260, damping: 19 }} type="button" key={tokenIndex} aria-label={text.remove} disabled={Boolean(review)} onClick={() => removeToken(stakeholderIndex)}>●</motion.button>)}</div>
         </motion.article>)}
       </div>
     </div>
-    <div className={styles.gauges}>{[text.flow, text.quality, text.team].map((label, gaugeIndex) => <div key={label}><span><b>{label}</b><strong>{Math.round(gauges[gaugeIndex] ?? 0)}</strong></span><i><motion.em animate={{ width: `${gauges[gaugeIndex]}%` }} transition={{ duration: .6 }} /></i></div>)}</div>
+    <div className={styles.gauges}>{[text.flow, text.quality, text.team].map((label, gaugeIndex) => <div key={label}><span><b>{label}</b><strong>{Math.round(displayedGauges[gaugeIndex] ?? 0)}</strong></span><i><motion.em animate={{ width: `${displayedGauges[gaugeIndex]}%` }} transition={{ duration: reducedMotion ? 0 : .75 }} /></i></div>)}</div>
     {review && <motion.div className={`${styles.result} ${distance === 0 ? styles.success : ""}`} initial={{ opacity: 0, scale: .96 }} animate={{ opacity: 1, scale: 1 }}><span>{distance === 0 ? <Check /> : "◌"}</span><div><strong>{verdict} · +{roundPoints}/20</strong><p>{current.learning[locale]}</p></div></motion.div>}
-    <footer className={styles.actions}><div className={styles.looseTokens}>{Array.from({ length: Math.max(0, 3 - distributed) }, (_, item) => <motion.i key={item} layout>●</motion.i>)}</div>{review ? <button className={styles.primaryButton} onClick={advance}>{attempts.length === 5 ? text.finish : text.next}</button> : <button className={styles.primaryButton} disabled={distributed !== 3} onClick={applyDecision}>{text.apply}</button>}</footer>
+    <footer className={styles.actions}><div className={styles.looseTokens} aria-label={`${text.tokensLeft}: ${Math.max(0, 3 - distributed)}`}>{Array.from({ length: Math.max(0, 3 - distributed) }, (_, item) => <motion.i key={item} layout>●</motion.i>)}</div>{review ? <button className={styles.primaryButton} onClick={advance}>{attempts.length === 5 ? text.finish : text.next}</button> : <button className={styles.primaryButton} disabled={distributed !== 3} onClick={applyDecision}>{text.apply}</button>}</footer>
   </section>;
 }

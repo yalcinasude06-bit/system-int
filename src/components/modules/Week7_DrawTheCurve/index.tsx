@@ -16,11 +16,11 @@ type CurveReview = { points: number; sampled: NormalizedPoint[]; roundIndex: num
 const copy = {
   tr: {
     title: "7. HAFTA · MODÜL 3", stage: "Aşama", score: "Puan", instruction: "Çizginin devamını parmağınla tamamla.", today: "BUGÜN", time: "zaman", stock: "Stok", clear: "Temizle", check: "Kontrol Et",
-    yourLine: "Senin çizgin", actual: "Gerçek davranış", saveError: "Yanıt kaydedilemedi. Bağlantını kontrol edip yeniden dene.", saving: "Yanıt kaydediliyor…", locked: "Bu çizim turundaki yanıtların kilitli.", retry: "Tekrar kaydet",
+    yourLine: "Senin çizgin", actual: "Gerçek davranış", similarity: "Benzerlik", saveError: "Yanıt kaydedilemedi. Bağlantını kontrol edip yeniden dene.", saving: "Yanıt kaydediliyor…", locked: "Bu çizim turundaki yanıtların kilitli.", retry: "Tekrar kaydet",
   },
   en: {
     title: "WEEK 7 · MODULE 3", stage: "Stage", score: "Score", instruction: "Continue the line with your finger.", today: "TODAY", time: "time", stock: "Stock", clear: "Clear", check: "Check",
-    yourLine: "Your line", actual: "Actual behavior", saveError: "Your answer could not be saved. Check your connection and try again.", saving: "Saving your answer…", locked: "Your answers for this drawing round are locked.", retry: "Save again",
+    yourLine: "Your line", actual: "Actual behavior", similarity: "Similarity", saveError: "Your answer could not be saved. Check your connection and try again.", saving: "Saving your answer…", locked: "Your answers for this drawing round are locked.", retry: "Save again",
   },
 } as const;
 
@@ -179,6 +179,7 @@ export function Week7DrawTheCurve({ onSubmit, onDraft, existingSubmission, exist
         {points.length > 1 && <path className={`${styles.studentCurve} ${review ? styles.reviewed : ""}`} d={pathFromPoints([{ x: 0, y: sharedStart }, ...points.filter((point) => point.x > 0)])} />}
         {review && <motion.path className={styles.actualCurve} d={pathFromPoints(displayTarget)} initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 1 }} transition={{ duration: reduceMotion ? 0 : .95 }} />}
       </svg>
+      {review && <motion.div className={styles.similarityBadge} role="status" aria-live="polite" initial={{ opacity: 0, scale: .82 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: reduceMotion ? .1 : 1.05, duration: reduceMotion ? 0 : .28 }}><span>{text.similarity}</span><strong>%{Math.round((review.points / 20) * 100)}</strong></motion.div>}
       <div className={styles.chartLegend}><span><i className={styles.studentLegend} />{text.yourLine}</span>{review && <span><i className={styles.actualLegend} />{text.actual}</span>}</div>
     </div>
     <div className={styles.feedback} aria-live="polite">{finalizing ? <><strong>{submitting ? text.saving : failed ? text.saveError : ""}</strong>{failed && finalSubmission && <button type="button" className={styles.retryButton} onClick={() => void send(finalSubmission)}><RotateCcw size={15} />{text.retry}</button>}</> : <><strong>{review ? `+${review.points}/20 · ${current.label[locale]}` : current.label[locale]}</strong><small className={styles.curveDescription}>{current.prompt[locale]}</small></>}</div>

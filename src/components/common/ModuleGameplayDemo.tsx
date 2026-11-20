@@ -612,19 +612,29 @@ function WeekSevenDrawCurveDemo() {
 
 function WeekEightCrisisDemo() {
   const { locale } = useI18n();
-  const labels = locale === "tr" ? ["Planlama", "Ekip", "Kalite", "Üretim"] : ["Planning", "Team", "Quality", "Production"];
+  const people = [
+    { role: { tr: "Planlama", en: "Planning" }, proposal: { tr: "İkiye bölelim.", en: "Split it in two." } },
+    { role: { tr: "Ekip", en: "Team" }, proposal: { tr: "Deneyimi taşıyalım.", en: "Move experience." } },
+    { role: { tr: "Kalite", en: "Quality" }, proposal: { tr: "Kontrol ekleyelim.", en: "Add inspection." } },
+    { role: { tr: "Üretim", en: "Production" }, proposal: { tr: "Hattı hızlandıralım.", en: "Speed up the line." } },
+  ];
+  const loop = { duration: 5.2, repeat: Infinity, ease: "easeInOut" as const, times: [0, .18, .44, .7, .88, 1] };
   return <div className="module-demo week-eight-crisis-demo" aria-hidden="true">
-    <div className="week-eight-demo-table">8</div>
-    {labels.map((label, index) => <span key={label} className={`week-eight-demo-person person-${index + 1}`}>{label}</span>)}
-    {[0, 1, 2].map((token) => <motion.i key={token} animate={{ x: [0, 0, token === 2 ? 42 : -38, token === 2 ? 42 : -38, 0], y: [44, 44, token === 2 ? -31 : -22, token === 2 ? -31 : -22, 44], scale: [1, .85, 1.08, 1, 1] }} transition={{ duration: 4.6, repeat: Infinity, delay: token * .18, times: [0, .15, .48, .8, 1] }}>●</motion.i>)}
+    <motion.div className="week-eight-demo-table" animate={{ boxShadow: ["0 8px 18px #7e572826", "0 8px 18px #7e572826", "0 0 0 7px #78c7a433", "0 0 0 7px #78c7a400", "0 8px 18px #7e572826", "0 8px 18px #7e572826"] }} transition={loop}><span>8</span></motion.div>
+    {people.map((person, index) => <div key={person.role.en} className={`week-eight-demo-person person-${index + 1}`}><i><b /></i><span><strong>{person.role[locale]}</strong><small>{person.proposal[locale]}</small></span></div>)}
+    {[0, 1, 2].map((token) => <motion.i className={`week-eight-demo-token token-${token + 1}`} key={token} animate={{ x: [0, 0, token === 2 ? 47 : -45, token === 2 ? 47 : -45, 0, 0], y: [42, 42, token === 2 ? -34 : -27, token === 2 ? -34 : -27, 8, 42], scale: [1, .82, 1.08, 1, .8, 1] }} transition={{ ...loop, delay: token * .12 }}>●</motion.i>)}
+    <div className="week-eight-demo-gauges">{["", "", ""].map((_, index) => <span key={index}><motion.i animate={{ width: ["50%", "50%", `${72 + index * 6}%`, `${72 + index * 6}%`, "50%", "50%"] }} transition={loop} /></span>)}</div>
   </div>;
 }
 
 function WeekEightEvidenceDemo() {
   const { locale } = useI18n();
+  const loop = { duration: 5.4, repeat: Infinity, ease: "easeInOut" as const, times: [0, .18, .38, .62, .82, 1] };
   return <div className="module-demo week-eight-evidence-demo" aria-hidden="true">
-    {["?", "?", "?"].map((label, index) => <motion.span key={index} animate={{ rotateY: [0, 0, 90, 0, 0], backgroundColor: ["#fff", "#fff", "#fff", "#e9f8f1", "#fff"] }} transition={{ duration: 4.8, repeat: Infinity, delay: index * .45, times: [0, .2, .34, .58, 1] }}>{label}<motion.b animate={{ opacity: [0, 0, 0, 1, 0] }} transition={{ duration: 4.8, repeat: Infinity, delay: index * .45 }}>✓</motion.b></motion.span>)}
-    <motion.strong animate={{ opacity: [.35, .35, 1, 1, .35], scale: [.96, .96, 1.03, 1, .96] }} transition={{ duration: 4.8, repeat: Infinity }}>{locale === "tr" ? "Çözümü Kilitle" : "Lock Solution"}</motion.strong>
+    <div className="week-eight-demo-files">{[0, 1, 2, 3, 4].map((index) => <motion.span key={index} animate={index === 1 ? { rotateX: [0, 0, -72, -72, 0, 0], backgroundColor: ["#f5c768", "#f5c768", "#bde6d2", "#bde6d2", "#f5c768", "#f5c768"] } : undefined} transition={loop}><i>{index + 1}</i></motion.span>)}</div>
+    <motion.div className="week-eight-demo-report" animate={{ opacity: [0, 0, 1, 1, 0, 0], y: [13, 13, 0, 0, -4, 13], scale: [.9, .9, 1, 1, .96, .9] }} transition={loop}><b>{locale === "tr" ? "Rota raporu" : "Route report"}</b><svg viewBox="0 0 80 30"><path d="M7 24c14-22 20 5 33-12s21 12 33-5" /><circle cx="7" cy="24" r="3" /><circle cx="73" cy="7" r="3" /></svg></motion.div>
+    <motion.span className="week-eight-demo-credit" animate={{ opacity: [1, 1, 1, 1, .4, 1] }} transition={loop}>100 → 70</motion.span>
+    <motion.strong className="week-eight-demo-stamp" animate={{ opacity: [0, 0, 0, 0, 1, 0], scale: [1.5, 1.5, 1.5, 1.5, 1, 1.5], rotate: [-10, -10, -10, -10, -5, -10] }} transition={loop}>{locale === "tr" ? "ONAY" : "APPROVED"}</motion.strong>
   </div>;
 }
 

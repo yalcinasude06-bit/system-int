@@ -22,13 +22,13 @@ type Review = { incorrect: number[]; points: number };
 
 const copy = {
   tr: {
-    title: "7. HAFTA · MODÜL 1", stage: "Aşama", score: "Puan", instruction: "Boş işaretlere dokun: + / − seç.", reset: "Sıfırla", check: "Kontrol Et",
+    title: "7. HAFTA · MODÜL 1", stage: "Aşama", score: "Puan", instruction: "Boş işaretlere dokun, + / − seç.", reset: "Sıfırla", check: "Kontrol Et",
     loopQuestion: "Bu döngü?", reinforcing: "R Pekiştirici", balancing: "B Dengeleyici", same: "Aynı yönlü etki", opposite: "Ters yönlü etki",
     correct: "İşaretler tamamlandı", reconsider: "İşareti yeniden düşün", completed: "Beş döngüyü de tamamladın", partial: "Kontrol ettiğin aşamalar kaydedildi",
     saveError: "Yanıt kaydedilemedi. Bağlantını kontrol edip yeniden dene.", saving: "Yanıt kaydediliyor…", locked: "Bu turdaki yanıtların kilitli.", retry: "Tekrar kaydet",
   },
   en: {
-    title: "WEEK 7 · MODULE 1", stage: "Stage", score: "Score", instruction: "Tap the empty signs: choose + / −.", reset: "Reset", check: "Check",
+    title: "WEEK 7 · MODULE 1", stage: "Stage", score: "Score", instruction: "Tap the empty signs, choose + or −.", reset: "Reset", check: "Check",
     loopQuestion: "What kind of loop?", reinforcing: "R Reinforcing", balancing: "B Balancing", same: "Same-direction effect", opposite: "Opposite-direction effect",
     correct: "Signs complete", reconsider: "Reconsider the sign", completed: "You completed all five loops", partial: "Your checked stages were saved",
     saveError: "Your answer could not be saved. Check your connection and try again.", saving: "Saving your answer…", locked: "Your answers for this round are locked.", retry: "Save again",
@@ -208,7 +208,7 @@ export function Week7LoopSigns({ onSubmit, onDraft, existingSubmission, existing
   return <section className={styles.shell} data-week7-game="loop-signs">
     <header className={styles.header}><b>{text.title}</b><span>{text.stage} <strong>{index + 1}/5</strong></span><span>{text.score} <strong>{currentScore}</strong></span></header>
     <div className={styles.progress}>{loopSignCases.map((item, itemIndex) => <i key={item.id} className={itemIndex < attempts.length ? styles.done : itemIndex === index ? styles.active : ""} />)}</div>
-    <div className={styles.prompt}><strong>{text.instruction}</strong><small>{current.assumption[locale]}</small></div>
+    <div className={styles.prompt}><strong>{text.instruction}</strong></div>
     <LoopCanvas item={current} signs={signs} review={review} locked={Boolean(review) || Boolean(forceSubmit)} onToggle={toggle} />
     <div className={styles.feedback} aria-live="polite">
       {finalizing ? <><strong>{submitting ? text.saving : failed ? text.saveError : ""}</strong>{failed && finalSubmission && <button type="button" className={styles.retryButton} onClick={() => void send(finalSubmission)}><RotateCcw size={15} />{text.retry}</button>}</> : <>

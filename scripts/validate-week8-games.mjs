@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import { crisisCases } from "../src/components/modules/Week8_CrisisMeeting/crisisMeetingContent.ts";
 import { scoreCrisisAttempts } from "../src/components/modules/Week8_CrisisMeeting/crisisMeetingEngine.ts";
 import { evidenceCases } from "../src/components/modules/Week8_EvidenceMarket/evidenceMarketContent.ts";
@@ -12,4 +13,23 @@ assert.equal(scoreCrisisAttempts([{ caseId: "CM1", allocation: [0, 0, 2, 1] }]),
 assert.equal(scoreCrisisAttempts([{ caseId: "CM1", allocation: [1, 0, 1, 1] }]), 16);
 assert.equal(scoreEvidenceAttempts([{ caseId: "EM1", opened: ["density", "route"], solutionId: "forklift" }]), 8);
 for (const item of evidenceCases) assert.ok(item.evidence.reduce((sum, evidence) => sum + (item.required.includes(evidence.id) ? evidence.cost : 0), 0) <= 70);
+
+const crisisUi = fs.readFileSync("src/components/modules/Week8_CrisisMeeting/index.tsx", "utf8");
+const evidenceUi = fs.readFileSync("src/components/modules/Week8_EvidenceMarket/index.tsx", "utf8");
+const week8Css = fs.readFileSync("src/components/modules/week8Games.module.css", "utf8");
+const demos = fs.readFileSync("src/components/common/ModuleGameplayDemo.tsx", "utf8");
+const migration = fs.readFileSync("supabase/migrations/202610190041_week_eight_crisis_evidence.sql", "utf8");
+assert.match(crisisUi, /function MeetingAvatar/, "Crisis Meeting must use illustrated participants instead of emoji-only badges");
+assert.match(crisisUi, /const displayedGauges = review \? gauges : \[50, 50, 50\]/, "Crisis gauges must not reveal the answer while tokens are being distributed");
+assert.match(crisisUi, /className=\{styles\.speech\}/, "Each participant must keep their role and proposal beside the avatar");
+assert.doesNotMatch(week8Css, /\.table\s*\{[^}]*display:\s*none/, "The meeting table must remain visible on mobile");
+assert.match(evidenceUi, /type EvidenceVisualKind/, "Evidence Market must render semantic mini data visuals");
+assert.match(evidenceUi, /useState<"inspect" \| "decide">/, "Evidence Market must use separate inspect and decision phases");
+assert.match(evidenceUi, /className=\{styles\.folderCover\}/, "Evidence cards must be presented as folders");
+assert.match(evidenceUi, /opened\.includes\(id\)\) return/, "Reopening evidence must not spend credit twice");
+assert.match(evidenceUi, /decisionStamp/, "The decision must receive an in-scene approval or rejection stamp");
+assert.match(demos, /function WeekEightCrisisDemo\(\)[\s\S]*?week-eight-demo-gauges/, "The Week 8 crisis demo must mirror the table, people, tokens, and gauges");
+assert.match(demos, /function WeekEightEvidenceDemo\(\)[\s\S]*?week-eight-demo-report[\s\S]*?week-eight-demo-stamp/, "The Week 8 evidence demo must mirror folders, a report, and approval stamp");
+assert.match(migration, /Week 8 speed bonus must remain enabled/, "Week 8 must remain eligible for the shared speed bonus");
+assert.doesNotMatch(migration, /when target_session\.selected_week = 8[^\n]*then 0/i, "Week 8 must not be excluded from the speed bonus calculation");
 console.log("Week 8 game validation passed.");
