@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ArrowLeft, Check, Coins, FileSearch, FolderOpen, LockKeyhole, RotateCcw, Sparkles } from "lucide-react";
+import { Check, Coins, FileSearch, FolderOpen, LockKeyhole, RotateCcw, Sparkles } from "lucide-react";
 import { useI18n } from "@/lib/i18n/I18nContext";
 import type { LearningModuleProps, ModuleDraft, ModuleSubmission } from "@/types";
 import styles from "../week8Games.module.css";
@@ -75,6 +75,8 @@ export function Week8EvidenceMarket({ onSubmit, onDraft, existingSubmission, exi
   const attemptsRef = useRef(restored.attempts); const openedRef = useRef(restored.opened); const submittedRef = useRef(false);
   const index = review ? Math.max(0, attempts.length - 1) : Math.min(attempts.length, evidenceCases.length - 1); const current = evidenceCases[index]!;
   const score = scoreEvidenceAttempts(attempts); const spent = current.evidence.filter((item) => opened.includes(item.id)).reduce((sum, item) => sum + item.cost, 0); const credit = 100 - spent;
+  const canOpenMore = current.evidence.some((item) => !opened.includes(item.id) && item.cost <= credit);
+  const autoDecisionReady = opened.length >= 2 && !canOpenMore;
 
   const submissionFor = useCallback((nextAttempts: EvidenceAttempt[], reason: "draft" | "completed" | "teacher-ended", currentOpened: string[], currentSolution: string | null): ModuleSubmission => ({ stage: 1, score: scoreEvidenceAttempts(nextAttempts), payload: { gameId: EVIDENCE_MARKET_GAME_ID, attempts: nextAttempts, currentOpened, currentSolution, answeredCount: nextAttempts.length, stageCount: evidenceCases.length, completionReason: reason } }), []);
   const saveDraft = useCallback((nextOpened: string[], nextSolution: string | null) => { void onDraft?.(submissionFor(attemptsRef.current, "draft", nextOpened, nextSolution)); }, [onDraft, submissionFor]);
@@ -94,6 +96,11 @@ export function Week8EvidenceMarket({ onSubmit, onDraft, existingSubmission, exi
 
   useEffect(() => { if (forceSubmit && !finalizing && !existingSubmission) finalize(attemptsRef.current, "teacher-ended"); }, [existingSubmission, finalizing, finalize, forceSubmit]);
   useEffect(() => { if (restored.attempts.length === evidenceCases.length && !existingSubmission) finalize(restored.attempts, "completed"); }, [existingSubmission, finalize, restored.attempts]);
+  useEffect(() => {
+    if (!autoDecisionReady || review || finalizing || phase === "decide") return;
+    const timer = window.setTimeout(() => setPhase("decide"), reduceMotion ? 0 : 520);
+    return () => window.clearTimeout(timer);
+  }, [autoDecisionReady, finalizing, phase, reduceMotion, review]);
 
   if (existingSubmission) return <section className={`${styles.shell} ${styles.centered}`}><LockKeyhole size={44} /><h2>{text.locked}</h2></section>;
   if (finalizing) return <section className={`${styles.shell} ${styles.centered}`}><Sparkles size={46} /><h2>{attempts.length === evidenceCases.length ? text.complete : text.partial}</h2><p>{submitting ? text.saving : failed ? text.failed : ""}</p>{failed && finalSubmission && <button className={styles.secondaryButton} onClick={() => void send(finalSubmission)}><RotateCcw size={17} />{text.retry}</button>}</section>;
@@ -120,18 +127,23 @@ export function Week8EvidenceMarket({ onSubmit, onDraft, existingSubmission, exi
       </section>
 
       <AnimatePresence mode="wait">
-        {phase === "inspect" && !review ? <motion.aside key="preview" className={styles.reportPreview} initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }}>
+        {phase === "inspect" && !review ? <motion.aside key="preview" className={styles.reportPreview} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
           {selectedCard && opened.includes(selectedCard.id) ? <><div className={styles.reportHeading}><span>{selectedCard.title[locale]}</span><b>{current.title[locale]}</b></div><EvidenceVisual id={selectedCard.id} /><p>{selectedCard.detail[locale]}</p></> : <><FileSearch size={34} /><strong>{text.instruction}</strong><small>{creditWarning ? text.noCredit : text.chooseTwo}</small></>}
-        </motion.aside> : <motion.section key="decision" className={styles.decisionBoard} initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }}>
-          <div className={styles.desk}><h2>{text.desk}</h2><div>{opened.map((id) => { const card = current.evidence.find((item) => item.id === id)!; return <button type="button" key={id} className={review && current.required.includes(id) ? styles.relevantChip : ""} disabled={Boolean(review)} onClick={() => { setSelectedEvidence(id); setPhase("inspect"); }}><Check />{card.title[locale]}</button>; })}</div></div>
+        </motion.aside> : null}
+      </AnimatePresence>
+
+      {opened.length > 0 && <div className={styles.desk}><h2>{text.desk}</h2><div>{opened.map((id) => { const card = current.evidence.find((item) => item.id === id)!; return <button type="button" key={id} className={review && current.required.includes(id) ? styles.relevantChip : ""} disabled={Boolean(review)} onClick={() => setSelectedEvidence(id)}><Check />{card.title[locale]}</button>; })}</div></div>}
+
+      <AnimatePresence mode="wait">
+        {(phase === "decide" || review) && <motion.section key="decision" className={styles.decisionBoard} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
+          {selectedCard && opened.includes(selectedCard.id) && <div className={styles.decisionEvidence}><EvidenceVisual id={selectedCard.id} /><div><strong>{selectedCard.title[locale]}</strong><p>{selectedCard.detail[locale]}</p></div></div>}
           <div className={styles.solutions}><h2>{text.solution}</h2><div>{current.solutions.map((item) => <motion.button type="button" key={item.id} disabled={Boolean(review)} className={`${solution === item.id ? styles.selected : ""} ${review && item.id === current.correct ? styles.correct : ""} ${review && solution === item.id && item.id !== current.correct ? styles.wrong : ""}`} onClick={() => choose(item.id)} animate={review && solution === item.id && item.id !== current.correct && !reduceMotion ? { x: [0, -3, 3, 0] } : undefined}>{item.text[locale]}{review && solution === item.id && <motion.span className={`${styles.decisionStamp} ${decisionCorrect ? styles.approvedStamp : styles.rejectedStamp}`} initial={{ opacity: 0, scale: 1.6, rotate: -12 }} animate={{ opacity: 1, scale: 1, rotate: -6 }} transition={{ delay: reduceMotion ? 0 : .35 }}>{decisionCorrect ? text.approved : text.unsuitable}</motion.span>}</motion.button>)}</div></div>
         </motion.section>}
       </AnimatePresence>
     </div>
     {review && <motion.div className={`${styles.result} ${decisionCorrect ? styles.success : ""}`} initial={{ opacity: 0, scale: .96 }} animate={{ opacity: 1, scale: 1 }}><span>{decisionCorrect ? <Check /> : "◌"}</span><div><strong>{text.best} · +{roundPoints}/20</strong><p>{current.learning[locale]}</p></div></motion.div>}
     <footer className={styles.actions}>
-      {!review && phase === "decide" && <button className={styles.secondaryButton} onClick={() => setPhase("inspect")}><ArrowLeft size={17} />{text.back}</button>}
-      {review ? <button className={styles.primaryButton} onClick={advance}>{attempts.length === 5 ? text.finish : text.next}</button> : phase === "inspect" ? <button className={styles.primaryButton} disabled={opened.length < 2} onClick={() => setPhase("decide")}>{text.decide}</button> : <button className={styles.primaryButton} disabled={!solution} onClick={lock}>{text.lock}</button>}
+      {review ? <button className={styles.primaryButton} onClick={advance}>{attempts.length === 5 ? text.finish : text.next}</button> : phase === "decide" ? <button className={styles.primaryButton} disabled={!solution} onClick={lock}>{text.lock}</button> : null}
     </footer>
   </section>;
 }
