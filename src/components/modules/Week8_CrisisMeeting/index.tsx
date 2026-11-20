@@ -31,8 +31,8 @@ function MeetingAvatar({ index, reacting = false }: { index: number; reacting?: 
 }
 
 const copy = {
-  tr: { title: "8. HAFTA · MODÜL 1", crisis: "Kriz", score: "Puan", instruction: "Kişiye dokun, 3 karar jetonunu dağıt.", goal: "HEDEF", next: "Sonraki Kriz", finish: "Toplantıyı Tamamla", flow: "Akış", quality: "Kalite", team: "Ekip", strong: "Güçlü denge", partial: "Kısmen uygun", oneSided: "Tek taraflı karar", locked: "Bu toplantı turundaki kararların kilitli.", saved: "Kararlar kaydediliyor…", failed: "Kararlar kaydedilemedi. İlerlemen korundu.", retry: "Tekrar kaydet", remove: "Jetonu geri al", complete: "Kriz toplantısı tamamlandı", early: "Kısmi kararların kaydedildi", tokensLeft: "Kalan jeton" },
-  en: { title: "WEEK 8 · MODULE 1", crisis: "Crisis", score: "Score", instruction: "Tap a person to distribute 3 decision tokens.", goal: "GOAL", next: "Next Crisis", finish: "Complete Meeting", flow: "Flow", quality: "Quality", team: "Team", strong: "Strong balance", partial: "Partly suitable", oneSided: "One-sided decision", locked: "Your decisions for this meeting round are locked.", saved: "Saving decisions…", failed: "Decisions could not be saved. Your progress is preserved.", retry: "Save again", remove: "Take token back", complete: "Crisis meeting complete", early: "Your partial decisions were saved", tokensLeft: "Tokens left" },
+  tr: { title: "8. HAFTA · MODÜL 1", crisis: "Kriz", score: "Puan", instruction: "Kişiye dokun, 3 karar jetonunu dağıt.", goal: "HEDEF", flow: "Akış", quality: "Kalite", team: "Ekip", strong: "Güçlü denge", partial: "Kısmen uygun", oneSided: "Tek taraflı karar", locked: "Bu toplantı turundaki kararların kilitli.", saved: "Kararlar kaydediliyor…", failed: "Kararlar kaydedilemedi. İlerlemen korundu.", retry: "Tekrar kaydet", remove: "Jetonu geri al", complete: "Kriz toplantısı tamamlandı", early: "Kısmi kararların kaydedildi", tokensLeft: "Kalan jeton" },
+  en: { title: "WEEK 8 · MODULE 1", crisis: "Crisis", score: "Score", instruction: "Tap a person to distribute 3 decision tokens.", goal: "GOAL", flow: "Flow", quality: "Quality", team: "Team", strong: "Strong balance", partial: "Partly suitable", oneSided: "One-sided decision", locked: "Your decisions for this meeting round are locked.", saved: "Saving decisions…", failed: "Decisions could not be saved. Your progress is preserved.", retry: "Save again", remove: "Take token back", complete: "Crisis meeting complete", early: "Your partial decisions were saved", tokensLeft: "Tokens left" },
 } as const;
 
 function restore(draft?: ModuleDraft | null) {
@@ -118,14 +118,16 @@ export function Week8CrisisMeeting({ onSubmit, onDraft, existingSubmission, exis
     allocationRef.current = next; setAllocation(next); saveCurrentDraft(next);
   };
 
-  const advance = () => {
-    if (!review || finalizing) return;
-    if (attemptsRef.current.length >= crisisCases.length) { finalize(attemptsRef.current, "completed"); return; }
-    const next = emptyAllocation(); allocationRef.current = next; setAllocation(next); setReview(null);
-  };
-
   useEffect(() => { if (forceSubmit && !finalizing && !existingSubmission) finalize(attemptsRef.current, "teacher-ended"); }, [existingSubmission, finalizing, finalize, forceSubmit]);
   useEffect(() => { if (restored.attempts.length === crisisCases.length && !existingSubmission) finalize(restored.attempts, "completed"); }, [existingSubmission, finalize, restored.attempts]);
+  useEffect(() => {
+    if (!review || finalizing || existingSubmission || forceSubmit) return;
+    const timer = window.setTimeout(() => {
+      if (attemptsRef.current.length >= crisisCases.length) { finalize(attemptsRef.current, "completed"); return; }
+      const next = emptyAllocation(); allocationRef.current = next; setAllocation(next); setReview(null);
+    }, 3000);
+    return () => window.clearTimeout(timer);
+  }, [existingSubmission, finalize, finalizing, forceSubmit, review]);
 
   if (existingSubmission) return <section className={`${styles.shell} ${styles.centered}`}><LockKeyhole size={44} /><h2>{text.locked}</h2></section>;
   if (finalizing) return <section className={`${styles.shell} ${styles.centered}`}><Sparkles size={46} /><h2>{attempts.length === crisisCases.length ? text.complete : text.early}</h2><p>{submitting ? text.saved : failed ? text.failed : ""}</p>{failed && finalSubmission && <button className={styles.secondaryButton} onClick={() => void send(finalSubmission)}><RotateCcw size={17} />{text.retry}</button>}</section>;
@@ -156,6 +158,6 @@ export function Week8CrisisMeeting({ onSubmit, onDraft, existingSubmission, exis
     </div>
     <div className={styles.gauges}>{[text.flow, text.quality, text.team].map((label, gaugeIndex) => <div key={label}><span><b>{label}</b><strong>{Math.round(displayedGauges[gaugeIndex] ?? 0)}</strong></span><i><motion.em animate={{ width: `${displayedGauges[gaugeIndex]}%` }} transition={{ duration: reducedMotion ? 0 : .75 }} /></i></div>)}</div>
     {review && <motion.div className={`${styles.result} ${distance === 0 ? styles.success : ""}`} initial={{ opacity: 0, scale: .96 }} animate={{ opacity: 1, scale: 1 }}><span>{distance === 0 ? <Check /> : "◌"}</span><div><strong>{verdict} · +{roundPoints}/20</strong><p>{current.learning[locale]}</p></div></motion.div>}
-    <footer className={styles.actions}><div className={styles.looseTokens} aria-label={`${text.tokensLeft}: ${Math.max(0, 3 - distributed)}`}>{Array.from({ length: Math.max(0, 3 - distributed) }, (_, item) => <motion.i key={item} layout>●</motion.i>)}</div>{review && <button className={styles.primaryButton} onClick={advance}>{attempts.length === 5 ? text.finish : text.next}</button>}</footer>
+    <footer className={styles.actions}><div className={styles.looseTokens} aria-label={`${text.tokensLeft}: ${Math.max(0, 3 - distributed)}`}>{Array.from({ length: Math.max(0, 3 - distributed) }, (_, item) => <motion.i key={item} layout>●</motion.i>)}</div></footer>
   </section>;
 }

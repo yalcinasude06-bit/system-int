@@ -41,8 +41,8 @@ function EvidenceVisual({ id }: { id: string }) {
 }
 
 const copy = {
-  tr: { title: "8. HAFTA · MODÜL 2", case: "Vaka", score: "Puan", credit: "Kalan Kredi", instruction: "Dosyaları incele, kanıtlarla karar ver.", goal: "HEDEF", market: "Kanıt Dosyaları", desk: "Masamdaki Kanıtlar", solution: "Çözüm Seç", open: "İncele", lock: "Çözümü Kilitle", next: "Sonraki Vaka", finish: "Pazarı Tamamla", required: "İlgili kanıt", extra: "Ekstra harcama", best: "Karar sonucu", chooseTwo: "Karar vermek için en az 2 kanıt aç.", locked: "Bu pazar turundaki yanıtların kilitli.", complete: "Kanıt pazarı tamamlandı", partial: "Kısmi araştırman kaydedildi", saving: "Sonuç kaydediliyor…", failed: "Sonuç kaydedilemedi. İlerlemen korundu.", retry: "Tekrar kaydet", decide: "Çözüm Seç", back: "Kanıtlara Dön", noCredit: "Bu dosya için yeterli kredin yok.", approved: "ONAY", unsuitable: "UYGUN DEĞİL" },
-  en: { title: "WEEK 8 · MODULE 2", case: "Case", score: "Score", credit: "Credit Left", instruction: "Inspect the files and decide from the evidence.", goal: "GOAL", market: "Evidence Files", desk: "Evidence on My Desk", solution: "Choose a Solution", open: "Inspect", lock: "Lock Solution", next: "Next Case", finish: "Complete Market", required: "Relevant evidence", extra: "Extra spending", best: "Decision result", chooseTwo: "Open at least 2 evidence files to decide.", locked: "Your answers for this market round are locked.", complete: "Evidence market complete", partial: "Your partial research was saved", saving: "Saving result…", failed: "Result could not be saved. Your progress is preserved.", retry: "Save again", decide: "Choose Solution", back: "Back to Evidence", noCredit: "You do not have enough credit for this file.", approved: "APPROVED", unsuitable: "NOT SUITABLE" },
+  tr: { title: "8. HAFTA · MODÜL 2", case: "Vaka", score: "Puan", credit: "Kalan Kredi", instruction: "Dosyaları incele, kanıtlarla karar ver.", goal: "HEDEF", market: "Kanıt Dosyaları", desk: "Masamdaki Kanıtlar", solution: "Çözüm Seç", open: "İncele", next: "Sonraki Vaka", finish: "Pazarı Tamamla", required: "İlgili kanıt", extra: "Ekstra harcama", best: "Karar sonucu", chooseTwo: "Karar vermek için en az 2 kanıt aç.", locked: "Bu pazar turundaki yanıtların kilitli.", complete: "Kanıt pazarı tamamlandı", partial: "Kısmi araştırman kaydedildi", saving: "Sonuç kaydediliyor…", failed: "Sonuç kaydedilemedi. İlerlemen korundu.", retry: "Tekrar kaydet", decide: "Çözüm Seç", back: "Kanıtlara Dön", noCredit: "Bu dosya için yeterli kredin yok.", approved: "ONAY", unsuitable: "UYGUN DEĞİL" },
+  en: { title: "WEEK 8 · MODULE 2", case: "Case", score: "Score", credit: "Credit Left", instruction: "Inspect the files and decide from the evidence.", goal: "GOAL", market: "Evidence Files", desk: "Evidence on My Desk", solution: "Choose a Solution", open: "Inspect", next: "Next Case", finish: "Complete Market", required: "Relevant evidence", extra: "Extra spending", best: "Decision result", chooseTwo: "Open at least 2 evidence files to decide.", locked: "Your answers for this market round are locked.", complete: "Evidence market complete", partial: "Your partial research was saved", saving: "Saving result…", failed: "Result could not be saved. Your progress is preserved.", retry: "Save again", decide: "Choose Solution", back: "Back to Evidence", noCredit: "You do not have enough credit for this file.", approved: "APPROVED", unsuitable: "NOT SUITABLE" },
 } as const;
 
 function restore(draft?: ModuleDraft | null) {
@@ -72,7 +72,7 @@ export function Week8EvidenceMarket({ onSubmit, onDraft, existingSubmission, exi
   const [creditWarning, setCreditWarning] = useState(false);
   const [review, setReview] = useState<EvidenceAttempt | null>(null);
   const [finalizing, setFinalizing] = useState(false); const [submitting, setSubmitting] = useState(false); const [failed, setFailed] = useState(false); const [finalSubmission, setFinalSubmission] = useState<ModuleSubmission | null>(null);
-  const attemptsRef = useRef(restored.attempts); const openedRef = useRef(restored.opened); const submittedRef = useRef(false);
+  const attemptsRef = useRef(restored.attempts); const openedRef = useRef(restored.opened); const submittedRef = useRef(false); const decisionCommittedRef = useRef(false);
   const index = review ? Math.max(0, attempts.length - 1) : Math.min(attempts.length, evidenceCases.length - 1); const current = evidenceCases[index]!;
   const score = scoreEvidenceAttempts(attempts); const spent = current.evidence.filter((item) => opened.includes(item.id)).reduce((sum, item) => sum + item.cost, 0); const credit = 100 - spent;
   const canOpenMore = current.evidence.some((item) => !opened.includes(item.id) && item.cost <= credit);
@@ -90,9 +90,22 @@ export function Week8EvidenceMarket({ onSubmit, onDraft, existingSubmission, exi
     if (card.cost > credit) { setCreditWarning(true); return; }
     const next = [...opened, id]; openedRef.current = next; setOpened(next); saveDraft(next, solution);
   };
-  const choose = (id: string) => { if (opened.length < 2 || review || finalizing || forceSubmit) return; setSolution(id); saveDraft(openedRef.current, id); };
-  const lock = () => { if (!solution || opened.length < 2 || review || finalizing) return; const attempt = { caseId: current.id, opened: [...opened], solutionId: solution }; const next = [...attemptsRef.current, attempt]; attemptsRef.current = next; setAttempts(next); setReview(attempt); void onDraft?.(submissionFor(next, "draft", [], null)); };
-  const advance = () => { if (!review || finalizing) return; if (attemptsRef.current.length >= evidenceCases.length) { finalize(attemptsRef.current, "completed"); return; } openedRef.current = []; setOpened([]); setSolution(null); setSelectedEvidence(null); setCreditWarning(false); setPhase("inspect"); setReview(null); };
+  const choose = (id: string) => {
+    if (phase !== "decide" || openedRef.current.length < 2 || review || finalizing || forceSubmit || decisionCommittedRef.current) return;
+    const selectedSolution = current.solutions.find((item) => item.id === id);
+    if (!selectedSolution) return;
+    decisionCommittedRef.current = true;
+    setSolution(id);
+    const attempt = { caseId: current.id, opened: [...openedRef.current], solutionId: id };
+    const next = [...attemptsRef.current, attempt];
+    attemptsRef.current = next; setAttempts(next); setReview(attempt);
+    void onDraft?.(submissionFor(next, "draft", [], null));
+  };
+  const advance = useCallback(() => {
+    if (!review || finalizing) return;
+    if (attemptsRef.current.length >= evidenceCases.length) { finalize(attemptsRef.current, "completed"); return; }
+    decisionCommittedRef.current = false; openedRef.current = []; setOpened([]); setSolution(null); setSelectedEvidence(null); setCreditWarning(false); setPhase("inspect"); setReview(null);
+  }, [finalize, finalizing, review]);
 
   useEffect(() => { if (forceSubmit && !finalizing && !existingSubmission) finalize(attemptsRef.current, "teacher-ended"); }, [existingSubmission, finalizing, finalize, forceSubmit]);
   useEffect(() => { if (restored.attempts.length === evidenceCases.length && !existingSubmission) finalize(restored.attempts, "completed"); }, [existingSubmission, finalize, restored.attempts]);
@@ -101,6 +114,11 @@ export function Week8EvidenceMarket({ onSubmit, onDraft, existingSubmission, exi
     const timer = window.setTimeout(() => setPhase("decide"), reduceMotion ? 0 : 520);
     return () => window.clearTimeout(timer);
   }, [autoDecisionReady, finalizing, phase, reduceMotion, review]);
+  useEffect(() => {
+    if (!review || finalizing || existingSubmission || forceSubmit) return;
+    const timer = window.setTimeout(advance, 3000);
+    return () => window.clearTimeout(timer);
+  }, [advance, existingSubmission, finalizing, forceSubmit, review]);
 
   if (existingSubmission) return <section className={`${styles.shell} ${styles.centered}`}><LockKeyhole size={44} /><h2>{text.locked}</h2></section>;
   if (finalizing) return <section className={`${styles.shell} ${styles.centered}`}><Sparkles size={46} /><h2>{attempts.length === evidenceCases.length ? text.complete : text.partial}</h2><p>{submitting ? text.saving : failed ? text.failed : ""}</p>{failed && finalSubmission && <button className={styles.secondaryButton} onClick={() => void send(finalSubmission)}><RotateCcw size={17} />{text.retry}</button>}</section>;
@@ -132,7 +150,7 @@ export function Week8EvidenceMarket({ onSubmit, onDraft, existingSubmission, exi
         </motion.aside> : null}
       </AnimatePresence>
 
-      {opened.length > 0 && <div className={styles.desk}><h2>{text.desk}</h2><div>{opened.map((id) => { const card = current.evidence.find((item) => item.id === id)!; return <button type="button" key={id} className={review && current.required.includes(id) ? styles.relevantChip : ""} disabled={Boolean(review)} onClick={() => setSelectedEvidence(id)} aria-label={`${card.title[locale]}: ${card.detail[locale]}`}><Check />{card.detail[locale]}</button>; })}</div></div>}
+      {opened.length > 0 && <div className={styles.desk}><h2>{text.desk}</h2><div>{opened.map((id) => { const card = current.evidence.find((item) => item.id === id)!; return <article key={id} className={`${styles.evidenceNote} ${review && current.required.includes(id) ? styles.relevantChip : ""}`}><Check /><span>{card.detail[locale]}</span></article>; })}</div></div>}
 
       <AnimatePresence mode="wait">
         {(phase === "decide" || review) && <motion.section key="decision" className={styles.decisionBoard} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
@@ -142,8 +160,5 @@ export function Week8EvidenceMarket({ onSubmit, onDraft, existingSubmission, exi
       </AnimatePresence>
     </div>
     {review && <motion.div className={`${styles.result} ${decisionCorrect ? styles.success : ""}`} initial={{ opacity: 0, scale: .96 }} animate={{ opacity: 1, scale: 1 }}><span>{decisionCorrect ? <Check /> : "◌"}</span><div><strong>{text.best} · +{roundPoints}/20</strong><p>{current.learning[locale]}</p></div></motion.div>}
-    <footer className={styles.actions}>
-      {review ? <button className={styles.primaryButton} onClick={advance}>{attempts.length === 5 ? text.finish : text.next}</button> : phase === "decide" ? <button className={styles.primaryButton} disabled={!solution} onClick={lock}>{text.lock}</button> : null}
-    </footer>
   </section>;
 }
