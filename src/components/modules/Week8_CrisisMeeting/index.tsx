@@ -140,10 +140,10 @@ export function Week8CrisisMeeting({ onSubmit, onDraft, existingSubmission, exis
     <div className={styles.caseBrief}><div><small>{current.title[locale]}</small><h1>{current.situation[locale]}</h1></div><span><b>{text.goal}</b>{current.target[locale]}</span></div>
     <p className={styles.instruction}><Coins size={19} />{text.instruction}<b>{3 - distributed}</b></p>
     <div className={styles.meetingScene}>
-      <motion.div className={`${styles.table} ${review ? styles.tableDecided : ""}`} animate={review && !reducedMotion ? { scale: [1, 1.035, 1] } : undefined} transition={{ duration: .7 }}>
+      <div data-meeting-table className={`${styles.table} ${review ? styles.tableDecided : ""}`}>
         <div className={styles.decisionRing}><span>{review ? "✓" : "8"}</span>{review && <div className={styles.tableTokens}>{[0, 1, 2].map((token) => <motion.i key={token} initial={{ opacity: 0, scale: .4, x: (token - 1) * 28, y: 35 }} animate={{ opacity: 1, scale: 1, x: (token - 1) * 18, y: 18 }} transition={{ delay: reducedMotion ? 0 : token * .1 }}>●</motion.i>)}</div>}</div>
         {review && <motion.strong className={styles.tableVerdict} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: reducedMotion ? 0 : .45 }}>{verdict}</motion.strong>}
-      </motion.div>
+      </div>
       <div className={styles.stakeholders}>
         {current.stakeholders.map((stakeholder, stakeholderIndex) => <motion.article key={stakeholder.id} className={`${styles.stakeholder} ${review && current.ideal[stakeholderIndex] > 0 ? styles.ideal : ""} ${visibleAllocation[stakeholderIndex] ? styles.hasToken : ""}`} animate={review && current.ideal[stakeholderIndex] === 0 && visibleAllocation[stakeholderIndex] > 0 && !reducedMotion ? { x: [0, -3, 3, 0] } : undefined}>
           <button type="button" disabled={Boolean(review) || distributed >= 3} onClick={() => addToken(stakeholderIndex)} aria-label={`${stakeholder.role[locale]}: ${stakeholder.proposal[locale]}`}>

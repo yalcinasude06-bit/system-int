@@ -53,23 +53,6 @@ function useMeasuredDemoTargets(containerRef: RefObject<HTMLElement | null>, tar
   return points;
 }
 
-function useMeasuredDemoSize(containerRef: RefObject<HTMLElement | null>) {
-  const [size, setSize] = useState({ width: 0, height: 0 });
-  useEffect(() => {
-    const measure = () => {
-      const container = containerRef.current;
-      if (!container) return;
-      setSize({ width: container.clientWidth, height: container.clientHeight });
-    };
-    measure();
-    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
-    if (containerRef.current) observer?.observe(containerRef.current);
-    window.addEventListener("resize", measure);
-    return () => { observer?.disconnect(); window.removeEventListener("resize", measure); };
-  }, [containerRef]);
-  return size;
-}
-
 function getRelativeRect(container: DOMRect, element: Element): RelativeRect {
   const rect = element.getBoundingClientRect();
   return { left: rect.left - container.left, top: rect.top - container.top, width: rect.width, height: rect.height };
@@ -629,10 +612,6 @@ function WeekSevenDrawCurveDemo() {
 
 function WeekEightCrisisDemo() {
   const { locale } = useI18n();
-  const demoRef = useRef<HTMLDivElement>(null);
-  const tokenSlotRefs = useRef<Array<HTMLElement | null>>([]);
-  const tokenSlots = useMeasuredDemoTargets(demoRef, tokenSlotRefs);
-  const demoSize = useMeasuredDemoSize(demoRef);
   const people = [
     { role: { tr: "Planlama", en: "Planning" }, proposal: { tr: "İkiye bölelim.", en: "Split it in two." } },
     { role: { tr: "Ekip", en: "Team" }, proposal: { tr: "Deneyimi taşıyalım.", en: "Move experience." } },
@@ -642,18 +621,17 @@ function WeekEightCrisisDemo() {
   const tokenOwners = [2, 2, 3] as const;
   const tokenTimes = [[0, .08, .22, .82, .9, 1], [0, .25, .39, .82, .9, 1], [0, .42, .56, .82, .9, 1]];
   const loop = { duration: 5.2, repeat: Infinity, ease: "easeInOut" as const, times: [0, .18, .44, .7, .88, 1] };
-  return <div ref={demoRef} className="module-demo week-eight-crisis-demo" aria-hidden="true">
+  return <div className="module-demo week-eight-crisis-demo" aria-hidden="true">
     <motion.div className="week-eight-demo-table" animate={{ boxShadow: ["0 8px 18px #7e572826", "0 8px 18px #7e572826", "0 0 0 7px #78c7a433", "0 0 0 7px #78c7a400", "0 8px 18px #7e572826", "0 8px 18px #7e572826"] }} transition={loop}><span>8</span></motion.div>
-    {people.map((person, index) => <motion.div key={person.role.en} className={`week-eight-demo-person person-${index + 1}`} animate={index >= 2 ? { scale: [1, 1, 1.04, 1.04, 1, 1], filter: ["brightness(1)", "brightness(1)", "brightness(1.08)", "brightness(1.08)", "brightness(1)", "brightness(1)"] } : undefined} transition={loop}><i><b /></i><span><strong>{person.role[locale]}</strong><small>{person.proposal[locale]}</small></span><em ref={(node) => { tokenSlotRefs.current[index] = node; }} className="week-eight-demo-token-slot" /></motion.div>)}
-    {[0, 1, 2].map((token) => {
-      const owner = tokenOwners[token]!;
-      const target = tokenSlots[owner];
-      const { width, height } = demoSize;
-      const spread = token < 2 ? (token === 0 ? -8 : 8) : 0;
-      const x = target && width ? target.x - width / 2 + spread : token < 2 ? -72 + spread : 72;
-      const y = target && height ? target.y - (height - 17) : -28;
-      return <motion.i className={`week-eight-demo-token token-${token + 1}`} key={token} animate={{ x: [0, 0, x, x, x, 0], y: [32, 32, y, y, y, 32], opacity: [0, 1, 1, 1, 0, 0], scale: [1, .82, 1.08, 1, .9, 1] }} transition={{ duration: 5.2, repeat: Infinity, repeatDelay: .35, ease: "easeInOut", times: tokenTimes[token] }}>●</motion.i>;
-    })}
+    {people.map((person, index) => <motion.div key={person.role.en} className={`week-eight-demo-person person-${index + 1}`} animate={index >= 2 ? { scale: [1, 1, 1.04, 1.04, 1, 1], filter: ["brightness(1)", "brightness(1)", "brightness(1.08)", "brightness(1.08)", "brightness(1)", "brightness(1)"] } : undefined} transition={loop}>
+      <i><b /></i><span><strong>{person.role[locale]}</strong><small>{person.proposal[locale]}</small></span>
+      <em className="week-eight-demo-token-slot">{tokenOwners.map((owner, token) => {
+        if (owner !== index) return null;
+        const startX = index === 2 ? 88 : -88;
+        const spread = token < 2 ? (token === 0 ? -6 : 6) : 0;
+        return <motion.i data-token-owner={owner} className={`week-eight-demo-token token-${token + 1}`} key={token} animate={{ x: [startX, startX, spread, spread, spread, startX], y: [34, 34, 0, 0, 0, 34], opacity: [0, 1, 1, 1, 0, 0], scale: [1, .82, 1.08, 1, .9, 1] }} transition={{ duration: 5.2, repeat: Infinity, repeatDelay: .35, ease: "easeInOut", times: tokenTimes[token] }}>●</motion.i>;
+      })}</em>
+    </motion.div>)}
     <div className="week-eight-demo-gauges">{["", "", ""].map((_, index) => <span key={index}><motion.i animate={{ width: ["50%", "50%", `${72 + index * 6}%`, `${72 + index * 6}%`, "50%", "50%"] }} transition={loop} /></span>)}</div>
   </div>;
 }
